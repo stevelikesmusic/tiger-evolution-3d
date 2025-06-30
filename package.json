@@ -1,41 +1,29 @@
 {
   "name": "tiger-evolution-3d",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "serve",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui"
   },
-  "keywords": [],
+  "keywords": ["3d", "game", "tiger", "evolution", "webgl", "three.js"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A 3D tiger evolution and survival game built with Three.js and WebGL",
   "dependencies": {
-    "serve": "^14.2.4",
     "three": "^0.168.0",
     "cannon-es": "^0.20.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "@jest/globals": "^29.7.0"
-  },
-  "type": "module",
-  "jest": {
-    "testEnvironment": "jsdom",
-    "moduleFileExtensions": ["js", "mjs"],
-    "testMatch": ["**/tests/**/*.test.js"],
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/**/*.test.js"
-    ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": ["text", "lcov", "html"],
-    "transform": {},
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "jsdom": "^23.0.0"
   }
 }

@@ -3,11 +3,12 @@
 ## Technical Stack
 
 ### Core Technologies
-- **Engine**: Three.js r177+ (WebGL 2.0/1.0 fallback)
-- **Physics**: Cannon.js for realistic physics simulation
-- **Testing**: Jest + Testing Library for unit/integration tests
-- **Build**: Vanilla JS with ES6 modules, served via `serve`
-- **Performance**: Web Workers for physics calculations
+- **Build Tool**: Vite 5.x for fast development and optimized production builds
+- **Engine**: Three.js r168+ (WebGL 2.0/1.0 fallback) with native ES module imports
+- **Physics**: Cannon-es for realistic physics simulation
+- **Testing**: Vitest with jsdom environment for unit/integration tests
+- **Development**: Hot Module Replacement (HMR) and fast refresh
+- **Performance**: Web Workers for physics calculations, optimized asset bundling
 
 ### Architecture Overview
 

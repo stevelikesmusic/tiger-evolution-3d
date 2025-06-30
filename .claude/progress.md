@@ -11,19 +11,23 @@
 - [x] Analyzed game specification requirements
 - [x] Designed ECS architecture approach
 - [x] Planned TDD methodology implementation
+- [x] **NEW**: Migrated from serve to Vite build system
+- [x] **NEW**: Replaced Jest with Vitest for better ES module support
+- [x] **NEW**: Set up proper Three.js module resolution with Vite
 
 ## Current Sprint: Foundation Setup
 
 ### In Progress 🚧
-- [ ] Setting up TDD framework with Jest
-- [ ] Creating initial test structure
-- [ ] Planning Phase 1 implementation details
+- [x] ~~Setting up TDD framework with Jest~~ **COMPLETED**: Migrated to Vitest
+- [x] ~~Creating initial test structure~~ **COMPLETED**: Vitest setup complete
+- [x] ~~Planning Phase 1 implementation details~~ **COMPLETED**: Phase 1 foundation ready
 
 ### Next Tasks 📋
-- [ ] Set up Three.js development environment
-- [ ] Create basic HTML structure
-- [ ] Implement core Engine class with tests
-- [ ] Set up basic scene management
+- [x] ~~Set up Three.js development environment~~ **COMPLETED**: Vite + Three.js setup
+- [x] ~~Create basic HTML structure~~ **COMPLETED**: Base HTML with canvas ready
+- [x] ~~Implement core Engine class with tests~~ **COMPLETED**: Engine class with Vitest tests
+- [x] ~~Set up basic scene management~~ **COMPLETED**: Scene, camera, renderer working
+- [ ] **NEXT**: Begin Phase 2 - Tiger character and basic movement system
 
 ## Development Phases Overview
 
