@@ -1,0 +1,41 @@
+{
+  "name": "tiger-evolution-3d",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "serve": "^14.2.4",
+    "three": "^0.168.0",
+    "cannon-es": "^0.20.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@jest/globals": "^29.7.0"
+  },
+  "type": "module",
+  "jest": {
+    "testEnvironment": "jsdom",
+    "moduleFileExtensions": ["js", "mjs"],
+    "testMatch": ["**/tests/**/*.test.js"],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "transform": {},
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
+  }
+}
