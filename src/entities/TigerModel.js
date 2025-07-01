@@ -120,6 +120,16 @@ export class TigerModel {
     return this.mesh.rotation.clone();
   }
 
+  // Getter for position property (for camera system compatibility)
+  get position() {
+    return this.mesh.position;
+  }
+
+  // Getter for rotation property (for camera system compatibility)
+  get rotation() {
+    return this.mesh.rotation;
+  }
+
   // Alpha tiger special abilities
   hasGlowEffects() {
     return this.evolutionStage === 'Alpha' && this.glowParticles !== undefined;

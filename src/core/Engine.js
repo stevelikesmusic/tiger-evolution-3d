@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GameController } from '../systems/GameController.js';
 
 export class Engine {
     constructor(canvas, options = {}) {
@@ -24,8 +25,8 @@ export class Engine {
     init() {
         this.initRenderer();
         this.initScene();
-        this.initCamera();
         this.initClock();
+        this.initGameController();
         
         this.setupEventListeners();
     }
@@ -55,29 +56,46 @@ export class Engine {
         this.scene.background = new THREE.Color(0x87CEEB); // Sky blue
         this.scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
         
-        // Add a test cube to verify rendering works
-        this.addTestCube();
-    }
-    
-    addTestCube() {
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0xff6600,
-            wireframe: true
-        });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0, -5);
-        this.scene.add(cube);
+        // Add basic lighting
+        this.initLighting();
         
-        // Store reference for animation
-        this.testCube = cube;
+        // Add ground plane
+        this.addGround();
     }
     
-    initCamera() {
-        const aspect = this.canvas.width / this.canvas.height;
-        this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-        this.camera.position.set(0, 5, 10);
-        this.camera.lookAt(0, 0, 0);
+    initLighting() {
+        // Ambient light for general illumination
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        this.scene.add(ambientLight);
+        
+        // Directional light for sun
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(50, 50, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.1;
+        directionalLight.shadow.camera.far = 200;
+        this.scene.add(directionalLight);
+    }
+    
+    addGround() {
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
+        const groundMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x3d5a3d // Forest green
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+    }
+    
+    initGameController() {
+        // Initialize game controller with scene and canvas
+        this.gameController = new GameController(this.scene, this.canvas);
+        
+        // Use the game controller's camera instead of creating our own
+        this.camera = this.gameController.getCamera();
     }
     
     initClock() {
@@ -120,13 +138,10 @@ export class Engine {
     }
     
     update(deltaTime) {
-        // Animate the test cube to verify the game loop is working
-        if (this.testCube) {
-            this.testCube.rotation.x += deltaTime;
-            this.testCube.rotation.y += deltaTime * 0.5;
+        // Update game controller and all systems
+        if (this.gameController) {
+            this.gameController.update(deltaTime);
         }
-        
-        // Override in subclasses or add update systems here
     }
     
     render() {
@@ -135,12 +150,24 @@ export class Engine {
     
     resize(width, height) {
         this.renderer.setSize(width, height);
-        this.camera.aspect = width / height;
-        this.camera.updateProjectionMatrix();
+        
+        // Notify game controller of resize (which will update camera)
+        if (this.gameController) {
+            this.gameController.resize(width, height);
+        } else {
+            // Fallback for when game controller isn't initialized yet
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+        }
     }
     
     dispose() {
         this.stop();
+        
+        // Dispose game controller
+        if (this.gameController) {
+            this.gameController.dispose();
+        }
         
         if (this.renderer) {
             this.renderer.dispose();
