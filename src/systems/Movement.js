@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 
 export class MovementSystem {
-  constructor(tiger) {
+  constructor(tiger, terrain = null) {
     if (!tiger) {
       throw new Error('Tiger is required for MovementSystem');
     }
 
     this.tiger = tiger;
+    this.terrain = terrain;
 
     // Movement state
     this.isMoving = false;
@@ -112,11 +113,40 @@ export class MovementSystem {
     this.tiger.position.y += this.velocity.y * deltaTime;
     this.tiger.position.z += this.velocity.z * deltaTime;
 
-    // Ground collision (simple)
-    if (this.tiger.position.y <= 0) {
-      this.tiger.position.y = 0;
-      this.velocity.y = 0;
-      this.isGrounded = true;
+    // Terrain collision detection
+    if (this.terrain) {
+      // Get terrain height at tiger's x,z position
+      const terrainHeight = this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z);
+      const tigerHeight = 1.0; // Tiger's height above ground
+      const groundLevel = terrainHeight + tigerHeight;
+
+      // If tiger is at or below ground level, place on terrain
+      if (this.tiger.position.y <= groundLevel) {
+        this.tiger.position.y = groundLevel;
+        this.velocity.y = 0;
+        this.isGrounded = true;
+      } else {
+        this.isGrounded = false;
+      }
+
+      // Handle steep slope sliding
+      const slope = this.terrain.getSlope(this.tiger.position.x, this.tiger.position.z);
+      if (slope > 0.7 && this.isGrounded) {
+        // Get slope normal for sliding direction
+        const normal = this.terrain.getNormal(this.tiger.position.x, this.tiger.position.z);
+        const slideForce = (slope - 0.7) * 20; // Sliding strength
+        
+        // Apply sliding force in direction of steepest descent (opposite of normal x,z)
+        this.velocity.x -= normal.x * slideForce * deltaTime;
+        this.velocity.z -= normal.z * slideForce * deltaTime;
+      }
+    } else {
+      // Fallback: simple ground collision at y=0
+      if (this.tiger.position.y <= 0) {
+        this.tiger.position.y = 0;
+        this.velocity.y = 0;
+        this.isGrounded = true;
+      }
     }
   }
 
@@ -186,5 +216,55 @@ export class MovementSystem {
     this.isCrouching = false;
     this.isJumping = false;
     this.isGrounded = true;
+  }
+
+  // Set terrain for collision detection
+  setTerrain(terrain) {
+    this.terrain = terrain;
+  }
+
+  // Get current terrain height at tiger position
+  getCurrentTerrainHeight() {
+    if (!this.terrain) return 0;
+    return this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z);
+  }
+
+  // Handle terrain collision (for compatibility with tests)
+  handleTerrainCollision(deltaTime) {
+    // This is just the terrain collision part of updatePosition
+    if (this.terrain) {
+      // Get terrain height at tiger's x,z position
+      const terrainHeight = this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z);
+      const tigerHeight = 1.0; // Tiger's height above ground
+      const groundLevel = terrainHeight + tigerHeight;
+
+      // If tiger is at or below ground level, place on terrain
+      if (this.tiger.position.y <= groundLevel) {
+        this.tiger.position.y = groundLevel;
+        this.velocity.y = 0;
+        this.isGrounded = true;
+      } else {
+        this.isGrounded = false;
+      }
+
+      // Handle steep slope sliding
+      const slope = this.terrain.getSlope(this.tiger.position.x, this.tiger.position.z);
+      if (slope > 0.7 && this.isGrounded) {
+        // Get slope normal for sliding direction
+        const normal = this.terrain.getNormal(this.tiger.position.x, this.tiger.position.z);
+        const slideForce = (slope - 0.7) * 20; // Sliding strength
+        
+        // Apply sliding force in direction of steepest descent (opposite of normal x,z)
+        this.velocity.x -= normal.x * slideForce * deltaTime;
+        this.velocity.z -= normal.z * slideForce * deltaTime;
+      }
+    } else {
+      // Fallback: simple ground collision at y=0
+      if (this.tiger.position.y <= 0) {
+        this.tiger.position.y = 0;
+        this.velocity.y = 0;
+        this.isGrounded = true;
+      }
+    }
   }
 }

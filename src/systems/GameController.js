@@ -1,8 +1,11 @@
 import { Tiger } from '../entities/Tiger.js';
 import { TigerModel } from '../entities/TigerModel.js';
+import { Terrain } from '../entities/Terrain.js';
 import { CameraSystem } from './Camera.js';
 import { InputSystem } from './Input.js';
 import { MovementSystem } from './Movement.js';
+import { VegetationSystem } from './VegetationSystem.js';
+import { TerrainRenderer } from './TerrainRenderer.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -26,6 +29,14 @@ export class GameController {
   }
 
   initializeSystems() {
+    // Create terrain system
+    this.terrain = new Terrain(512, 512, 128);
+    this.terrain.generateHeightmap(12345); // Use consistent seed for now
+
+    // Create terrain renderer and add to scene
+    this.terrainRenderer = new TerrainRenderer(this.terrain);
+    this.scene.add(this.terrainRenderer.getMesh());
+
     // Create tiger entity and model
     this.tiger = new Tiger();
     this.tigerModel = new TigerModel();
@@ -37,7 +48,14 @@ export class GameController {
     this.input = new InputSystem(this.canvas);
 
     // Create movement system
-    this.movementSystem = new MovementSystem(this.tiger);
+    this.movementSystem = new MovementSystem(this.tiger, this.terrain);
+
+    // Create vegetation system
+    this.vegetationSystem = new VegetationSystem(this.scene, this.terrain);
+    this.vegetationSystem.generateVegetation(12345); // Use consistent seed
+
+    // Position tiger on terrain surface
+    this.positionTigerOnTerrain();
 
     // Add tiger model to scene
     this.scene.add(this.tigerModel.getMesh());
@@ -79,6 +97,11 @@ export class GameController {
       // Update 3D model
       this.tigerModel.update(deltaTime);
       
+      // Update vegetation system (for wind effects, etc.)
+      if (this.vegetationSystem) {
+        this.vegetationSystem.update(deltaTime);
+      }
+      
       // Update camera
       this.camera.update(deltaTime);
       
@@ -99,6 +122,19 @@ export class GameController {
 
     // Apply to movement system
     this.movementSystem.setMovementInput(movementInput);
+
+    // Handle camera control with mouse movement
+    const mouseDelta = this.input.getMouseDelta();
+    
+    if (mouseDelta.x !== 0 || mouseDelta.y !== 0) {
+      // Create a mock event for camera system
+      const mockEvent = {
+        movementX: mouseDelta.x,
+        movementY: mouseDelta.y,
+        buttons: 0 // No buttons needed for pointer lock
+      };
+      this.camera.handleMouseMove(mockEvent);
+    }
   }
 
   syncTigerToModel() {
@@ -158,6 +194,21 @@ export class GameController {
 
   // Reset game state
   reset() {
+    // Reset terrain with new heightmap
+    if (this.terrain) {
+      this.terrain.generateHeightmap();
+      
+      // Update terrain renderer
+      if (this.terrainRenderer) {
+        this.terrainRenderer.updateTerrain();
+      }
+    }
+
+    // Reset vegetation
+    if (this.vegetationSystem) {
+      this.vegetationSystem.generateVegetation();
+    }
+
     // Reset tiger to starting state
     this.tiger = new Tiger();
     
@@ -177,6 +228,10 @@ export class GameController {
     // Re-establish connections
     this.camera.setTarget(this.tigerModel);
     this.movementSystem.tiger = this.tiger;
+    this.movementSystem.setTerrain(this.terrain);
+    
+    // Position tiger on terrain
+    this.positionTigerOnTerrain();
     
     // Sync initial state
     this.syncTigerToModel();
@@ -184,6 +239,17 @@ export class GameController {
 
   // Cleanup
   dispose() {
+    // Clean up vegetation system
+    if (this.vegetationSystem) {
+      this.vegetationSystem.dispose();
+    }
+
+    // Clean up terrain renderer
+    if (this.terrainRenderer) {
+      this.scene.remove(this.terrainRenderer.getMesh());
+      this.terrainRenderer.dispose();
+    }
+
     // Clean up input system
     if (this.input) {
       this.input.dispose();
@@ -200,6 +266,9 @@ export class GameController {
     // Clean up references
     this.tiger = null;
     this.tigerModel = null;
+    this.terrain = null;
+    this.terrainRenderer = null;
+    this.vegetationSystem = null;
     this.camera = null;
     this.input = null;
     this.movementSystem = null;
@@ -230,5 +299,49 @@ export class GameController {
       experience: this.tiger.experience,
       evolutionStage: this.tiger.evolutionStage
     };
+  }
+
+  // Terrain and vegetation access methods
+  getTerrain() {
+    return this.terrain;
+  }
+
+  getVegetationSystem() {
+    return this.vegetationSystem;
+  }
+
+  getVegetationStats() {
+    return this.vegetationSystem ? this.vegetationSystem.getStatistics() : null;
+  }
+
+  positionTigerOnTerrain() {
+    if (this.terrain && this.tiger) {
+      // Start tiger at center of terrain
+      const centerX = 0;
+      const centerZ = 0;
+      const terrainHeight = this.terrain.getHeightAt(centerX, centerZ);
+      const tigerHeight = 1.0; // Height above ground
+      
+      this.tiger.setPosition(centerX, terrainHeight + tigerHeight, centerZ);
+    }
+  }
+
+  regenerateTerrain(seed) {
+    if (this.terrain) {
+      this.terrain.generateHeightmap(seed);
+      
+      // Update terrain renderer
+      if (this.terrainRenderer) {
+        this.terrainRenderer.updateTerrain();
+      }
+      
+      // Regenerate vegetation to match new terrain
+      if (this.vegetationSystem) {
+        this.vegetationSystem.generateVegetation(seed);
+      }
+
+      // Reposition tiger on new terrain
+      this.positionTigerOnTerrain();
+    }
   }
 }
