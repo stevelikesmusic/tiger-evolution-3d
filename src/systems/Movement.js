@@ -30,6 +30,10 @@ export class MovementSystem {
     this.runSpeedMultiplier = 1.5;
     this.crouchSpeedMultiplier = 0.5;
     this.staminaSpeedReduction = 0.3; // Speed reduction when low stamina
+
+    // Rotation properties
+    this.targetRotation = 0; // Target rotation angle in radians
+    this.rotationSpeed = 3; // Rotation speed in radians per second (slower for gradual turning)
   }
 
   setMovementInput(input) {
@@ -44,7 +48,7 @@ export class MovementSystem {
       this.inputDirection.normalize();
     }
 
-    // Update movement state
+    // Update movement state - any directional input counts as "moving"
     this.isMoving = length > 0;
     this.isRunning = isRunning && this.isMoving;
     this.isCrouching = isCrouching;
@@ -71,27 +75,62 @@ export class MovementSystem {
     return speed;
   }
 
+  updateRotation(deltaTime) {
+    // Rotate tiger to face movement direction for natural diagonal movement
+    if (this.isMoving && this.inputDirection.length() > 0) {
+      // Calculate target rotation based on movement direction
+      const targetRotation = Math.atan2(-this.inputDirection.x, this.inputDirection.z);
+      
+      const currentRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
+      
+      // Calculate shortest angle difference
+      let angleDiff = targetRotation - currentRotation;
+      
+      // Normalize angle difference to [-π, π]
+      while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+      while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+      
+      // Apply smooth rotation toward movement direction
+      const rotationChange = this.rotationSpeed * deltaTime;
+      const actualChange = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), rotationChange);
+      this.tiger.rotation.y = currentRotation + actualChange;
+    }
+  }
+
   applyMovementForces(deltaTime) {
-    if (!this.isMoving) {
+    // Extract movement input
+    const forwardBackward = this.inputDirection.z; // -1 for forward, +1 for backward
+    const leftRight = this.inputDirection.x; // -1 for left, +1 for right
+    
+    // Check if there's any movement input
+    const hasMovementInput = Math.abs(forwardBackward) > 0.1 || Math.abs(leftRight) > 0.1;
+    
+    if (!hasMovementInput) {
       // Apply friction when not moving
       this.velocity.x *= this.groundFriction;
       this.velocity.z *= this.groundFriction;
       return;
     }
 
-    // Calculate target velocity based on input
+    // Calculate target velocity based on input direction
     const speed = this.getCurrentSpeed();
-    const targetVelocity = this.inputDirection.clone().multiplyScalar(speed);
+    
+    // Create movement vector from input (diagonal movement in world space)
+    const movementVector = new THREE.Vector3(leftRight, 0, forwardBackward);
+    if (movementVector.length() > 1) {
+      movementVector.normalize();
+    }
+    
+    // Apply movement in world coordinates for true diagonal movement
+    const targetVelocityX = -movementVector.x * speed; // Left/right movement
+    const targetVelocityZ = movementVector.z * speed; // Forward/backward movement
 
     // Apply acceleration towards target velocity
-    const velocityDiff = targetVelocity.clone().sub(
-      new THREE.Vector3(this.velocity.x, 0, this.velocity.z)
-    );
+    const velocityDiffX = targetVelocityX - this.velocity.x;
+    const velocityDiffZ = targetVelocityZ - this.velocity.z;
     
-    const accelerationForce = velocityDiff.multiplyScalar(this.acceleration * deltaTime);
-    
-    this.velocity.x += accelerationForce.x;
-    this.velocity.z += accelerationForce.z;
+    this.velocity.x += velocityDiffX * this.acceleration * deltaTime;
+    this.velocity.z += velocityDiffZ * this.acceleration * deltaTime;
   }
 
   applyJump() {
@@ -180,7 +219,10 @@ export class MovementSystem {
     // Clamp delta time to prevent large jumps
     deltaTime = Math.max(0, Math.min(deltaTime, 0.1));
 
-    // Apply movement forces
+    // Update tiger rotation based on left/right input
+    this.updateRotation(deltaTime);
+
+    // Apply movement forces based on forward/backward input
     this.applyMovementForces(deltaTime);
 
     // Handle jumping
@@ -216,6 +258,10 @@ export class MovementSystem {
     this.isCrouching = false;
     this.isJumping = false;
     this.isGrounded = true;
+    this.targetRotation = 0;
+    if (this.tiger && this.tiger.rotation) {
+      this.tiger.rotation.y = 0;
+    }
   }
 
   // Set terrain for collision detection

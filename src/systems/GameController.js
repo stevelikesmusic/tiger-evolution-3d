@@ -145,6 +145,11 @@ export class GameController {
       this.tiger.position.z
     );
 
+    // Sync rotation (only Y-axis rotation for turning)
+    if (this.tiger.rotation !== undefined) {
+      this.tigerModel.setRotation(0, this.tiger.rotation.y, 0);
+    }
+
     // Sync animation based on tiger state
     this.tigerModel.playAnimation(this.tiger.state);
 

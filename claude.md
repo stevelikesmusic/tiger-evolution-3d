@@ -96,6 +96,10 @@ Follow this flow when performing your tasks
 - **Build**: `npm run build` - Build for production
 - **Preview**: `npm run preview` - Preview production build locally
 
+#### MCP
+
+- Use playwight MCP to test in the browser. 
+
 ### Testing
 
 - **Run Tests**: `npm test` - Run tests with Vitest

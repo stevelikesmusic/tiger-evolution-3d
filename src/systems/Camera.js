@@ -13,7 +13,7 @@ export class CameraSystem {
     // Camera configuration
     this.distance = 15; // Distance from target
     this.height = 8; // Height offset above target
-    this.smoothness = 0.1; // Camera smoothing factor (0-1)
+    this.smoothness = 0.3; // Camera smoothing factor (0-1) - faster following
     this.minDistance = 5;
     this.maxDistance = 25;
 
@@ -57,15 +57,23 @@ export class CameraSystem {
 
     // Calculate camera offset based on orbit angles and target rotation
     const targetRotation = this.target.rotation ? this.target.rotation.y : 0;
-    const totalRotationY = targetRotation + this.orbitX;
+    
+    // Camera follows target rotation but offset by orbit angle
+    const cameraAngle = targetRotation + this.orbitX;
 
     // Calculate spherical coordinates for camera position
     const horizontalDistance = this.distance * Math.cos(this.orbitY);
     const verticalDistance = this.distance * Math.sin(this.orbitY) + this.height;
 
-    // Position camera behind and to the side of target
-    const offsetX = horizontalDistance * Math.sin(totalRotationY);
-    const offsetZ = horizontalDistance * Math.cos(totalRotationY);
+    // Position camera behind target
+    // Simple approach: calculate backward direction from tiger's rotation
+    // Tiger forward direction vector (in Three.js: forward is -Z)
+    const forwardX = Math.sin(targetRotation);
+    const forwardZ = -Math.cos(targetRotation);
+    
+    // Camera position is behind tiger (opposite of forward direction)
+    const offsetX = -forwardX * horizontalDistance;
+    const offsetZ = -forwardZ * horizontalDistance;
 
     this.desiredPosition.set(
       targetPos.x + offsetX,
