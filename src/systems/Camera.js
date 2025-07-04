@@ -13,12 +13,12 @@ export class CameraSystem {
     // Camera configuration
     this.distance = 15; // Distance from target
     this.height = 8; // Height offset above target
-    this.smoothness = 0.3; // Camera smoothing factor (0-1) - faster following
+    this.smoothness = 0.1; // Camera smoothing factor (0-1) - more stable following
     this.minDistance = 5;
     this.maxDistance = 25;
 
     // Orbit controls
-    this.orbitX = 0; // Horizontal orbit angle
+    this.orbitX = Math.PI; // Horizontal orbit angle (start behind tiger: π radians = 180°)
     this.orbitY = 0.3; // Vertical orbit angle (slightly above)
     this.maxOrbitY = Math.PI / 3; // 60 degrees up/down limit
 
@@ -48,32 +48,24 @@ export class CameraSystem {
   calculateDesiredPosition() {
     if (!this.target) return this.desiredPosition;
 
-    // Get target position and rotation
+    // Get target position
     const targetPos = new THREE.Vector3(
       this.target.position.x,
       this.target.position.y,
       this.target.position.z
     );
 
-    // Calculate camera offset based on orbit angles and target rotation
-    const targetRotation = this.target.rotation ? this.target.rotation.y : 0;
-    
-    // Camera follows target rotation but offset by orbit angle
-    const cameraAngle = targetRotation + this.orbitX;
+    // Use orbit angles for camera positioning (independent of target rotation)
+    // This creates a stable third-person camera that doesn't spin with the tiger
+    const cameraAngle = this.orbitX; // Use only manual orbit, not tiger rotation
 
     // Calculate spherical coordinates for camera position
     const horizontalDistance = this.distance * Math.cos(this.orbitY);
     const verticalDistance = this.distance * Math.sin(this.orbitY) + this.height;
 
-    // Position camera behind target
-    // Simple approach: calculate backward direction from tiger's rotation
-    // Tiger forward direction vector (in Three.js: forward is -Z)
-    const forwardX = Math.sin(targetRotation);
-    const forwardZ = -Math.cos(targetRotation);
-    
-    // Camera position is behind tiger (opposite of forward direction)
-    const offsetX = -forwardX * horizontalDistance;
-    const offsetZ = -forwardZ * horizontalDistance;
+    // Position camera using spherical coordinates around target
+    const offsetX = Math.sin(cameraAngle) * horizontalDistance;
+    const offsetZ = Math.cos(cameraAngle) * horizontalDistance;
 
     this.desiredPosition.set(
       targetPos.x + offsetX,
@@ -93,8 +85,12 @@ export class CameraSystem {
 
   // Handle mouse movement for orbiting
   handleMouseMove(event) {
-    if (event.buttons === 1) { // Left mouse button held
-      const sensitivity = 0.005;
+    // Work with pointer lock (no button check needed) or mouse drag
+    const isPointerLocked = document.pointerLockElement !== null;
+    const shouldOrbit = isPointerLocked || event.buttons === 1;
+    
+    if (shouldOrbit) {
+      const sensitivity = 0.003; // Reduced sensitivity for smoother control
       
       this.orbitX -= event.movementX * sensitivity;
       this.orbitY -= event.movementY * sensitivity;
@@ -145,6 +141,9 @@ export class CameraSystem {
   update(deltaTime) {
     if (!this.target) return;
 
+    // Store previous position for logging
+    const prevCameraPosition = this.camera.position.clone();
+
     // Clamp distance within valid range
     this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, this.distance));
     
@@ -165,6 +164,58 @@ export class CameraSystem {
     );
 
     this.camera.lookAt(lookAtTarget);
+
+    // Log camera data when position changes significantly (throttled)
+    if (this.camera.position.distanceTo(prevCameraPosition) > 0.01) {
+      this.logCounter = (this.logCounter || 0) + 1;
+      if (this.logCounter % 120 === 0) { // Log every 120 frames
+        this.logCameraData(deltaTime, prevCameraPosition);
+      }
+    }
+  }
+
+  logCameraData(deltaTime, prevPosition) {
+    const currentPosition = this.camera.position.clone();
+    const positionDelta = currentPosition.sub(prevPosition);
+    const targetRotation = this.target.rotation ? this.target.rotation.y : 0;
+    
+    console.log('📷 CAMERA SYSTEM:', {
+      deltaTime: deltaTime.toFixed(4),
+      target: {
+        position: {
+          x: this.target.position.x.toFixed(2),
+          y: this.target.position.y.toFixed(2),
+          z: this.target.position.z.toFixed(2)
+        },
+        rotation: (targetRotation * 180 / Math.PI).toFixed(1) + '°'
+      },
+      camera: {
+        position: {
+          x: this.camera.position.x.toFixed(2),
+          y: this.camera.position.y.toFixed(2),
+          z: this.camera.position.z.toFixed(2)
+        },
+        desired: {
+          x: this.desiredPosition.x.toFixed(2),
+          y: this.desiredPosition.y.toFixed(2),
+          z: this.desiredPosition.z.toFixed(2)
+        },
+        distance: this.distance.toFixed(2),
+        orbit: {
+          x: (this.orbitX * 180 / Math.PI).toFixed(1) + '°',
+          y: (this.orbitY * 180 / Math.PI).toFixed(1) + '°'
+        }
+      },
+      deltas: {
+        position: {
+          x: positionDelta.x.toFixed(3),
+          y: positionDelta.y.toFixed(3),
+          z: positionDelta.z.toFixed(3)
+        },
+        magnitude: positionDelta.length().toFixed(3)
+      },
+      smoothness: this.smoothness
+    });
   }
 
   // Configuration methods
@@ -197,7 +248,7 @@ export class CameraSystem {
 
   // Reset camera to default position relative to target
   reset() {
-    this.orbitX = 0;
+    this.orbitX = Math.PI; // Reset to behind tiger
     this.orbitY = 0.3;
     this.distance = 15;
     

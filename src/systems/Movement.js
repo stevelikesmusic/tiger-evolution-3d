@@ -40,6 +40,9 @@ export class MovementSystem {
     // Normalize input direction
     const { direction, isRunning, isCrouching, isJumping } = input;
     
+    // Store previous state for comparison
+    const prevMoving = this.isMoving;
+    
     this.inputDirection.set(direction.x, 0, direction.z);
     
     // Normalize if length > 1
@@ -49,10 +52,16 @@ export class MovementSystem {
     }
 
     // Update movement state - any directional input counts as "moving"
-    this.isMoving = length > 0;
+    // But require a minimum threshold to prevent micro-movements
+    this.isMoving = length > 0.01;
     this.isRunning = isRunning && this.isMoving;
     this.isCrouching = isCrouching;
     this.isJumping = isJumping;
+    
+    // Log significant state changes for debugging
+    if (prevMoving !== this.isMoving && (this.isMoving || length > 0.01)) {
+      console.log(`🐅 MOVEMENT STATE: ${prevMoving ? 'Moving' : 'Stopped'} -> ${this.isMoving ? 'Moving' : 'Stopped'}, input length: ${length.toFixed(3)}`);
+    }
   }
 
   getCurrentSpeed() {
@@ -122,8 +131,8 @@ export class MovementSystem {
     }
     
     // Apply movement in world coordinates for true diagonal movement
-    const targetVelocityX = -movementVector.x * speed; // Left/right movement
-    const targetVelocityZ = movementVector.z * speed; // Forward/backward movement
+    const targetVelocityX = movementVector.x * speed; // Left/right movement (fixed: removed inversion)
+    const targetVelocityZ = -movementVector.z * speed; // Forward/backward movement (fixed: added inversion for correct forward direction)
 
     // Apply acceleration towards target velocity
     const velocityDiffX = targetVelocityX - this.velocity.x;
@@ -219,6 +228,10 @@ export class MovementSystem {
     // Clamp delta time to prevent large jumps
     deltaTime = Math.max(0, Math.min(deltaTime, 0.1));
 
+    // Store position before update for logging
+    const prevPosition = new THREE.Vector3(this.tiger.position.x, this.tiger.position.y, this.tiger.position.z);
+    const prevRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
+
     // Update tiger rotation based on left/right input
     this.updateRotation(deltaTime);
 
@@ -239,6 +252,57 @@ export class MovementSystem {
 
     // Consume stamina if needed
     this.consumeStamina(deltaTime);
+
+    // Log movement data when there's input or position changes (throttled)
+    if (this.isMoving || this.tiger.position.distanceTo(prevPosition) > 0.01) {
+      this.logCounter = (this.logCounter || 0) + 1;
+      if (this.logCounter % 60 === 0) { // Log every 60 frames
+        this.logMovementData(deltaTime, prevPosition, prevRotation);
+      }
+    }
+  }
+
+  logMovementData(deltaTime, prevPosition, prevRotation) {
+    const currentRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
+    const currentPosition = new THREE.Vector3(this.tiger.position.x, this.tiger.position.y, this.tiger.position.z);
+    const positionDelta = currentPosition.sub(prevPosition);
+    const rotationDelta = currentRotation - prevRotation;
+    
+    console.log('🐅 TIGER MOVEMENT:', JSON.stringify({
+      deltaTime: deltaTime.toFixed(4),
+      position: {
+        x: this.tiger.position.x.toFixed(2),
+        y: this.tiger.position.y.toFixed(2),
+        z: this.tiger.position.z.toFixed(2)
+      },
+      rotation: {
+        y: (currentRotation * 180 / Math.PI).toFixed(1) + '°'
+      },
+      input: {
+        direction: {
+          x: this.inputDirection.x.toFixed(2),
+          z: this.inputDirection.z.toFixed(2)
+        },
+        isMoving: this.isMoving,
+        isRunning: this.isRunning
+      },
+      velocity: {
+        x: this.velocity.x.toFixed(2),
+        y: this.velocity.y.toFixed(2),
+        z: this.velocity.z.toFixed(2),
+        magnitude: this.velocity.length().toFixed(2)
+      },
+      deltas: {
+        position: {
+          x: positionDelta.x.toFixed(3),
+          y: positionDelta.y.toFixed(3),
+          z: positionDelta.z.toFixed(3)
+        },
+        rotation: (rotationDelta * 180 / Math.PI).toFixed(1) + '°'
+      },
+      state: this.tiger.state,
+      isGrounded: this.isGrounded
+    }, null, 2));
   }
 
   // Helper methods for debugging/testing

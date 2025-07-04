@@ -24,12 +24,15 @@
 - **Fallback**: Drag mode works without pointer lock
 - **Movement**: WASD for tiger movement, Space to jump, Shift to run
 - **Physics Integration**: Camera follows tiger smoothly on varied terrain
+- **Fixed Controls**: All movement directions working correctly (A/D left/right, W/S forward/backward)
 
 #### 🐅 **Tiger Movement & Physics**
 - **Terrain Following**: Tiger position follows heightmap perfectly
 - **Jump Mechanics**: Proper jumping with gravity and landing detection  
 - **Realistic Movement**: Speed varies with stamina, running, crouching
 - **Slope Handling**: Sliding on steep terrain for realistic physics
+- **Robust Input**: Anti-stuck key system with focus/blur handling
+- **Debug Logging**: Comprehensive position, rotation, and velocity tracking
 
 ### 🎯 **HOW TO USE**
 ```bash
@@ -96,9 +99,7 @@ Follow this flow when performing your tasks
 - **Build**: `npm run build` - Build for production
 - **Preview**: `npm run preview` - Preview production build locally
 
-#### MCP
-
-- Use playwight MCP to test in the browser. 
+ 
 
 ### Testing
 
@@ -106,6 +107,15 @@ Follow this flow when performing your tasks
 - **Watch Tests**: `npm run test:watch` - Run tests in watch mode
 - **Coverage**: `npm run test:coverage` - Run tests with coverage report
 - **Test UI**: `npm run test:ui` - Open Vitest UI for interactive testing
+
+### Browser Testing
+
+- **Playwright MCP**: Available for automated browser testing and debugging
+- **Navigation**: `mcp__playwright__browser_navigate` to visit localhost
+- **Screenshots**: `mcp__playwright__browser_take_screenshot` for visual verification
+- **Console Logs**: `mcp__playwright__browser_console_messages` to view debug output
+- **Interaction**: `mcp__playwright__browser_click`, `mcp__playwright__browser_type`, `mcp__playwright__browser_press_key` for user simulation
+- **Usage**: Start dev server first (`npm run dev`), then use Playwright tools to test game controls and movement
 
 ### Technology Stack
 

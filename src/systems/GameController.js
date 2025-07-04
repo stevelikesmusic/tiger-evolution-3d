@@ -26,6 +26,9 @@ export class GameController {
     // Initialize core systems
     this.initializeSystems();
     this.setupConnections();
+    
+    // Expose debug API
+    this.exposeDebugAPI();
   }
 
   initializeSystems() {
@@ -105,9 +108,37 @@ export class GameController {
       // Update camera
       this.camera.update(deltaTime);
       
+      // Log position sync issues
+      this.logPositionSync();
+      
     } catch (error) {
       console.error('GameController update error:', error);
       // Continue running despite errors
+    }
+  }
+
+  logPositionSync() {
+    this.positionLogCounter = (this.positionLogCounter || 0) + 1;
+    if (this.positionLogCounter % 120 === 0) { // Log every 120 frames (~2 seconds at 60fps)
+      const tigerModelPos = this.tigerModel.getMesh().position;
+      const tigerModelRot = this.tigerModel.getMesh().rotation;
+      const positionDiff = Math.abs(this.tiger.position.x - tigerModelPos.x) + 
+                          Math.abs(this.tiger.position.y - tigerModelPos.y) + 
+                          Math.abs(this.tiger.position.z - tigerModelPos.z);
+      
+      if (positionDiff > 0.1) { // Only log if there's a significant difference
+        console.log('⚠️ POSITION SYNC ISSUE:', JSON.stringify({
+          tiger: {
+            entity: { x: this.tiger.position.x.toFixed(2), y: this.tiger.position.y.toFixed(2), z: this.tiger.position.z.toFixed(2) },
+            model: { x: tigerModelPos.x.toFixed(2), y: tigerModelPos.y.toFixed(2), z: tigerModelPos.z.toFixed(2) },
+            difference: positionDiff.toFixed(3)
+          },
+          camera: {
+            pos: { x: this.camera.camera.position.x.toFixed(2), y: this.camera.camera.position.y.toFixed(2), z: this.camera.camera.position.z.toFixed(2) },
+            target: this.camera.target ? 'TigerModel' : 'null'
+          }
+        }, null, 2));
+      }
     }
   }
 
@@ -120,6 +151,26 @@ export class GameController {
       isJumping: this.input.isJumping()
     };
 
+    // Log input data when there's significant input (throttled)
+    const inputMagnitude = Math.sqrt(movementInput.direction.x * movementInput.direction.x + movementInput.direction.z * movementInput.direction.z);
+    if (inputMagnitude > 0.1) {
+      // Only log every 30 frames to reduce spam
+      this.inputLogCounter = (this.inputLogCounter || 0) + 1;
+      if (this.inputLogCounter % 30 === 0) {
+        console.log('🎮 INPUT SYSTEM:', JSON.stringify({
+          direction: {
+            x: movementInput.direction.x.toFixed(2),
+            z: movementInput.direction.z.toFixed(2),
+            magnitude: inputMagnitude.toFixed(2)
+          },
+          isRunning: movementInput.isRunning,
+          isCrouching: movementInput.isCrouching,
+          isJumping: movementInput.isJumping,
+          pointerLocked: this.isPointerLocked
+        }, null, 2));
+      }
+    }
+
     // Apply to movement system
     this.movementSystem.setMovementInput(movementInput);
 
@@ -127,6 +178,14 @@ export class GameController {
     const mouseDelta = this.input.getMouseDelta();
     
     if (mouseDelta.x !== 0 || mouseDelta.y !== 0) {
+      console.log('🔍 MOUSE INPUT:', {
+        delta: {
+          x: mouseDelta.x.toFixed(2),
+          y: mouseDelta.y.toFixed(2)
+        },
+        pointerLocked: this.isPointerLocked
+      });
+      
       // Create a mock event for camera system
       const mockEvent = {
         movementX: mouseDelta.x,
@@ -242,6 +301,59 @@ export class GameController {
     this.syncTigerToModel();
   }
 
+  // Make debug function globally accessible
+  exposeDebugAPI() {
+    if (typeof window !== 'undefined') {
+      window.tigerGame = {
+        logState: () => this.logGameState(),
+        getTigerPosition: () => this.getTigerPosition(),
+        getTigerStats: () => this.getTigerStats(),
+        getMovementSystem: () => this.movementSystem,
+        getCamera: () => this.camera,
+        resetKeys: () => this.input.resetAllKeys(),
+        getKeys: () => this.input.keys,
+        validateKeys: () => this.input.validateKeyStates(),
+        getPhysicalKeys: () => Array.from(this.input.physicalKeys),
+        forceKeyState: (key, state) => {
+          if (this.input.keys.hasOwnProperty(key)) {
+            this.input.keys[key] = state;
+            console.log(`🔧 Manually set ${key} to ${state}`);
+          } else {
+            console.log(`⚠️ Invalid key: ${key}`);
+          }
+        },
+        logPositions: () => {
+          const tigerModelPos = this.tigerModel.getMesh().position;
+          const tigerModelRot = this.tigerModel.getMesh().rotation;
+          console.log('📍 POSITION DEBUG:', JSON.stringify({
+            tiger: {
+              entity: { x: this.tiger.position.x.toFixed(2), y: this.tiger.position.y.toFixed(2), z: this.tiger.position.z.toFixed(2) },
+              model: { x: tigerModelPos.x.toFixed(2), y: tigerModelPos.y.toFixed(2), z: tigerModelPos.z.toFixed(2) },
+              entityRot: this.tiger.rotation ? (this.tiger.rotation.y * 180 / Math.PI).toFixed(1) + '°' : '0°',
+              modelRot: (tigerModelRot.y * 180 / Math.PI).toFixed(1) + '°'
+            },
+            camera: {
+              pos: { x: this.camera.camera.position.x.toFixed(2), y: this.camera.camera.position.y.toFixed(2), z: this.camera.camera.position.z.toFixed(2) },
+              desired: { x: this.camera.desiredPosition.x.toFixed(2), y: this.camera.desiredPosition.y.toFixed(2), z: this.camera.desiredPosition.z.toFixed(2) },
+              distance: this.camera.distance.toFixed(2)
+            }
+          }, null, 2));
+        }
+      };
+      console.log('🔍 Debug API exposed: window.tigerGame');
+      console.log('Available commands:');
+      console.log('  window.tigerGame.logState() - Log complete game state');
+      console.log('  window.tigerGame.getTigerPosition() - Get tiger position');
+      console.log('  window.tigerGame.getTigerStats() - Get tiger stats');
+      console.log('  window.tigerGame.resetKeys() - Reset all stuck keys');
+      console.log('  window.tigerGame.getKeys() - Show current key states');
+      console.log('  window.tigerGame.validateKeys() - Validate and fix key states');
+      console.log('  window.tigerGame.getPhysicalKeys() - Show physically pressed keys');
+      console.log('  window.tigerGame.forceKeyState(key, state) - Manually set key state');
+      console.log('  window.tigerGame.logPositions() - Log tiger and camera positions');
+    }
+  }
+
   // Cleanup
   dispose() {
     // Clean up vegetation system
@@ -288,6 +400,83 @@ export class GameController {
       y: this.tiger.position.y,
       z: this.tiger.position.z
     };
+  }
+
+  // Log complete game state for debugging
+  logGameState() {
+    const tigerModelPos = this.tigerModel.getMesh().position;
+    const tigerModelRot = this.tigerModel.getMesh().rotation;
+    const cameraLookAt = new THREE.Vector3();
+    this.camera.camera.getWorldDirection(cameraLookAt);
+    
+    console.log('🎮 GAME STATE DEBUG:', JSON.stringify({
+      tiger: {
+        entityPosition: {
+          x: this.tiger.position.x.toFixed(2),
+          y: this.tiger.position.y.toFixed(2),
+          z: this.tiger.position.z.toFixed(2)
+        },
+        modelPosition: {
+          x: tigerModelPos.x.toFixed(2),
+          y: tigerModelPos.y.toFixed(2),
+          z: tigerModelPos.z.toFixed(2)
+        },
+        entityRotation: this.tiger.rotation ? (this.tiger.rotation.y * 180 / Math.PI).toFixed(1) + '°' : '0°',
+        modelRotation: {
+          x: (tigerModelRot.x * 180 / Math.PI).toFixed(1) + '°',
+          y: (tigerModelRot.y * 180 / Math.PI).toFixed(1) + '°',
+          z: (tigerModelRot.z * 180 / Math.PI).toFixed(1) + '°'
+        },
+        state: this.tiger.state,
+        velocity: {
+          x: this.movementSystem.velocity.x.toFixed(2),
+          y: this.movementSystem.velocity.y.toFixed(2),
+          z: this.movementSystem.velocity.z.toFixed(2)
+        },
+        isGrounded: this.movementSystem.isGrounded,
+        isMoving: this.movementSystem.isMoving,
+        isRunning: this.movementSystem.isRunning
+      },
+      camera: {
+        position: {
+          x: this.camera.camera.position.x.toFixed(2),
+          y: this.camera.camera.position.y.toFixed(2),
+          z: this.camera.camera.position.z.toFixed(2)
+        },
+        desiredPosition: {
+          x: this.camera.desiredPosition.x.toFixed(2),
+          y: this.camera.desiredPosition.y.toFixed(2),
+          z: this.camera.desiredPosition.z.toFixed(2)
+        },
+        lookingAt: {
+          x: cameraLookAt.x.toFixed(2),
+          y: cameraLookAt.y.toFixed(2),
+          z: cameraLookAt.z.toFixed(2)
+        },
+        distance: this.camera.distance.toFixed(2),
+        orbit: {
+          x: (this.camera.orbitX * 180 / Math.PI).toFixed(1) + '°',
+          y: (this.camera.orbitY * 180 / Math.PI).toFixed(1) + '°'
+        },
+        target: this.camera.target ? 'TigerModel' : 'null'
+      },
+      terrain: {
+        heightAtTiger: this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z).toFixed(2),
+        slopeAtTiger: this.terrain.getSlope(this.tiger.position.x, this.tiger.position.z).toFixed(3)
+      },
+      input: {
+        direction: this.input.getMovementDirection(),
+        pointerLocked: this.isPointerLocked
+      },
+      sync: {
+        positionDifference: {
+          x: (this.tiger.position.x - tigerModelPos.x).toFixed(3),
+          y: (this.tiger.position.y - tigerModelPos.y).toFixed(3),
+          z: (this.tiger.position.z - tigerModelPos.z).toFixed(3)
+        }
+      },
+      timestamp: new Date().toISOString()
+    }, null, 2));
   }
 
   setTigerPosition(x, y, z) {

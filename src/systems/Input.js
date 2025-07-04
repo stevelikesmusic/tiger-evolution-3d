@@ -13,6 +13,12 @@ export class InputSystem {
       run: false,
       interact: false
     };
+    
+    // Track which keys are currently physically pressed
+    this.physicalKeys = new Set();
+    
+    // Debounce timer for key state validation
+    this.keyValidationTimer = null;
 
     // Mouse state
     this.mouse = {
@@ -53,6 +59,21 @@ export class InputSystem {
     // Keyboard events
     document.addEventListener('keydown', this.handleKeyDown);
     document.addEventListener('keyup', this.handleKeyUp);
+    
+    // Add blur and focus handlers to reset keys when window loses focus
+    window.addEventListener('blur', () => this.resetAllKeys());
+    window.addEventListener('focus', () => this.resetAllKeys());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.resetAllKeys();
+      }
+    });
+    
+    // Emergency key reset on pointer lock change
+    document.addEventListener('pointerlockchange', () => {
+      // Small delay to prevent interfering with normal pointer lock flow
+      setTimeout(() => this.validateKeyStates(), 50);
+    });
 
     // Mouse events
     this.canvas.addEventListener('mousedown', this.handleMouseDown);
@@ -71,6 +92,12 @@ export class InputSystem {
 
   // Keyboard event handlers
   handleKeyDown(event) {
+    // Prevent repeated keydown events
+    if (event.repeat) return;
+    
+    // Track physical key press
+    this.physicalKeys.add(event.code);
+    
     switch (event.code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -104,9 +131,15 @@ export class InputSystem {
         this.keys.interact = true;
         break;
     }
+    
+    // Schedule key validation
+    this.scheduleKeyValidation();
   }
 
   handleKeyUp(event) {
+    // Remove from physical key tracking
+    this.physicalKeys.delete(event.code);
+    
     switch (event.code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -139,6 +172,9 @@ export class InputSystem {
         this.keys.interact = false;
         break;
     }
+    
+    // Schedule key validation
+    this.scheduleKeyValidation();
   }
 
   // Mouse event handlers
@@ -258,14 +294,29 @@ export class InputSystem {
     let z = 0;
 
     // Keyboard input
-    if (this.keys.left) x -= 1;
-    if (this.keys.right) x += 1;
+    if (this.keys.left) x += 1;  // Fixed: A key = left = positive X
+    if (this.keys.right) x -= 1; // Fixed: D key = right = negative X
     if (this.keys.forward) z -= 1;
     if (this.keys.backward) z += 1;
 
     // Virtual input (touch/gamepad)
     x += this.virtualMovement.x;
     z += this.virtualMovement.z;
+
+    // Debug logging for problematic input
+    this.debugLogCounter = (this.debugLogCounter || 0) + 1;
+    if (this.debugLogCounter % 60 === 0 && (x !== 0 || z !== 0)) {
+      console.log('🖥️ INPUT DEBUG:', JSON.stringify({
+        keys: {
+          left: this.keys.left,
+          right: this.keys.right,
+          forward: this.keys.forward,
+          backward: this.keys.backward
+        },
+        virtualMovement: this.virtualMovement,
+        rawDirection: { x: x, z: z }
+      }, null, 2));
+    }
 
     // Normalize the vector
     const length = Math.sqrt(x * x + z * z);
@@ -297,12 +348,79 @@ export class InputSystem {
     this.virtualMovement.z = 0;
   }
 
+  // Reset all keys (useful when window loses focus)
+  resetAllKeys() {
+    console.log('🔄 INPUT: Resetting all keys due to focus change');
+    this.keys = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      jump: false,
+      crouch: false,
+      run: false,
+      interact: false
+    };
+    this.physicalKeys.clear();
+    this.resetVirtualMovement();
+    
+    // Clear any pending validation
+    if (this.keyValidationTimer) {
+      clearTimeout(this.keyValidationTimer);
+      this.keyValidationTimer = null;
+    }
+  }
+  
+  // Schedule key state validation to prevent stuck keys
+  scheduleKeyValidation() {
+    if (this.keyValidationTimer) {
+      clearTimeout(this.keyValidationTimer);
+    }
+    
+    this.keyValidationTimer = setTimeout(() => {
+      this.validateKeyStates();
+    }, 100); // Check after 100ms
+  }
+  
+  // Validate that key states match expected physical state
+  validateKeyStates() {
+    const expectedKeys = {
+      forward: this.physicalKeys.has('KeyW') || this.physicalKeys.has('ArrowUp'),
+      backward: this.physicalKeys.has('KeyS') || this.physicalKeys.has('ArrowDown'),
+      left: this.physicalKeys.has('KeyA') || this.physicalKeys.has('ArrowLeft'),
+      right: this.physicalKeys.has('KeyD') || this.physicalKeys.has('ArrowRight'),
+      jump: this.physicalKeys.has('Space'),
+      run: this.physicalKeys.has('ShiftLeft') || this.physicalKeys.has('ShiftRight'),
+      crouch: this.physicalKeys.has('ControlLeft') || this.physicalKeys.has('ControlRight'),
+      interact: this.physicalKeys.has('KeyE')
+    };
+    
+    let hasStuckKeys = false;
+    for (const [key, expectedState] of Object.entries(expectedKeys)) {
+      if (this.keys[key] !== expectedState) {
+        console.log(`⚠️ INPUT: Fixed stuck key ${key}: ${this.keys[key]} -> ${expectedState}`);
+        this.keys[key] = expectedState;
+        hasStuckKeys = true;
+      }
+    }
+    
+    if (hasStuckKeys) {
+      console.log('🔧 INPUT: Key state validation corrected stuck keys');
+    }
+  }
+
   // Update method (call once per frame)
   update() {
     // Reset mouse deltas after they've been processed
     // This ensures deltas are only used for one frame
     this.mouse.deltaX = 0;
     this.mouse.deltaY = 0;
+    
+    // Periodic key validation (every 60 frames = ~1 second at 60fps)
+    this.validationCounter = (this.validationCounter || 0) + 1;
+    if (this.validationCounter % 60 === 0) {
+      this.validateKeyStates();
+    }
   }
 
   // Cleanup
@@ -310,6 +428,11 @@ export class InputSystem {
     // Remove keyboard event listeners
     document.removeEventListener('keydown', this.handleKeyDown);
     document.removeEventListener('keyup', this.handleKeyUp);
+    
+    // Remove focus event listeners  
+    window.removeEventListener('blur', this.resetAllKeys);
+    window.removeEventListener('focus', this.resetAllKeys);
+    document.removeEventListener('visibilitychange', this.resetAllKeys);
 
     // Remove mouse event listeners
     this.canvas.removeEventListener('mousedown', this.handleMouseDown);
