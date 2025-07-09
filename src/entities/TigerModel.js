@@ -25,13 +25,13 @@ export class TigerModel {
     this.body.position.set(0, 0, 0);
     this.mesh.add(this.body);
 
-    // Head (at front of tiger - negative Z direction)
+    // Head (at front of tiger - positive Z direction when camera is behind)
     const headGeometry = new THREE.BoxGeometry(1, 0.8, 1);
     const headMaterial = new THREE.MeshBasicMaterial({ 
       color: 0xff8833 // Slightly lighter orange for head
     });
     this.head = new THREE.Mesh(headGeometry, headMaterial);
-    this.head.position.set(0, 0.2, -1.5); // Front of tiger
+    this.head.position.set(0, 0.2, 1.5); // Front of tiger (positive Z)
     this.mesh.add(this.head);
 
     // Eyes (two larger black spheres)
@@ -39,11 +39,11 @@ export class TigerModel {
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
     this.leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    this.leftEye.position.set(-0.25, 0.3, -1.9); // Closer to front and more visible
+    this.leftEye.position.set(-0.25, 0.3, 1.9); // Closer to front (positive Z)
     this.mesh.add(this.leftEye);
     
     this.rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    this.rightEye.position.set(0.25, 0.3, -1.9); // Closer to front and more visible
+    this.rightEye.position.set(0.25, 0.3, 1.9); // Closer to front (positive Z)
     this.mesh.add(this.rightEye);
 
     // Ears (two small triangular shapes)
@@ -51,12 +51,12 @@ export class TigerModel {
     const earMaterial = new THREE.MeshBasicMaterial({ color: 0xff6600 });
     
     this.leftEar = new THREE.Mesh(earGeometry, earMaterial);
-    this.leftEar.position.set(-0.4, 0.6, -1.4);
+    this.leftEar.position.set(-0.4, 0.6, 1.4); // At head (positive Z)
     this.leftEar.rotation.z = Math.PI; // Point upward
     this.mesh.add(this.leftEar);
     
     this.rightEar = new THREE.Mesh(earGeometry, earMaterial);
-    this.rightEar.position.set(0.4, 0.6, -1.4);
+    this.rightEar.position.set(0.4, 0.6, 1.4); // At head (positive Z)
     this.rightEar.rotation.z = Math.PI; // Point upward
     this.mesh.add(this.rightEar);
 
@@ -64,16 +64,16 @@ export class TigerModel {
     const noseGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.1);
     const noseMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     this.nose = new THREE.Mesh(noseGeometry, noseMaterial);
-    this.nose.position.set(0, 0.1, -2);
+    this.nose.position.set(0, 0.1, 2); // Very front (positive Z)
     this.mesh.add(this.nose);
 
-    // Tail (at back of tiger - positive Z direction)
+    // Tail (at back of tiger - negative Z direction)
     const tailGeometry = new THREE.CylinderGeometry(0.1, 0.05, 1.5, 8);
     const tailMaterial = new THREE.MeshBasicMaterial({ 
       color: 0xff6600 // Same orange as body
     });
     this.tail = new THREE.Mesh(tailGeometry, tailMaterial);
-    this.tail.position.set(0, 0.3, 1.8); // Back of tiger
+    this.tail.position.set(0, 0.3, -1.8); // Back of tiger (negative Z)
     this.tail.rotation.x = Math.PI / 6; // Angle upward slightly
     this.mesh.add(this.tail);
 
@@ -81,7 +81,7 @@ export class TigerModel {
     const tailTipGeometry = new THREE.SphereGeometry(0.08, 8, 8);
     const tailTipMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     this.tailTip = new THREE.Mesh(tailTipGeometry, tailTipMaterial);
-    this.tailTip.position.set(0, 0.8, 2.3);
+    this.tailTip.position.set(0, 0.8, -2.3); // Back of tiger (negative Z)
     this.mesh.add(this.tailTip);
   }
 

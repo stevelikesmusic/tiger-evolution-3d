@@ -143,26 +143,28 @@ export class GameController {
   }
 
   processInput() {
-    // Get movement input
+    // Get tank controls input - separate movement and rotation
     const movementInput = {
-      direction: this.input.getMovementDirection(),
+      direction: this.input.getMovementDirection(), // Only forward/backward (W/S)
+      rotation: this.input.getRotationDirection(), // Only left/right rotation (A/D)
       isRunning: this.input.isRunning(),
       isCrouching: this.input.isCrouching(),
       isJumping: this.input.isJumping()
     };
 
     // Log input data when there's significant input (throttled)
-    const inputMagnitude = Math.sqrt(movementInput.direction.x * movementInput.direction.x + movementInput.direction.z * movementInput.direction.z);
-    if (inputMagnitude > 0.1) {
+    const inputMagnitude = Math.abs(movementInput.direction.z);
+    const rotationMagnitude = Math.abs(movementInput.rotation);
+    if (inputMagnitude > 0.1 || rotationMagnitude > 0.1) {
       // Only log every 30 frames to reduce spam
       this.inputLogCounter = (this.inputLogCounter || 0) + 1;
       if (this.inputLogCounter % 30 === 0) {
-        console.log('🎮 INPUT SYSTEM:', JSON.stringify({
-          direction: {
-            x: movementInput.direction.x.toFixed(2),
+        console.log('🎮 TANK CONTROLS INPUT:', JSON.stringify({
+          movement: {
             z: movementInput.direction.z.toFixed(2),
             magnitude: inputMagnitude.toFixed(2)
           },
+          rotation: movementInput.rotation.toFixed(2),
           isRunning: movementInput.isRunning,
           isCrouching: movementInput.isCrouching,
           isJumping: movementInput.isJumping,
@@ -509,14 +511,24 @@ export class GameController {
   }
 
   positionTigerOnTerrain() {
-    if (this.terrain && this.tiger) {
+    if (this.terrain && this.tiger && this.tigerModel) {
       // Start tiger at center of terrain
       const centerX = 0;
       const centerZ = 0;
       const terrainHeight = this.terrain.getHeightAt(centerX, centerZ);
       const tigerHeight = 1.0; // Height above ground
       
-      this.tiger.setPosition(centerX, terrainHeight + tigerHeight, centerZ);
+      // Set tiger entity position
+      this.tiger.position.set(centerX, terrainHeight + tigerHeight, centerZ);
+      
+      // Set tiger model position and rotation
+      this.tigerModel.setPosition(centerX, terrainHeight + tigerHeight, centerZ);
+      
+      // Set tiger to face away from camera initially
+      // Tiger head is at negative Z (-1.9), tail is at positive Z (+2.3)
+      // Camera is positioned at positive Z relative to tiger
+      // No rotation needed - tiger should already face away from camera
+      this.tigerModel.setRotation(0, 0, 0); // No rotation - default orientation
     }
   }
 

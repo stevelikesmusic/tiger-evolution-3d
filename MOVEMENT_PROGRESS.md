@@ -114,3 +114,6 @@ npm test -- CameraFollowing.test.js       # Test camera behavior (some failing)
 - Camera uses spherical coordinates around tiger
 - Movement system separates rotation input from movement input
 - All tests for basic movement pass, but user experience still not ideal
+
+
+

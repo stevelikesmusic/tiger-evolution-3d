@@ -13,12 +13,12 @@ export class CameraSystem {
     // Camera configuration
     this.distance = 15; // Distance from target
     this.height = 8; // Height offset above target
-    this.smoothness = 0.1; // Camera smoothing factor (0-1) - more stable following
+    this.smoothness = 0.3; // Camera smoothing factor (0-1) - increased for responsiveness
     this.minDistance = 5;
     this.maxDistance = 25;
 
     // Orbit controls
-    this.orbitX = Math.PI; // Horizontal orbit angle (start behind tiger: π radians = 180°)
+    this.orbitX = Math.PI; // Horizontal orbit angle (start behind tiger: π radians = behind tiger)
     this.orbitY = 0.3; // Vertical orbit angle (slightly above)
     this.maxOrbitY = Math.PI / 3; // 60 degrees up/down limit
 
@@ -55,15 +55,17 @@ export class CameraSystem {
       this.target.position.z
     );
 
-    // Use orbit angles for camera positioning (independent of target rotation)
-    // This creates a stable third-person camera that doesn't spin with the tiger
-    const cameraAngle = this.orbitX; // Use only manual orbit, not tiger rotation
+    // Enhanced camera positioning - combine orbit with tiger rotation for proper following
+    // This creates a third-person camera that stays behind the tiger as it rotates
+    const tigerRotation = this.target.rotation ? this.target.rotation.y : 0;
+    const cameraAngle = this.orbitX + tigerRotation; // Combine orbit with tiger rotation
 
     // Calculate spherical coordinates for camera position
     const horizontalDistance = this.distance * Math.cos(this.orbitY);
     const verticalDistance = this.distance * Math.sin(this.orbitY) + this.height;
 
     // Position camera using spherical coordinates around target
+    // Note: In Three.js, negative Z is forward, positive Z is backward
     const offsetX = Math.sin(cameraAngle) * horizontalDistance;
     const offsetZ = Math.cos(cameraAngle) * horizontalDistance;
 
@@ -248,7 +250,7 @@ export class CameraSystem {
 
   // Reset camera to default position relative to target
   reset() {
-    this.orbitX = Math.PI; // Reset to behind tiger
+    this.orbitX = Math.PI; // Reset to behind tiger (π radians with tiger rotation)
     this.orbitY = 0.3;
     this.distance = 15;
     

@@ -288,44 +288,46 @@ export class InputSystem {
     return document.pointerLockElement === this.canvas;
   }
 
-  // Get normalized movement direction vector
+  // Get forward/backward movement input (tank controls)
   getMovementDirection() {
-    let x = 0;
     let z = 0;
 
-    // Keyboard input
-    if (this.keys.left) x += 1;  // Fixed: A key = left = positive X
-    if (this.keys.right) x -= 1; // Fixed: D key = right = negative X
-    if (this.keys.forward) z -= 1;
-    if (this.keys.backward) z += 1;
+    // Only forward/backward movement (W/S keys)
+    // Tiger now faces positive Z, so W should be positive Z
+    if (this.keys.forward) z += 1;  // W key = forward = positive Z
+    if (this.keys.backward) z -= 1; // S key = backward = negative Z
 
-    // Virtual input (touch/gamepad)
-    x += this.virtualMovement.x;
+    // Virtual input (touch/gamepad) - only Z axis for movement
     z += this.virtualMovement.z;
+
+    return { x: 0, z }; // X is always 0 for tank controls
+  }
+
+  // Get rotation input (tank controls)
+  getRotationDirection() {
+    let rotation = 0;
+
+    // Only left/right rotation (A/D keys)
+    if (this.keys.left) rotation += 1;  // A key = rotate left = positive rotation
+    if (this.keys.right) rotation -= 1; // D key = rotate right = negative rotation
+
+    // Virtual input (touch/gamepad) - only X axis for rotation
+    rotation += this.virtualMovement.x;
 
     // Debug logging for problematic input
     this.debugLogCounter = (this.debugLogCounter || 0) + 1;
-    if (this.debugLogCounter % 60 === 0 && (x !== 0 || z !== 0)) {
-      console.log('🖥️ INPUT DEBUG:', JSON.stringify({
+    if (this.debugLogCounter % 60 === 0 && rotation !== 0) {
+      console.log('🖥️ ROTATION INPUT DEBUG:', JSON.stringify({
         keys: {
           left: this.keys.left,
-          right: this.keys.right,
-          forward: this.keys.forward,
-          backward: this.keys.backward
+          right: this.keys.right
         },
-        virtualMovement: this.virtualMovement,
-        rawDirection: { x: x, z: z }
+        virtualRotation: this.virtualMovement.x,
+        rotation: rotation
       }, null, 2));
     }
 
-    // Normalize the vector
-    const length = Math.sqrt(x * x + z * z);
-    if (length > 0) {
-      x /= length;
-      z /= length;
-    }
-
-    return { x, z };
+    return rotation;
   }
 
   // Get mouse movement deltas
@@ -338,8 +340,8 @@ export class InputSystem {
 
   // Set virtual movement (for touch controls or AI)
   setVirtualMovement(x, z) {
-    this.virtualMovement.x = Math.max(-1, Math.min(1, x));
-    this.virtualMovement.z = Math.max(-1, Math.min(1, z));
+    this.virtualMovement.x = Math.max(-1, Math.min(1, x)); // Used for rotation in tank controls
+    this.virtualMovement.z = Math.max(-1, Math.min(1, z)); // Used for forward/backward movement
   }
 
   // Reset virtual movement

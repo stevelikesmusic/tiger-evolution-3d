@@ -32,35 +32,34 @@ export class MovementSystem {
     this.staminaSpeedReduction = 0.3; // Speed reduction when low stamina
 
     // Rotation properties
-    this.targetRotation = 0; // Target rotation angle in radians
-    this.rotationSpeed = 3; // Rotation speed in radians per second (slower for gradual turning)
+    this.rotationInput = 0; // Current rotation input (-1 to 1)
+    this.rotationSpeed = 3.0; // Rotation speed in radians per second
+    this.minimumMovementThreshold = 0.01; // Prevent micro-movements
   }
 
   setMovementInput(input) {
-    // Normalize input direction
-    const { direction, isRunning, isCrouching, isJumping } = input;
+    // Tank controls - separate movement from rotation
+    const { direction, rotation, isRunning, isCrouching, isJumping } = input;
     
     // Store previous state for comparison
     const prevMoving = this.isMoving;
     
-    this.inputDirection.set(direction.x, 0, direction.z);
+    // Store movement input (forward/backward only)
+    this.inputDirection.set(0, 0, direction.z);
     
-    // Normalize if length > 1
-    const length = this.inputDirection.length();
-    if (length > 1) {
-      this.inputDirection.normalize();
-    }
-
-    // Update movement state - any directional input counts as "moving"
-    // But require a minimum threshold to prevent micro-movements
-    this.isMoving = length > 0.01;
+    // Store rotation input separately
+    this.rotationInput = rotation || 0;
+    
+    // Update movement state - only forward/backward movement counts as "moving"
+    const movementMagnitude = Math.abs(direction.z);
+    this.isMoving = movementMagnitude > 0.01;
     this.isRunning = isRunning && this.isMoving;
     this.isCrouching = isCrouching;
     this.isJumping = isJumping;
     
     // Log significant state changes for debugging
-    if (prevMoving !== this.isMoving && (this.isMoving || length > 0.01)) {
-      console.log(`🐅 MOVEMENT STATE: ${prevMoving ? 'Moving' : 'Stopped'} -> ${this.isMoving ? 'Moving' : 'Stopped'}, input length: ${length.toFixed(3)}`);
+    if (prevMoving !== this.isMoving) {
+      console.log(`🐅 MOVEMENT STATE: ${prevMoving ? 'Moving' : 'Stopped'} -> ${this.isMoving ? 'Moving' : 'Stopped'}, movement: ${movementMagnitude.toFixed(3)}, rotation: ${this.rotationInput.toFixed(3)}`);
     }
   }
 
@@ -85,34 +84,24 @@ export class MovementSystem {
   }
 
   updateRotation(deltaTime) {
-    // Rotate tiger to face movement direction for natural diagonal movement
-    if (this.isMoving && this.inputDirection.length() > 0) {
-      // Calculate target rotation based on movement direction
-      const targetRotation = Math.atan2(-this.inputDirection.x, this.inputDirection.z);
+    // Tank controls - direct rotation based on A/D input
+    if (Math.abs(this.rotationInput) > this.minimumMovementThreshold) {
+      // Apply rotation directly based on input
+      const rotationChange = this.rotationInput * this.rotationSpeed * deltaTime;
+      this.tiger.rotation.y += rotationChange;
       
-      const currentRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
-      
-      // Calculate shortest angle difference
-      let angleDiff = targetRotation - currentRotation;
-      
-      // Normalize angle difference to [-π, π]
-      while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-      while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-      
-      // Apply smooth rotation toward movement direction
-      const rotationChange = this.rotationSpeed * deltaTime;
-      const actualChange = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), rotationChange);
-      this.tiger.rotation.y = currentRotation + actualChange;
+      // Normalize rotation to [-π, π]
+      while (this.tiger.rotation.y > Math.PI) this.tiger.rotation.y -= 2 * Math.PI;
+      while (this.tiger.rotation.y < -Math.PI) this.tiger.rotation.y += 2 * Math.PI;
     }
   }
 
   applyMovementForces(deltaTime) {
-    // Extract movement input
+    // Tank controls - movement only in tiger's facing direction
     const forwardBackward = this.inputDirection.z; // -1 for forward, +1 for backward
-    const leftRight = this.inputDirection.x; // -1 for left, +1 for right
     
     // Check if there's any movement input
-    const hasMovementInput = Math.abs(forwardBackward) > 0.1 || Math.abs(leftRight) > 0.1;
+    const hasMovementInput = Math.abs(forwardBackward) > this.minimumMovementThreshold;
     
     if (!hasMovementInput) {
       // Apply friction when not moving
@@ -121,25 +110,37 @@ export class MovementSystem {
       return;
     }
 
-    // Calculate target velocity based on input direction
+    // Calculate target velocity based on tiger's facing direction
     const speed = this.getCurrentSpeed();
     
-    // Create movement vector from input (diagonal movement in world space)
-    const movementVector = new THREE.Vector3(leftRight, 0, forwardBackward);
-    if (movementVector.length() > 1) {
-      movementVector.normalize();
-    }
+    // Get tiger's forward direction vector
+    // Tiger faces positive Z at rotation 0 (forward in Three.js coordinate system)
+    const tigerRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
     
-    // Apply movement in world coordinates for true diagonal movement
-    const targetVelocityX = movementVector.x * speed; // Left/right movement (fixed: removed inversion)
-    const targetVelocityZ = -movementVector.z * speed; // Forward/backward movement (fixed: added inversion for correct forward direction)
+    // Calculate forward direction using trigonometry
+    // At rotation = 0: tiger faces +Z (forward)
+    // As rotation increases (counter-clockwise): direction changes
+    const forwardX = Math.sin(tigerRotation);   // X component of forward vector
+    const forwardZ = Math.cos(tigerRotation);   // Z component of forward vector
+    
+    
+    // Apply movement in tiger's facing direction
+    // Note: forwardBackward is positive for forward (W), negative for backward (S)
+    // Tiger faces positive Z, so W should move in positive Z direction
+    const targetVelocityX = forwardX * forwardBackward * speed;
+    const targetVelocityZ = forwardZ * forwardBackward * speed;
 
-    // Apply acceleration towards target velocity
-    const velocityDiffX = targetVelocityX - this.velocity.x;
-    const velocityDiffZ = targetVelocityZ - this.velocity.z;
-    
-    this.velocity.x += velocityDiffX * this.acceleration * deltaTime;
-    this.velocity.z += velocityDiffZ * this.acceleration * deltaTime;
+    // Tank controls: immediately change direction, smoothly change speed
+    if (hasMovementInput) {
+      // Use lerp for smooth acceleration but with a reasonable factor
+      const accelerationFactor = Math.min(1.0, this.acceleration * deltaTime);
+      this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
+      this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
+    } else {
+      // Apply friction when not moving
+      this.velocity.x *= this.groundFriction;
+      this.velocity.z *= this.groundFriction;
+    }
   }
 
   applyJump() {
@@ -254,7 +255,11 @@ export class MovementSystem {
     this.consumeStamina(deltaTime);
 
     // Log movement data when there's input or position changes (throttled)
-    if (this.isMoving || this.tiger.position.distanceTo(prevPosition) > 0.01) {
+    const positionChanged = Math.abs(this.tiger.position.x - prevPosition.x) > 0.01 || 
+                           Math.abs(this.tiger.position.y - prevPosition.y) > 0.01 || 
+                           Math.abs(this.tiger.position.z - prevPosition.z) > 0.01;
+    
+    if (this.isMoving || positionChanged) {
       this.logCounter = (this.logCounter || 0) + 1;
       if (this.logCounter % 60 === 0) { // Log every 60 frames
         this.logMovementData(deltaTime, prevPosition, prevRotation);
