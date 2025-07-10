@@ -6,6 +6,7 @@ import { InputSystem } from './Input.js';
 import { MovementSystem } from './Movement.js';
 import { VegetationSystem } from './VegetationSystem.js';
 import { TerrainRenderer } from './TerrainRenderer.js';
+import { WaterSystem } from './WaterSystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -57,6 +58,14 @@ export class GameController {
     this.vegetationSystem = new VegetationSystem(this.scene, this.terrain);
     this.vegetationSystem.generateVegetation(12345); // Use consistent seed
 
+    // Create water system
+    this.waterSystem = new WaterSystem(this.terrain);
+    const waterMeshes = this.waterSystem.getWaterMeshes();
+    waterMeshes.forEach(mesh => this.scene.add(mesh));
+
+    // Connect water system to movement system
+    this.movementSystem.setWaterSystem(this.waterSystem);
+
     // Position tiger on terrain surface
     this.positionTigerOnTerrain();
 
@@ -103,6 +112,11 @@ export class GameController {
       // Update vegetation system (for wind effects, etc.)
       if (this.vegetationSystem) {
         this.vegetationSystem.update(deltaTime);
+      }
+      
+      // Update water system (for wave animation)
+      if (this.waterSystem) {
+        this.waterSystem.update(deltaTime);
       }
       
       // Update camera
@@ -358,6 +372,13 @@ export class GameController {
 
   // Cleanup
   dispose() {
+    // Clean up water system
+    if (this.waterSystem) {
+      const waterMeshes = this.waterSystem.getWaterMeshes();
+      waterMeshes.forEach(mesh => this.scene.remove(mesh));
+      this.waterSystem.dispose();
+    }
+
     // Clean up vegetation system
     if (this.vegetationSystem) {
       this.vegetationSystem.dispose();
@@ -388,6 +409,7 @@ export class GameController {
     this.terrain = null;
     this.terrainRenderer = null;
     this.vegetationSystem = null;
+    this.waterSystem = null;
     this.camera = null;
     this.input = null;
     this.movementSystem = null;
@@ -510,6 +532,21 @@ export class GameController {
     return this.vegetationSystem ? this.vegetationSystem.getStatistics() : null;
   }
 
+  getWaterSystem() {
+    return this.waterSystem;
+  }
+
+  getWaterStats() {
+    if (!this.waterSystem) return null;
+    
+    return {
+      waterBodies: this.waterSystem.getWaterBodies().length,
+      rivers: this.waterSystem.getWaterBodies().filter(body => body.type === 'river').length,
+      ponds: this.waterSystem.getWaterBodies().filter(body => body.type === 'pond').length,
+      waterLevel: this.waterSystem.waterLevel
+    };
+  }
+
   positionTigerOnTerrain() {
     if (this.terrain && this.tiger && this.tigerModel) {
       // Start tiger at center of terrain
@@ -544,6 +581,22 @@ export class GameController {
       // Regenerate vegetation to match new terrain
       if (this.vegetationSystem) {
         this.vegetationSystem.generateVegetation(seed);
+      }
+
+      // Regenerate water system to match new terrain
+      if (this.waterSystem) {
+        // Remove old water meshes
+        const oldWaterMeshes = this.waterSystem.getWaterMeshes();
+        oldWaterMeshes.forEach(mesh => this.scene.remove(mesh));
+        this.waterSystem.dispose();
+        
+        // Create new water system
+        this.waterSystem = new WaterSystem(this.terrain);
+        const newWaterMeshes = this.waterSystem.getWaterMeshes();
+        newWaterMeshes.forEach(mesh => this.scene.add(mesh));
+        
+        // Reconnect to movement system
+        this.movementSystem.setWaterSystem(this.waterSystem);
       }
 
       // Reposition tiger on new terrain

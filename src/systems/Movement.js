@@ -1,19 +1,21 @@
 import * as THREE from 'three';
 
 export class MovementSystem {
-  constructor(tiger, terrain = null) {
+  constructor(tiger, terrain = null, waterSystem = null) {
     if (!tiger) {
       throw new Error('Tiger is required for MovementSystem');
     }
 
     this.tiger = tiger;
     this.terrain = terrain;
+    this.waterSystem = waterSystem;
 
     // Movement state
     this.isMoving = false;
     this.isRunning = false;
     this.isCrouching = false;
     this.isJumping = false;
+    this.isSwimming = false;
 
     // Input direction (normalized)
     this.inputDirection = new THREE.Vector3(0, 0, 0);
@@ -30,11 +32,32 @@ export class MovementSystem {
     this.runSpeedMultiplier = 1.5;
     this.crouchSpeedMultiplier = 0.5;
     this.staminaSpeedReduction = 0.3; // Speed reduction when low stamina
+    this.swimSpeedMultiplier = 0.7; // Swimming is slower than running
 
     // Rotation properties
     this.rotationInput = 0; // Current rotation input (-1 to 1)
     this.rotationSpeed = 3.0; // Rotation speed in radians per second
     this.minimumMovementThreshold = 0.01; // Prevent micro-movements
+  }
+
+  setWaterSystem(waterSystem) {
+    this.waterSystem = waterSystem;
+  }
+
+  updateSwimmingState() {
+    if (!this.waterSystem) {
+      this.isSwimming = false;
+      return;
+    }
+
+    // Check if tiger is in water
+    const wasSwimming = this.isSwimming;
+    this.isSwimming = this.waterSystem.isInWater(this.tiger.position.x, this.tiger.position.z);
+
+    // Log swimming state changes
+    if (wasSwimming !== this.isSwimming) {
+      console.log(`🏊 SWIMMING STATE: ${wasSwimming ? 'Swimming' : 'Land'} -> ${this.isSwimming ? 'Swimming' : 'Land'}`);
+    }
   }
 
   setMovementInput(input) {
@@ -67,7 +90,10 @@ export class MovementSystem {
     let speed = this.tiger.speed;
 
     // Apply movement modifiers
-    if (this.isRunning) {
+    if (this.isSwimming) {
+      speed *= this.swimSpeedMultiplier;
+      // No running or crouching while swimming
+    } else if (this.isRunning) {
       speed *= this.runSpeedMultiplier;
     } else if (this.isCrouching) {
       speed *= this.crouchSpeedMultiplier;
@@ -144,14 +170,27 @@ export class MovementSystem {
   }
 
   applyJump() {
-    if (this.isJumping && this.isGrounded) {
-      this.velocity.y = this.jumpForce;
-      this.isGrounded = false;
+    if (this.isJumping) {
+      if (this.isSwimming) {
+        // Swimming: jump input makes tiger swim upward
+        this.velocity.y = this.jumpForce * 0.5; // Reduced force for swimming
+      } else if (this.isGrounded) {
+        // Land: normal jump
+        this.velocity.y = this.jumpForce;
+        this.isGrounded = false;
+      }
     }
   }
 
   applyGravity(deltaTime) {
-    if (!this.isGrounded) {
+    if (this.isSwimming) {
+      // Swimming: apply buoyancy and water resistance
+      const buoyancy = 15; // Upward force in water
+      const waterResistance = 0.8; // Damping factor for vertical movement
+      
+      this.velocity.y += (buoyancy + this.gravity * 0.3) * deltaTime; // Reduced gravity in water
+      this.velocity.y *= waterResistance; // Damping
+    } else if (!this.isGrounded) {
       this.velocity.y += this.gravity * deltaTime;
     }
   }
@@ -162,20 +201,38 @@ export class MovementSystem {
     this.tiger.position.y += this.velocity.y * deltaTime;
     this.tiger.position.z += this.velocity.z * deltaTime;
 
-    // Terrain collision detection
+    // Terrain and water collision detection
     if (this.terrain) {
-      // Get terrain height at tiger's x,z position
       const terrainHeight = this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z);
       const tigerHeight = 1.0; // Tiger's height above ground
       const groundLevel = terrainHeight + tigerHeight;
 
-      // If tiger is at or below ground level, place on terrain
-      if (this.tiger.position.y <= groundLevel) {
-        this.tiger.position.y = groundLevel;
-        this.velocity.y = 0;
-        this.isGrounded = true;
+      if (this.isSwimming && this.waterSystem) {
+        // Swimming mode: maintain tiger at water surface level or below
+        const waterDepth = this.waterSystem.getWaterDepth(this.tiger.position.x, this.tiger.position.z);
+        const waterSurface = terrainHeight + waterDepth - 0.5; // Water surface level
+        
+        // Keep tiger submerged but not too deep
+        if (this.tiger.position.y > waterSurface) {
+          this.tiger.position.y = waterSurface; // Don't go above water surface
+        }
+        
+        // Don't let tiger go below terrain
+        if (this.tiger.position.y < groundLevel) {
+          this.tiger.position.y = groundLevel;
+          this.velocity.y = 0;
+        }
+        
+        this.isGrounded = false; // Never grounded while swimming
       } else {
-        this.isGrounded = false;
+        // Land mode: normal terrain collision
+        if (this.tiger.position.y <= groundLevel) {
+          this.tiger.position.y = groundLevel;
+          this.velocity.y = 0;
+          this.isGrounded = true;
+        } else {
+          this.isGrounded = false;
+        }
       }
 
       // Handle steep slope sliding
@@ -233,16 +290,19 @@ export class MovementSystem {
     const prevPosition = new THREE.Vector3(this.tiger.position.x, this.tiger.position.y, this.tiger.position.z);
     const prevRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
 
+    // Check if tiger is in water
+    this.updateSwimmingState();
+
     // Update tiger rotation based on left/right input
     this.updateRotation(deltaTime);
 
     // Apply movement forces based on forward/backward input
     this.applyMovementForces(deltaTime);
 
-    // Handle jumping
+    // Handle jumping (or swimming up/down)
     this.applyJump();
 
-    // Apply gravity
+    // Apply gravity (modified for swimming)
     this.applyGravity(deltaTime);
 
     // Update position

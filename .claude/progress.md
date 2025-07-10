@@ -1,17 +1,31 @@
 # Development Progress - Tiger Evolution 3D
 
-## Current Phase: Jungle Foundation ✅ COMPLETED
+## Current Phase: Water & Ecosystem ✅ COMPLETED
 
 ### Session Summary (Latest)
-**Goal**: Implement complete jungle terrain system with vegetation and physics
+**Goal**: Implement realistic water system with swimming mechanics (Phase 2)
 **Status**: ✅ **FULLY COMPLETED**
-**Duration**: 1 intensive session
+**Duration**: 1 intensive session focused on water system overhaul
 
 ---
 
 ## ✅ COMPLETED MILESTONES
 
-### 🌿 Terrain System Implementation
+### 🌊 Phase 2: Water System Implementation
+- **Realistic Water Bodies**: Large central lake (35-unit radius), winding river system, scattered ponds
+- **Proper 3D Water Surfaces**: Replaced blue terrain patches with actual water planes positioned below ground
+- **Animated Water Shader**: Subtle wave effects, realistic blue coloring, transparency, depth-based rendering
+- **Connected Water Network**: Flowing river segments connecting different water areas
+- **Performance Optimized**: Efficient water detection and rendering system
+
+### 🏊 Swimming Mechanics Integration  
+- **Automatic Detection**: Tiger seamlessly enters swimming mode when touching water
+- **Swimming Physics**: Buoyancy force (15 units), water resistance (0.8x), reduced gravity
+- **Swimming Controls**: Reduced movement speed (0.7x), jump for upward movement, disabled running
+- **Realistic Constraints**: Tiger maintained at water surface, prevented from going below terrain
+- **State Management**: Smooth transitions between land and water movement modes
+
+### 🌿 Terrain System (Phase 1)
 - **Procedural Generation**: Perlin noise heightmaps with erosion simulation
 - **3D Rendering**: Vertex-colored terrain mesh (512x512 units, 128x128 segments)
 - **Physics Integration**: Tiger collision detection with terrain surface
@@ -19,32 +33,34 @@
 - **Height Queries**: Efficient terrain height lookup for positioning
 - **Performance**: Optimized rendering with proper LOD considerations
 
-### 🌳 Vegetation Ecosystem
+### 🌳 Vegetation Ecosystem (Phase 1)
 - **Procedural Placement**: Intelligent flora distribution based on terrain constraints
 - **Variety System**: Multiple tree types, bushes, grass patches, and ferns
 - **Constraint Logic**: Height, slope, and spacing-based placement rules
 - **Visual Polish**: Wind animation effects for grass and foliage
 - **Performance**: Grouped rendering with vegetation density management
 
-### 🎮 Camera & Control Systems
+### 🎮 Enhanced Controls & Camera (Phase 1)
+- **Tank Controls**: Fixed W/S forward/backward movement in tiger's facing direction, A/D rotation
 - **Mouse Controls**: Pointer lock integration for seamless camera orbiting
 - **Input Processing**: Fixed update order to capture mouse deltas properly
 - **Fallback Support**: Drag mode for browsers without pointer lock
 - **Zoom System**: Mouse wheel distance control (5-25 unit range)
 - **Smooth Following**: Camera tracks tiger movement across varied terrain
 
-### 🐅 Tiger Physics & Movement
+### 🐅 Advanced Tiger Physics (Enhanced)
+- **Land/Water Integration**: Movement system handles both terrain and water physics
 - **Terrain Following**: Tiger Y-position dynamically follows heightmap
-- **Jump Mechanics**: Proper gravity, velocity, and landing detection
-- **Movement Variety**: Walking, running, crouching with stamina effects
-- **Realistic Physics**: Horizontal movement with vertical terrain collision
-- **Input Integration**: WASD movement, Space jump, Shift run controls
+- **Jump/Swimming**: Context-aware jumping on land, upward swimming in water
+- **Movement Variety**: Walking, running, crouching, swimming with appropriate speed modifiers
+- **Realistic Physics**: Proper collision with terrain and water surfaces
+- **Input Integration**: Enhanced WASD movement, context-aware Space key behavior
 
-### 🧪 Quality Assurance
-- **Test Coverage**: 52+ unit tests across all major systems
-- **Integration Testing**: Cross-system interaction verification
-- **Performance Testing**: Smooth 60fps operation verified
-- **Manual Testing**: Full gameplay loop functional
+### 🧪 Comprehensive Quality Assurance
+- **Test Coverage**: 63+ unit tests across all major systems (added water & swimming tests)
+- **Integration Testing**: Cross-system interaction verification including water integration
+- **Performance Testing**: Smooth 60fps operation verified with water effects
+- **Manual Testing**: Full gameplay loop including swimming mechanics functional
 
 ---
 
@@ -66,29 +82,29 @@
 
 ## 🎯 NEXT PHASE PRIORITIES
 
-### Phase 2: Water & Ecosystem (Upcoming)
-**Estimated Duration**: 2-3 sessions
-**Primary Goals**:
-- River and stream generation following terrain flow
-- Water physics and tiger swimming mechanics
-- Aquatic ecosystem elements (fish, water birds)
-- Enhanced terrain texturing with water interaction
-
-### Phase 3: Wildlife & AI (Future)
+### Phase 3: Wildlife & AI (NEXT - HIGH PRIORITY)
 **Estimated Duration**: 3-4 sessions
 **Primary Goals**:
-- Prey animals (deer, wild boar, small mammals)
-- Predator threats (other tigers, large cats)
-- AI behavior trees for realistic animal movement
-- Hunting and stalking mechanics
+- Prey animals (deer, wild boar, small mammals) with realistic AI behaviors
+- Predator threats (other tigers, leopards, crocodiles) especially near water areas
+- Animal behavior trees: flocking, fleeing, territorial responses
+- Basic hunting mechanics: stealth detection, pouncing, simple combat
 
-### Phase 4: Evolution & Progression (Future)
-**Estimated Duration**: 2-3 sessions
+### Phase 3 Continued: Environmental Enhancement (MEDIUM PRIORITY)
+**Estimated Duration**: 2-3 sessions  
 **Primary Goals**:
-- Tiger growth stages (cub → adult → alpha)
-- Stat progression and skill development
-- Territory management and marking
-- Breeding and pack dynamics
+- Enhanced terrain biomes (dense forest, riverbanks, rocky outcrops)
+- Weather system (rain, fog) affecting visibility and animal behavior
+- Day/night cycle with dynamic lighting and different animal activity patterns
+- Audio integration (ambient jungle sounds, water sounds, footsteps)
+
+### Phase 4: Evolution & Advanced Systems (FUTURE)
+**Estimated Duration**: 3-4 sessions
+**Primary Goals**:
+- Tiger evolution system (cub → adult → alpha) with stat progression
+- Advanced hunting: stealth system, kill animations, prey tracking
+- Territory management: marking, defending, expanding controlled areas
+- Survival elements: hunger, thirst, stamina management with consequences
 
 ---
 
