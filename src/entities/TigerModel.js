@@ -83,6 +83,67 @@ export class TigerModel {
     this.tailTip = new THREE.Mesh(tailTipGeometry, tailTipMaterial);
     this.tailTip.position.set(0, 0.8, -2.3); // Back of tiger (negative Z)
     this.mesh.add(this.tailTip);
+
+    // Add black stripes to body
+    this.addStripes();
+  }
+
+  addStripes() {
+    // Create truly black stripe material with higher rendering priority
+    const stripeMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x000000,
+      transparent: false,
+      depthTest: false,
+      depthWrite: false
+    });
+    
+    // Body stripes (vertical stripes across the body)
+    for (let i = 0; i < 6; i++) {
+      const stripeGeometry = new THREE.BoxGeometry(0.05, 0.6, 0.12);
+      const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+      stripe.position.set(0.77, 0, -1 + (i * 0.4)); // Position slightly outside body surface
+      stripe.renderOrder = 1; // Render on top
+      this.mesh.add(stripe);
+      
+      // Mirror stripe on left side
+      const stripeLeft = new THREE.Mesh(stripeGeometry, stripeMaterial);
+      stripeLeft.position.set(-0.77, 0, -1 + (i * 0.4));
+      stripeLeft.renderOrder = 1;
+      this.mesh.add(stripeLeft);
+    }
+    
+    // Back stripes (horizontal stripes across the tiger's back)
+    for (let i = 0; i < 5; i++) {
+      const backStripeGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.15);
+      const backStripe = new THREE.Mesh(backStripeGeometry, stripeMaterial);
+      backStripe.position.set(0, 0.42, -1 + (i * 0.5)); // Position on top of body
+      backStripe.renderOrder = 1;
+      this.mesh.add(backStripe);
+    }
+    
+    // Head stripes (smaller stripes on the head)
+    for (let i = 0; i < 3; i++) {
+      const headStripeGeometry = new THREE.BoxGeometry(0.04, 0.5, 0.08);
+      const headStripe = new THREE.Mesh(headStripeGeometry, stripeMaterial);
+      headStripe.position.set(0.52, 0.2, 1.2 + (i * 0.2)); // Position slightly outside head surface
+      headStripe.renderOrder = 1;
+      this.mesh.add(headStripe);
+      
+      // Mirror stripe on left side
+      const headStripeLeft = new THREE.Mesh(headStripeGeometry, stripeMaterial);
+      headStripeLeft.position.set(-0.52, 0.2, 1.2 + (i * 0.2));
+      headStripeLeft.renderOrder = 1;
+      this.mesh.add(headStripeLeft);
+    }
+    
+    // Tail stripes (simpler black bands)
+    for (let i = 0; i < 4; i++) {
+      const tailStripeGeometry = new THREE.BoxGeometry(0.22, 0.22, 0.08);
+      const tailStripe = new THREE.Mesh(tailStripeGeometry, stripeMaterial);
+      tailStripe.position.set(0, 0.3 + (i * 0.15), -1.8);
+      tailStripe.renderOrder = 1;
+      this.mesh.add(tailStripe);
+    }
   }
 
   setupAnimations() {
