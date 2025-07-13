@@ -1,6 +1,6 @@
 # Tiger Evolution 3D
 
-## Current Status (Latest Session - Phase 2 Water System Complete!)
+## Current Status (Latest Session - Advanced Water System & Lily Pads Complete!)
 
 ### ✅ COMPLETED FEATURES
 
@@ -11,35 +11,39 @@
 - **Collision System**: Tiger properly walks on terrain surface, no clipping
 - **Slope Physics**: Tiger slides down steep slopes (>0.7 steepness)
 
-#### 🌳 **Vegetation System**
+#### 🌳 **ENHANCED: Vegetation & Ecosystem System**
 - **Procedural Generation**: Trees, bushes, grass patches, and ferns
-- **Intelligent Placement**: Respects terrain constraints (height, slope, spacing)
+- **✅ WATER-AWARE PLACEMENT**: Vegetation avoids water areas with 3-unit shore buffer
+- **✅ JUNGLE MUSHROOMS**: Realistic mushrooms with stems, caps, and white spots replace small water bodies
+- **Intelligent Placement**: Respects terrain constraints (height, slope, spacing, water proximity)
 - **Visual Variety**: Multiple tree types with different trunk/leaf combinations
 - **Wind Animation**: Grass and foliage sway with wind effects
 - **Performance**: LOD groups and caching for optimal rendering
 
-#### 🌊 **NEW: Realistic Water System** 
-- **✅ PROPER WATER SURFACES**: Real 3D water planes instead of blue terrain patches
-- **✅ CONNECTED WATER BODIES**: Large central lake (35-unit radius) + winding river system
-- **✅ REALISTIC DEPTH**: Water positioned 1-2.5 units below terrain for depth effect
-- **✅ ANIMATED WATER SHADER**: Subtle waves, realistic blue coloring, transparency effects
-- **Multiple Water Types**: Lake, river segments, scattered ponds throughout terrain
-- **Smart Generation**: Connected flowing water bodies instead of fragmented patches
-- **Performance Optimized**: Efficient water detection and rendering
+#### 🌊 **ENHANCED: Professional Water System** 
+- **✅ THREE.JS WATER CLASS**: All water uses professional Water class with realistic reflections
+- **✅ BEAUTIFUL VISUALS**: Reflections, refractions, depth-based transparency, wave animations
+- **✅ OPTIMIZED PERFORMANCE**: 128x128 render targets, distance culling, maintained 60fps
+- **✅ WATER BODY TYPES**: Large reflective lake, flowing rivers, scattered ponds
+- **✅ VEGETATION EXCLUSION**: Trees/bushes cannot spawn in water (3-unit shore buffer)
+- **✅ DEPTH-BASED SWIMMING**: Shallow water allows jumping, deep water requires swimming
+- **Smart Generation**: Connected water bodies with proper routing to avoid overlaps
 
-#### 🏊 **NEW: Tiger Swimming Mechanics**
-- **✅ AUTOMATIC DETECTION**: Tiger enters swimming mode when touching water
-- **✅ SWIMMING PHYSICS**: Buoyancy, water resistance, reduced gravity in water
-- **✅ SWIMMING CONTROLS**: Slower movement speed (0.7x), upward movement with jump/space
+#### 🏊 **ENHANCED: Advanced Swimming & Aquatic Navigation**
+- **✅ DEPTH-AWARE SWIMMING**: Only swims in deep water (>1.5 units), can jump in shallow water
+- **✅ LILY PAD PLATFORMS**: Floating lily pads with flowers serve as jump platforms
+- **✅ PRECISE CONTROLS**: Enhanced friction (0.7x) and acceleration (1.5x) on lily pads  
+- **✅ STRATEGIC CROSSING**: Use lily pads to cross water without swimming
+- **✅ FLOATING ANIMATION**: Lily pads gently bob on water surface (3cm amplitude)
 - **✅ REALISTIC CONSTRAINTS**: Tiger stays at water surface, can't go below terrain
-- **State Management**: Seamless transition between land and water movement
-- **Stamina Integration**: Swimming consumes energy like running
+- **State Management**: Seamless transition between land, lily pad, and water movement
 
-#### 🎮 **Tank Controls & Camera System**
+#### 🎮 **PERFECTED: Tank Controls & Camera System**
+- **✅ CORRECTED CONTROLS**: W=forward, S=backward, A=left, D=right (fixed inversion!)
 - **✅ TRUE TANK CONTROLS**: W/S moves forward/backward in tiger's facing direction, A/D rotates left/right
 - **✅ DIRECTION UPDATES**: Movement direction properly updates when tiger rotates (fixed critical bug!)
 - **✅ PROPER TRIGONOMETRY**: Fixed forward direction calculation using `Math.sin/cos(rotation.y)`
-- **✅ SMOOTH ACCELERATION**: Improved velocity interpolation prevents overshooting
+- **✅ ENHANCED RESPONSIVENESS**: Surface-aware friction and acceleration for precise control
 - **Camera Following**: Camera stays behind tiger and follows rotation smoothly
 - **Mouse Controls**: Pointer lock + mouse movement for camera orbiting
 - **Zoom**: Mouse wheel for distance control (5-25 units)
@@ -65,39 +69,45 @@
 npm run dev                    # Start development server
 # 1. Click canvas to enable mouse controls
 # 2. Move mouse to look around tiger
-# 3. ✅ WORKING TANK CONTROLS:
-#    - W: Move forward in tiger's CURRENT facing direction (FIXED!)
-#    - S: Move backward in tiger's CURRENT facing direction
+# 3. ✅ PERFECTED CONTROLS:
+#    - W: Move forward in tiger's facing direction
+#    - S: Move backward in tiger's facing direction  
 #    - A: Rotate tiger left (counter-clockwise)
 #    - D: Rotate tiger right (clockwise)
-#    - A+W: Rotate left while moving forward
-#    - Space: Jump on land, swim upward in water
+#    - Space: Jump on land/lily pads, swim upward in deep water
 #    - Shift: Run (disabled while swimming)
 # 4. Mouse wheel to zoom in/out
-# 5. ✅ NEW: Tiger automatically swims when entering water!
-# 6. Find the large lake, winding river, or scattered ponds to test swimming!
+# 5. ✅ AQUATIC FEATURES:
+#    - Reflective water with realistic visuals
+#    - Lily pads as jump platforms across water
+#    - Depth-aware swimming (shallow=jump, deep=swim)
+#    - Enhanced precision on lily pads
+# 6. ✅ ECOSYSTEM FEATURES:
+#    - Jungle mushrooms scattered around
+#    - Water-aware vegetation placement
+#    - Clean shorelines with natural buffers
 ```
 
 ### 🏗️ **ARCHITECTURE OVERVIEW**
 
 #### Key Systems:
 - **`GameController.js`**: Main orchestrator, manages all systems, syncs tiger entity with model
-- **`WaterSystem.js`**: NEW - Realistic water bodies with swimming mechanics
-- **`VegetationSystem.js`**: Procedural jungle vegetation generation
+- **`WaterSystem.js`**: ✅ ENHANCED - Professional Water class, lily pads, mushrooms
+- **`VegetationSystem.js`**: ✅ ENHANCED - Water-aware placement, ecosystem integration
 - **`TerrainRenderer.js`**: 3D terrain mesh from heightmap data
-- **`MovementSystem.js`**: ✅ ENHANCED tank controls with land/water physics integration
+- **`MovementSystem.js`**: ✅ PERFECTED - Surface-aware physics, lily pad precision
 - **`CameraSystem.js`**: Third-person camera with rotation following
 - **`Terrain.js`**: Heightmap generation and terrain queries
-- **`Input.js`**: Separate movement (W/S) and rotation (A/D) input handling
+- **`Input.js`**: ✅ FIXED - Corrected WASD mapping, complete input system
 - **`TigerModel.js`**: 3D tiger mesh with proper head/tail orientation
 
 #### Data Flow:
 1. `Terrain` generates heightmap using Perlin noise
 2. `TerrainRenderer` creates 3D mesh with vertex colors
-3. `VegetationSystem` places flora based on terrain constraints
-4. `WaterSystem` generates realistic water bodies (lake, river, ponds) with animated shaders
-5. `Input` separates movement and rotation inputs for tank controls
-6. `MovementSystem` applies forces with land/water physics (ENHANCED: swimming integration)
+3. `WaterSystem` generates professional water bodies (Three.js Water class) + lily pads + mushrooms
+4. `VegetationSystem` places flora based on terrain + water constraints (water-aware placement)
+5. `Input` provides corrected WASD mapping and complete input handling
+6. `MovementSystem` applies surface-aware physics (land/lily pad/water with enhanced precision)
 7. `GameController` syncs tiger entity with model and coordinates all systems
 8. `CameraSystem` follows tiger and integrates with tiger rotation
 
@@ -113,51 +123,60 @@ npm run dev                    # Start development server
 
 ### 🔧 **RECENT IMPLEMENTATION (Current Session)**
 
-#### 🌊 **Phase 2: Complete Water System Implementation**
-**Goal**: Transform blue terrain patches into realistic swimming environment
+#### 🌊 **Phase 3: Professional Water System & Aquatic Ecosystem**
+**Goal**: Create professional-grade water with lily pad navigation and ecosystem integration
 
 **Major Changes**:
-1. **Water System Rewrite (`WaterSystem.js`)**:
-   - Replaced terrain-based water detection with proper 3D water bodies
-   - Large central lake (35-unit radius) + winding river + scattered ponds
-   - Animated shader with realistic wave effects and transparency
-   - Connected water bodies instead of fragmented patches
+1. **Professional Water Enhancement (`WaterSystem.js`)**:
+   - All water now uses Three.js Water class with realistic reflections/refractions
+   - Performance optimized: 128x128 render targets, distance culling
+   - Floating lily pads with flowers as jump platforms (~30% coverage)
+   - Mushroom generation replacing small water bodies (realistic design)
+   - Depth-based transparency and wave animations
 
-2. **Swimming Mechanics (`MovementSystem.js`)**:
-   - Automatic swimming detection when tiger enters water
-   - Modified physics: buoyancy (15 units), water resistance (0.8x), reduced gravity
-   - Swimming-specific controls: 0.7x speed, jump for upward movement
-   - Proper collision with water surface and terrain boundaries
+2. **Enhanced Movement Controls (`MovementSystem.js` + `Input.js`)**:
+   - Fixed inverted WASD controls (W=forward, S=backward, A=left, D=right)
+   - Surface-aware friction: lily pads (0.7x) vs land (0.85x) for precise control
+   - Enhanced acceleration (1.5x) on lily pads for responsive navigation
+   - Depth-aware swimming: shallow water allows jumping, deep water requires swimming
 
-3. **Integration (`GameController.js`)**:
-   - Connected water system to movement system
-   - Added water system regeneration when terrain changes
-   - Proper cleanup and resource management
+3. **Ecosystem Integration (`VegetationSystem.js` + `GameController.js`)**:
+   - Water-aware vegetation placement with 3-unit shore buffers
+   - Trees/bushes cannot spawn in water areas
+   - Clean, natural shorelines around all water bodies
+   - Generation order: water first, then vegetation avoids water areas
 
 **Technical Implementation**:
 ```javascript
-// Water detection
-isInWater(x, z) {
-  for (const waterBody of this.waterBodies) {
-    if (waterBody.type === 'lake' || waterBody.type === 'pond') {
-      const distance = Math.sqrt(Math.pow(x - waterBody.center.x, 2) + Math.pow(z - waterBody.center.z, 2));
-      if (distance <= waterBody.radius) return true;
-    }
+// Professional Water class creation
+const water = new Water(geometry, {
+  textureWidth: 128,         // Optimized render targets
+  textureHeight: 128,
+  waterNormals: this.waterNormalsTexture,
+  sunDirection: new THREE.Vector3(0.70710678, 0.70710678, 0),
+  waterColor: 0x001e0f,
+  distortionScale: 1.2       // Realistic wave distortion
+});
+
+// Lily pad collision and physics
+isOnLilyPad(x, z) {
+  for (const lilyPadGroup of this.lilyPads) {
+    const distance = Math.sqrt(Math.pow(x - lilyPadGroup.position.x, 2) + 
+                              Math.pow(z - lilyPadGroup.position.z, 2));
+    if (distance <= 1.5) return true;
   }
 }
 
-// Swimming physics
-applyGravity(deltaTime) {
-  if (this.isSwimming) {
-    const buoyancy = 15;
-    const waterResistance = 0.8;
-    this.velocity.y += (buoyancy + this.gravity * 0.3) * deltaTime;
-    this.velocity.y *= waterResistance;
+// Surface-aware friction system
+getCurrentFriction() {
+  if (this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z)) {
+    return 0.7;  // Enhanced stopping power on lily pads
   }
+  return 0.85;   // Normal ground friction
 }
 ```
 
-**Result**: Realistic aquatic environment with proper swimming mechanics! ✅
+**Result**: Professional aquatic ecosystem with lily pad navigation and precise controls! ✅
 
 ### 🚀 **NEXT PRIORITIES FOR FUTURE SESSIONS**
 

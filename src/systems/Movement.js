@@ -23,7 +23,8 @@ export class MovementSystem {
     // Physics properties
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.acceleration = 50; // Units per second squared
-    this.groundFriction = 0.9; // Friction coefficient
+    this.groundFriction = 0.85; // Base friction coefficient
+    this.lilyPadFriction = 0.7; // Higher friction on lily pads for precise control
     this.jumpForce = 15; // Jump impulse force
     this.gravity = -30; // Gravity acceleration
     this.isGrounded = true;
@@ -50,13 +51,27 @@ export class MovementSystem {
       return;
     }
 
-    // Check if tiger is in water
+    // Check if tiger is on a lily pad first
+    const isOnLilyPad = this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z);
+    
+    if (isOnLilyPad) {
+      // Tiger is on lily pad - not swimming, can jump normally
+      this.isSwimming = false;
+      return;
+    }
+
+    // Check if tiger is in water and get depth
     const wasSwimming = this.isSwimming;
-    this.isSwimming = this.waterSystem.isInWater(this.tiger.position.x, this.tiger.position.z);
+    const isInWater = this.waterSystem.isInWater(this.tiger.position.x, this.tiger.position.z);
+    const waterDepth = this.waterSystem.getWaterDepth(this.tiger.position.x, this.tiger.position.z);
+    
+    // Only consider it "swimming" if in deep enough water (>1.5 units deep)
+    // This allows jumping in shallow water near shores
+    this.isSwimming = isInWater && waterDepth > 1.5;
 
     // Log swimming state changes
     if (wasSwimming !== this.isSwimming) {
-      console.log(`🏊 SWIMMING STATE: ${wasSwimming ? 'Swimming' : 'Land'} -> ${this.isSwimming ? 'Swimming' : 'Land'}`);
+      console.log(`🏊 SWIMMING STATE: ${wasSwimming ? 'Swimming' : 'Land'} -> ${this.isSwimming ? 'Swimming' : 'Land'} (depth: ${waterDepth.toFixed(1)})`);
     }
   }
 
@@ -84,6 +99,15 @@ export class MovementSystem {
     if (prevMoving !== this.isMoving) {
       console.log(`🐅 MOVEMENT STATE: ${prevMoving ? 'Moving' : 'Stopped'} -> ${this.isMoving ? 'Moving' : 'Stopped'}, movement: ${movementMagnitude.toFixed(3)}, rotation: ${this.rotationInput.toFixed(3)}`);
     }
+  }
+
+  getCurrentFriction() {
+    // Check if tiger is on a lily pad for enhanced friction
+    if (this.waterSystem && this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z)) {
+      return this.lilyPadFriction; // Much stronger friction on lily pads
+    }
+    
+    return this.groundFriction; // Normal ground friction
   }
 
   getCurrentSpeed() {
@@ -130,9 +154,10 @@ export class MovementSystem {
     const hasMovementInput = Math.abs(forwardBackward) > this.minimumMovementThreshold;
     
     if (!hasMovementInput) {
-      // Apply friction when not moving
-      this.velocity.x *= this.groundFriction;
-      this.velocity.z *= this.groundFriction;
+      // Apply friction when not moving - use stronger friction on lily pads
+      const frictionMultiplier = this.getCurrentFriction();
+      this.velocity.x *= frictionMultiplier;
+      this.velocity.z *= frictionMultiplier;
       return;
     }
 
@@ -158,14 +183,19 @@ export class MovementSystem {
 
     // Tank controls: immediately change direction, smoothly change speed
     if (hasMovementInput) {
-      // Use lerp for smooth acceleration but with a reasonable factor
-      const accelerationFactor = Math.min(1.0, this.acceleration * deltaTime);
+      // Enhanced acceleration on lily pads for more responsive control
+      const baseAcceleration = this.acceleration;
+      const isOnLilyPad = this.waterSystem && this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z);
+      const accelerationMultiplier = isOnLilyPad ? 1.5 : 1.0; // Faster response on lily pads
+      
+      const accelerationFactor = Math.min(1.0, baseAcceleration * accelerationMultiplier * deltaTime);
       this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
       this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
     } else {
-      // Apply friction when not moving
-      this.velocity.x *= this.groundFriction;
-      this.velocity.z *= this.groundFriction;
+      // Apply friction when not moving - use enhanced friction
+      const frictionMultiplier = this.getCurrentFriction();
+      this.velocity.x *= frictionMultiplier;
+      this.velocity.z *= frictionMultiplier;
     }
   }
 
@@ -179,6 +209,8 @@ export class MovementSystem {
         this.velocity.y = this.jumpForce;
         this.isGrounded = false;
       }
+      // Reset jumping state after applying jump force (one-time action)
+      this.isJumping = false;
     }
   }
 
@@ -207,7 +239,19 @@ export class MovementSystem {
       const tigerHeight = 1.0; // Tiger's height above ground
       const groundLevel = terrainHeight + tigerHeight;
 
-      if (this.isSwimming && this.waterSystem) {
+      // Check if tiger is on a lily pad first
+      const lilyPadHeight = this.waterSystem ? this.waterSystem.getLilyPadHeight(this.tiger.position.x, this.tiger.position.z) : null;
+      
+      if (lilyPadHeight !== null) {
+        // Tiger is on a lily pad - treat it like solid ground
+        if (this.tiger.position.y <= lilyPadHeight) {
+          this.tiger.position.y = lilyPadHeight;
+          this.velocity.y = 0;
+          this.isGrounded = true;
+        } else {
+          this.isGrounded = false;
+        }
+      } else if (this.isSwimming && this.waterSystem) {
         // Swimming mode: maintain tiger at water surface level or below
         const waterDepth = this.waterSystem.getWaterDepth(this.tiger.position.x, this.tiger.position.z);
         const waterSurface = terrainHeight + waterDepth - 0.5; // Water surface level

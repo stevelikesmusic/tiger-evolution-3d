@@ -54,14 +54,14 @@ export class GameController {
     // Create movement system
     this.movementSystem = new MovementSystem(this.tiger, this.terrain);
 
-    // Create vegetation system
-    this.vegetationSystem = new VegetationSystem(this.scene, this.terrain);
-    this.vegetationSystem.generateVegetation(12345); // Use consistent seed
-
-    // Create water system
+    // Create water system FIRST
     this.waterSystem = new WaterSystem(this.terrain);
     const waterMeshes = this.waterSystem.getWaterMeshes();
     waterMeshes.forEach(mesh => this.scene.add(mesh));
+
+    // Create vegetation system AFTER water system
+    this.vegetationSystem = new VegetationSystem(this.scene, this.terrain, this.waterSystem);
+    this.vegetationSystem.generateVegetation(12345); // Use consistent seed - now avoids water
 
     // Connect water system to movement system
     this.movementSystem.setWaterSystem(this.waterSystem);
@@ -116,7 +116,7 @@ export class GameController {
       
       // Update water system (for wave animation)
       if (this.waterSystem) {
-        this.waterSystem.update(deltaTime);
+        this.waterSystem.update(deltaTime, this.camera.camera);
       }
       
       // Update camera

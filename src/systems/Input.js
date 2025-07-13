@@ -411,6 +411,39 @@ export class InputSystem {
     }
   }
 
+  // Input state getters
+  getMovementDirection() {
+    const direction = { x: 0, y: 0, z: 0 };
+    
+    // Tank controls: W/S for forward/backward movement only
+    if (this.keys.forward) direction.z = 1; // W = Forward (positive Z)
+    if (this.keys.backward) direction.z = -1; // S = Backward (negative Z)
+    
+    return direction;
+  }
+  
+  getRotationDirection() {
+    let rotation = 0;
+    
+    // Tank controls: A/D for left/right rotation only
+    if (this.keys.left) rotation = 1; // A = Turn left (positive rotation)
+    if (this.keys.right) rotation = -1; // D = Turn right (negative rotation)
+    
+    return rotation;
+  }
+  
+  isRunning() {
+    return this.keys.run;
+  }
+  
+  isCrouching() {
+    return this.keys.crouch;
+  }
+  
+  isJumping() {
+    return this.keys.jump;
+  }
+
   // Update method (call once per frame)
   update() {
     // Reset mouse deltas after they've been processed

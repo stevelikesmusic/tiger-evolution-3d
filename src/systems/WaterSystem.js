@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Water } from 'three/addons/objects/Water.js';
 
 /**
  * WaterSystem - Handles water generation and rendering for rivers, ponds, and lakes
@@ -9,12 +10,51 @@ export class WaterSystem {
     this.waterBodies = [];
     this.waterLevel = 2; // Base water level
     this.waterMeshes = [];
+    this.lilyPads = []; // Store lily pad meshes
     this.riverGeometry = null;
     this.pondGeometry = null;
     this.waterMaterial = null;
+    this.waterNormalsTexture = null;
+    this.useAdvancedWater = true; // Use Water class for all water bodies
+    this.maxAdvancedWaterBodies = 10; // Allow multiple Water class instances
+    this.advancedWaterCount = 0;
     
+    this.createWaterNormalsTexture();
     this.createWaterMaterial();
     this.generateWaterBodies();
+  }
+
+  /**
+   * Create procedural water normals texture
+   */
+  createWaterNormalsTexture() {
+    const width = 128; // Dramatically reduced for performance
+    const height = 128;
+    const size = width * height;
+    const data = new Uint8Array(3 * size);
+    
+    // Generate subtle normal variation for realistic water surface
+    for (let i = 0; i < size; i++) {
+      const stride = i * 3;
+      const x = (i % width) / width;
+      const y = Math.floor(i / width) / height;
+      
+      // Create subtle wave patterns
+      const wave1 = Math.sin(x * Math.PI * 8) * Math.cos(y * Math.PI * 6);
+      const wave2 = Math.sin(x * Math.PI * 12 + y * Math.PI * 8) * 0.5;
+      const wave3 = Math.cos(x * Math.PI * 16) * Math.sin(y * Math.PI * 10) * 0.3;
+      
+      const intensity = (wave1 + wave2 + wave3) * 0.1 + 0.5;
+      
+      // Generate normal map values (centered around 0.5, 0.5, 1.0)
+      data[stride] = Math.floor((intensity * 0.2 + 0.4) * 255);     // R (X normal)
+      data[stride + 1] = Math.floor((intensity * 0.2 + 0.4) * 255); // G (Y normal)  
+      data[stride + 2] = Math.floor((intensity * 0.1 + 0.9) * 255); // B (Z normal)
+    }
+    
+    this.waterNormalsTexture = new THREE.DataTexture(data, width, height, THREE.RGBFormat);
+    this.waterNormalsTexture.wrapS = this.waterNormalsTexture.wrapT = THREE.RepeatWrapping;
+    this.waterNormalsTexture.needsUpdate = true;
   }
 
   /**
@@ -105,6 +145,9 @@ export class WaterSystem {
     
     // Create small ponds scattered around
     this.generateScatteredPonds();
+    
+    // Add lily pads to water bodies
+    this.generateLilyPads();
   }
 
   /**
@@ -114,8 +157,32 @@ export class WaterSystem {
     // Create a large lake in the center-low area
     const lakeCenter = { x: -50, z: 20 };
     const lakeRadius = 35;
-    const lakeGeometry = new THREE.CircleGeometry(lakeRadius, 32);
-    const lakeMesh = new THREE.Mesh(lakeGeometry, this.waterMaterial);
+    
+    let lakeMesh;
+    
+    if (this.useAdvancedWater && this.advancedWaterCount < this.maxAdvancedWaterBodies) {
+      // Use Three.js Water class ONLY for main lake (performance critical)
+      // Use CircleGeometry to match collision detection expectations
+      const lakeGeometry = new THREE.CircleGeometry(lakeRadius, 32);
+      
+      const water = new Water(lakeGeometry, {
+        textureWidth: 128, // Dramatically reduced render target size
+        textureHeight: 128,
+        waterNormals: this.waterNormalsTexture,
+        sunDirection: new THREE.Vector3(0.70710678, 0.70710678, 0),
+        sunColor: 0xffffff,
+        waterColor: 0x001e0f,
+        distortionScale: 1.2, // Reduced distortion for performance
+        fog: false
+      });
+      
+      lakeMesh = water;
+      this.advancedWaterCount++;
+    } else {
+      // Fallback to custom shader for performance
+      const lakeGeometry = new THREE.CircleGeometry(lakeRadius, 32);
+      lakeMesh = new THREE.Mesh(lakeGeometry, this.waterMaterial);
+    }
     
     // Position at water level
     const lakeHeight = this.waterLevel - 1; // Slightly below water level for depth
@@ -130,6 +197,8 @@ export class WaterSystem {
       mesh: lakeMesh
     });
     
+    // Lake created successfully
+    
     // Create a winding river
     this.generateWindingRiver();
   }
@@ -141,10 +210,10 @@ export class WaterSystem {
     const riverPath = [
       { x: 80, z: -100, width: 8 },
       { x: 60, z: -60, width: 10 },
-      { x: 20, z: -20, width: 12 },
-      { x: -20, z: 20, width: 14 },
-      { x: -60, z: 60, width: 12 },
-      { x: -80, z: 100, width: 10 }
+      { x: 30, z: -40, width: 12 },   // Keep river on northeast side
+      { x: 0, z: -30, width: 14 },    // Curve northeast of lake
+      { x: -30, z: -20, width: 12 },  // Continue northeast curve  
+      { x: -100, z: 80, width: 10 }   // Far northwest endpoint
     ];
     
     // Create river segments
@@ -161,7 +230,28 @@ export class WaterSystem {
       
       // Create ellipse geometry for river segment
       const riverGeometry = new THREE.PlaneGeometry(distance, avgWidth, 16, 8);
-      const riverMesh = new THREE.Mesh(riverGeometry, this.waterMaterial);
+      
+      // Use Water class for rivers too
+      let riverMesh;
+      
+      if (this.useAdvancedWater && this.advancedWaterCount < this.maxAdvancedWaterBodies) {
+        const water = new Water(riverGeometry, {
+          textureWidth: 128,
+          textureHeight: 128,
+          waterNormals: this.waterNormalsTexture,
+          sunDirection: new THREE.Vector3(0.70710678, 0.70710678, 0),
+          sunColor: 0xffffff,
+          waterColor: 0x001e0f,
+          distortionScale: 0.8, // Lower distortion for rivers
+          fog: false
+        });
+        
+        riverMesh = water;
+        this.advancedWaterCount++;
+      } else {
+        // Fallback to custom shader if we hit the limit
+        riverMesh = new THREE.Mesh(riverGeometry, this.waterMaterial);
+      }
       
       // Position and rotate to connect points
       const centerX = (start.x + end.x) / 2;
@@ -182,46 +272,278 @@ export class WaterSystem {
   }
 
   /**
-   * Generate scattered small ponds around the terrain
+   * Generate scattered ponds and mushrooms around the terrain
    */
   generateScatteredPonds() {
-    const pondLocations = [
-      { x: 100, z: 80, radius: 12 },
-      { x: -120, z: -90, radius: 8 },
-      { x: 70, z: -120, radius: 10 },
-      { x: -80, z: 120, radius: 15 },
-      { x: 150, z: -50, radius: 6 },
-      { x: -150, z: 30, radius: 9 }
+    const locations = [
+      { x: 100, z: 80, radius: 12, type: 'pond' },     // Large = pond
+      { x: -120, z: -90, radius: 8, type: 'mushroom' }, // Small = mushroom
+      { x: 70, z: -120, radius: 10, type: 'pond' },     // Medium = pond
+      { x: -80, z: 120, radius: 15, type: 'pond' },     // Large = pond
+      { x: 150, z: -50, radius: 6, type: 'mushroom' },  // Small = mushroom
+      { x: -150, z: 30, radius: 9, type: 'mushroom' }   // Small = mushroom
     ];
     
-    pondLocations.forEach(pond => {
-      const pondGeometry = new THREE.CircleGeometry(pond.radius, 24);
-      const pondMesh = new THREE.Mesh(pondGeometry, this.waterMaterial);
-      
-      // Position slightly below terrain for depth effect
-      const terrainHeight = this.terrain.getHeightAt(pond.x, pond.z);
-      const pondHeight = Math.min(terrainHeight - 1.5, this.waterLevel - 1);
-      
-      pondMesh.position.set(pond.x, pondHeight, pond.z);
-      pondMesh.rotation.x = -Math.PI / 2;
-      
-      this.waterMeshes.push(pondMesh);
-      this.waterBodies.push({
-        type: 'pond',
-        center: { x: pond.x, z: pond.z },
-        radius: pond.radius,
-        mesh: pondMesh
+    locations.forEach(location => {
+      if (location.type === 'mushroom') {
+        this.createMushroom(location.x, location.z, location.radius);
+      } else {
+        this.createPond(location.x, location.z, location.radius);
+      }
+    });
+  }
+  
+  /**
+   * Create a pond at the specified location
+   */
+  createPond(x, z, radius) {
+    const pondGeometry = new THREE.CircleGeometry(radius, 24);
+    
+    // Use Water class for ponds
+    let pondMesh;
+    
+    if (this.useAdvancedWater && this.advancedWaterCount < this.maxAdvancedWaterBodies) {
+      const water = new Water(pondGeometry, {
+        textureWidth: 128,
+        textureHeight: 128,
+        waterNormals: this.waterNormalsTexture,
+        sunDirection: new THREE.Vector3(0.70710678, 0.70710678, 0),
+        sunColor: 0xffffff,
+        waterColor: 0x001e0f,
+        distortionScale: 1.0, // Moderate distortion for ponds
+        fog: false
       });
+      
+      pondMesh = water;
+      this.advancedWaterCount++;
+    } else {
+      // Fallback to custom shader if we hit the limit
+      pondMesh = new THREE.Mesh(pondGeometry, this.waterMaterial);
+    }
+    
+    // Position slightly below terrain for depth effect
+    const terrainHeight = this.terrain.getHeightAt(x, z);
+    const pondHeight = Math.min(terrainHeight - 1.5, this.waterLevel - 1);
+    
+    pondMesh.position.set(x, pondHeight, z);
+    pondMesh.rotation.x = -Math.PI / 2;
+    
+    this.waterMeshes.push(pondMesh);
+    this.waterBodies.push({
+      type: 'pond',
+      center: { x, z },
+      radius: radius,
+      mesh: pondMesh
+    });
+  }
+  
+  /**
+   * Create a mushroom at the specified location
+   */
+  createMushroom(x, z, size) {
+    const terrainHeight = this.terrain.getHeightAt(x, z);
+    
+    // Create mushroom group
+    const mushroomGroup = new THREE.Group();
+    
+    // Mushroom stem
+    const stemHeight = size * 0.8;
+    const stemRadius = size * 0.15;
+    const stemGeometry = new THREE.CylinderGeometry(stemRadius, stemRadius * 1.2, stemHeight, 8);
+    const stemMaterial = new THREE.MeshLambertMaterial({ 
+      color: 0xf0e6d2 // Cream/beige stem color
+    });
+    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+    stem.position.y = stemHeight / 2;
+    stem.castShadow = true;
+    stem.receiveShadow = true;
+    
+    // Mushroom cap
+    const capRadius = size * 0.4;
+    const capHeight = size * 0.3;
+    const capGeometry = new THREE.SphereGeometry(capRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    const capMaterial = new THREE.MeshLambertMaterial({ 
+      color: 0xd2691e // Brown/orange cap color
+    });
+    const cap = new THREE.Mesh(capGeometry, capMaterial);
+    cap.position.y = stemHeight + capHeight * 0.3;
+    cap.castShadow = true;
+    cap.receiveShadow = true;
+    
+    // Add spots to mushroom cap
+    const spotsGroup = new THREE.Group();
+    const numSpots = 3 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < numSpots; i++) {
+      const spotGeometry = new THREE.SphereGeometry(capRadius * 0.15, 8, 6);
+      const spotMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xffffff // White spots
+      });
+      const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+      
+      // Random position on cap
+      const angle = (Math.PI * 2 * i) / numSpots + Math.random() * 0.5;
+      const distance = capRadius * (0.3 + Math.random() * 0.4);
+      spot.position.x = Math.cos(angle) * distance;
+      spot.position.z = Math.sin(angle) * distance;
+      spot.position.y = stemHeight + capHeight * 0.5;
+      
+      spotsGroup.add(spot);
+    }
+    
+    mushroomGroup.add(stem);
+    mushroomGroup.add(cap);
+    mushroomGroup.add(spotsGroup);
+    
+    // Position mushroom on terrain
+    mushroomGroup.position.set(x, terrainHeight, z);
+    
+    // Add slight random rotation
+    mushroomGroup.rotation.y = Math.random() * Math.PI * 2;
+    
+    // Add to scene through water system for now (could be moved to vegetation system later)
+    this.waterMeshes.push(mushroomGroup);
+  }
+  
+  /**
+   * Create lily pads on a water body
+   */
+  createLilyPads(waterBody) {
+    if (waterBody.type !== 'lake' && waterBody.type !== 'pond') {
+      return; // Only add lily pads to lakes and ponds, not rivers
+    }
+    
+    const numPads = Math.floor(waterBody.radius * 0.3); // Density based on water body size
+    const waterSurfaceHeight = this.waterLevel - 0.8; // Slightly above water surface
+    
+    for (let i = 0; i < numPads; i++) {
+      // Random position within water body
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * waterBody.radius * 0.8; // Keep away from edges
+      
+      const x = waterBody.center.x + Math.cos(angle) * distance;
+      const z = waterBody.center.z + Math.sin(angle) * distance;
+      
+      // Check if position is actually in water
+      if (this.isInWater(x, z)) {
+        this.createSingleLilyPad(x, z, waterSurfaceHeight);
+      }
+    }
+  }
+  
+  /**
+   * Create a single lily pad at the specified position
+   */
+  createSingleLilyPad(x, z, height) {
+    // Create lily pad group
+    const lilyPadGroup = new THREE.Group();
+    
+    // Lily pad geometry - circular with a notch
+    const padRadius = 1.2 + Math.random() * 0.8; // Varied size
+    const padGeometry = new THREE.CircleGeometry(padRadius, 16);
+    
+    // Create notch by removing vertices (simple approach)
+    const positions = padGeometry.attributes.position.array;
+    const notchAngle = Math.random() * Math.PI * 2; // Random notch direction
+    
+    // Lily pad material
+    const padMaterial = new THREE.MeshLambertMaterial({
+      color: 0x228B22, // Forest green
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9
+    });
+    
+    const lilyPad = new THREE.Mesh(padGeometry, padMaterial);
+    lilyPad.rotation.x = -Math.PI / 2; // Lay flat on water
+    lilyPad.rotation.z = Math.random() * Math.PI * 2; // Random rotation
+    lilyPad.position.y = 0.05; // Slightly above water surface
+    
+    // Add some gentle animation (floating effect)
+    lilyPad.userData = {
+      originalY: lilyPad.position.y,
+      animationPhase: Math.random() * Math.PI * 2,
+      isLilyPad: true // Mark for collision detection
+    };
+    
+    lilyPad.castShadow = false; // Lily pads don't need to cast shadows
+    lilyPad.receiveShadow = true;
+    
+    lilyPadGroup.add(lilyPad);
+    
+    // Occasionally add a small white flower
+    if (Math.random() < 0.3) {
+      const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 6);
+      const flowerMaterial = new THREE.MeshLambertMaterial({
+        color: 0xffffff // White flower
+      });
+      const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+      flower.position.set(
+        (Math.random() - 0.5) * padRadius * 0.5,
+        0.1,
+        (Math.random() - 0.5) * padRadius * 0.5
+      );
+      flower.scale.setScalar(0.8 + Math.random() * 0.4);
+      lilyPadGroup.add(flower);
+    }
+    
+    // Position lily pad group
+    lilyPadGroup.position.set(x, height, z);
+    
+    this.lilyPads.push(lilyPadGroup);
+    this.waterMeshes.push(lilyPadGroup); // Add to water meshes for scene addition
+  }
+  
+  /**
+   * Generate lily pads for all water bodies
+   */
+  generateLilyPads() {
+    this.waterBodies.forEach(waterBody => {
+      this.createLilyPads(waterBody);
     });
   }
 
   /**
-   * Update water animation
+   * Update water animation with performance optimization
    */
-  update(deltaTime) {
+  update(deltaTime, camera) {
+    // Update custom shader material
     if (this.waterMaterial) {
       this.waterMaterial.uniforms.time.value += deltaTime;
     }
+    
+    // Update Water class instances (only the main lake now)
+    this.waterMeshes.forEach((mesh, index) => {
+      if (mesh.material && mesh.material.uniforms && mesh.material.uniforms.time) {
+        mesh.material.uniforms.time.value += deltaTime * 0.5;
+        
+        // Distance-based culling for Water class
+        if (camera && this.waterBodies[index]) {
+          const distance = camera.position.distanceTo(mesh.position);
+          
+          // Disable expensive Water class at distance
+          if (distance > 150) {
+            mesh.visible = false;
+          } else {
+            mesh.visible = true;
+            
+            // Update eye position for reflections when close
+            if (mesh.material.uniforms.eye && distance < 100) {
+              mesh.material.uniforms.eye.value.copy(camera.position);
+            }
+          }
+        }
+      }
+    });
+    
+    // Animate lily pads (gentle floating effect)
+    this.lilyPads.forEach(lilyPadGroup => {
+      const lilyPad = lilyPadGroup.children[0]; // First child is the pad mesh
+      if (lilyPad && lilyPad.userData.isLilyPad) {
+        lilyPad.userData.animationPhase += deltaTime * 0.5; // Slow gentle animation
+        const floatOffset = Math.sin(lilyPad.userData.animationPhase) * 0.03; // Subtle 3cm float
+        lilyPad.position.y = lilyPad.userData.originalY + floatOffset;
+      }
+    });
   }
 
   /**
@@ -261,15 +583,75 @@ export class WaterSystem {
   }
 
   /**
-   * Get water depth at position
+   * Get water depth at position with realistic depth gradients
    */
   getWaterDepth(x, z) {
     if (!this.isInWater(x, z)) {
       return 0;
     }
     
-    // Default depth for water bodies
-    return 2.5;
+    // Calculate depth based on distance from shore for each water body
+    for (const waterBody of this.waterBodies) {
+      if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+        const distance = Math.sqrt(
+          Math.pow(x - waterBody.center.x, 2) + Math.pow(z - waterBody.center.z, 2)
+        );
+        
+        if (distance <= waterBody.radius) {
+          // Calculate depth based on distance from shore
+          // Shallow at edges (0.5 units), deeper in center (2.5 units)
+          const distanceFromShore = waterBody.radius - distance;
+          const maxDepth = waterBody.type === 'lake' ? 2.5 : 2.0;
+          const shoreDepth = 0.5;
+          
+          // Linear interpolation from shore to center
+          const depthRatio = Math.min(distanceFromShore / (waterBody.radius * 0.7), 1.0);
+          return shoreDepth + (maxDepth - shoreDepth) * depthRatio;
+        }
+      } else if (waterBody.type === 'river' && waterBody.path) {
+        // Rivers are shallow everywhere (wadeable)
+        return 1.2;
+      }
+    }
+    
+    // Fallback depth
+    return 1.0;
+  }
+  
+  /**
+   * Check if tiger is standing on a lily pad
+   */
+  isOnLilyPad(x, z) {
+    for (const lilyPadGroup of this.lilyPads) {
+      const distance = Math.sqrt(
+        Math.pow(x - lilyPadGroup.position.x, 2) + 
+        Math.pow(z - lilyPadGroup.position.z, 2)
+      );
+      
+      // Check if tiger is within lily pad radius (approximately 1.5 units)
+      if (distance <= 1.5) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  /**
+   * Get lily pad height at position (for tiger to stand on)
+   */
+  getLilyPadHeight(x, z) {
+    for (const lilyPadGroup of this.lilyPads) {
+      const distance = Math.sqrt(
+        Math.pow(x - lilyPadGroup.position.x, 2) + 
+        Math.pow(z - lilyPadGroup.position.z, 2)
+      );
+      
+      if (distance <= 1.5) {
+        // Return lily pad surface height (slightly above water)
+        return lilyPadGroup.position.y + 0.1;
+      }
+    }
+    return null;
   }
 
   /**
@@ -327,6 +709,10 @@ export class WaterSystem {
   dispose() {
     if (this.waterMaterial) {
       this.waterMaterial.dispose();
+    }
+    
+    if (this.waterNormalsTexture) {
+      this.waterNormalsTexture.dispose();
     }
     
     this.waterMeshes.forEach(mesh => {

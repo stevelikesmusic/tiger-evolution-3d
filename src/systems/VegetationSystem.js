@@ -4,9 +4,10 @@ import * as THREE from 'three';
  * VegetationSystem - Manages procedural placement and rendering of jungle vegetation
  */
 export class VegetationSystem {
-  constructor(scene, terrain) {
+  constructor(scene, terrain, waterSystem = null) {
     this.scene = scene;
     this.terrain = terrain;
+    this.waterSystem = waterSystem;
     
     // Vegetation containers
     this.trees = [];
@@ -64,6 +65,13 @@ export class VegetationSystem {
     
     this.initMaterials();
     this.initGeometries();
+  }
+  
+  /**
+   * Set water system reference for vegetation placement
+   */
+  setWaterSystem(waterSystem) {
+    this.waterSystem = waterSystem;
   }
   
   /**
@@ -398,10 +406,36 @@ export class VegetationSystem {
     const height = this.terrain.getHeightAt(x, z);
     const slope = this.terrain.getSlope(x, z);
     
-    return height >= constraints.minHeight &&
-           height <= constraints.maxHeight &&
-           slope >= constraints.minSlope &&
-           slope <= constraints.maxSlope;
+    // Check basic terrain constraints
+    const terrainValid = height >= constraints.minHeight &&
+                        height <= constraints.maxHeight &&
+                        slope >= constraints.minSlope &&
+                        slope <= constraints.maxSlope;
+    
+    if (!terrainValid) return false;
+    
+    // Check if position is in water - exclude water areas from vegetation
+    if (this.waterSystem && this.waterSystem.isInWater(x, z)) {
+      return false;
+    }
+    
+    // Add buffer around water bodies to prevent vegetation at water's edge
+    if (this.waterSystem) {
+      const waterBodies = this.waterSystem.getWaterBodies();
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(x - waterBody.center.x, 2) + Math.pow(z - waterBody.center.z, 2)
+          );
+          // Add 3-unit buffer around water bodies
+          if (distance <= waterBody.radius + 3) {
+            return false;
+          }
+        }
+      }
+    }
+    
+    return true;
   }
   
   /**
