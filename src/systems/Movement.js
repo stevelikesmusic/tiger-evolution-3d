@@ -15,6 +15,7 @@ export class MovementSystem {
     this.isRunning = false;
     this.isCrouching = false;
     this.isJumping = false;
+    this.isDiving = false;
     this.isSwimming = false;
 
     // Input direction (normalized)
@@ -77,7 +78,7 @@ export class MovementSystem {
 
   setMovementInput(input) {
     // Tank controls - separate movement from rotation
-    const { direction, rotation, isRunning, isCrouching, isJumping } = input;
+    const { direction, rotation, isRunning, isCrouching, isJumping, isDiving } = input;
     
     // Store previous state for comparison
     const prevMoving = this.isMoving;
@@ -94,6 +95,7 @@ export class MovementSystem {
     this.isRunning = isRunning && this.isMoving;
     this.isCrouching = isCrouching;
     this.isJumping = isJumping;
+    this.isDiving = isDiving;
     
     // Log significant state changes for debugging
     if (prevMoving !== this.isMoving) {
@@ -203,7 +205,7 @@ export class MovementSystem {
     if (this.isJumping) {
       if (this.isSwimming) {
         // Swimming: jump input makes tiger swim upward
-        this.velocity.y = this.jumpForce * 0.5; // Reduced force for swimming
+        this.velocity.y = this.jumpForce * 0.6; // Swimming up force
       } else if (this.isGrounded) {
         // Land: normal jump
         this.velocity.y = this.jumpForce;
@@ -211,6 +213,15 @@ export class MovementSystem {
       }
       // Reset jumping state after applying jump force (one-time action)
       this.isJumping = false;
+    }
+    
+    if (this.isDiving) {
+      if (this.isSwimming) {
+        // Swimming: dive input makes tiger swim downward
+        this.velocity.y = -this.jumpForce * 0.8; // Diving down force (stronger than swimming up)
+      }
+      // Reset diving state after applying dive force (one-time action)
+      this.isDiving = false;
     }
   }
 
@@ -430,6 +441,7 @@ export class MovementSystem {
     this.isRunning = false;
     this.isCrouching = false;
     this.isJumping = false;
+    this.isDiving = false;
     this.isGrounded = true;
     this.targetRotation = 0;
     if (this.tiger && this.tiger.rotation) {

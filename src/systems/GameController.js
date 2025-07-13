@@ -163,7 +163,8 @@ export class GameController {
       rotation: this.input.getRotationDirection(), // Only left/right rotation (A/D)
       isRunning: this.input.isRunning(),
       isCrouching: this.input.isCrouching(),
-      isJumping: this.input.isJumping()
+      isJumping: this.input.isJumping(),
+      isDiving: this.input.isDiving() // R key for diving in water
     };
 
     // Log input data when there's significant input (throttled)
@@ -182,6 +183,7 @@ export class GameController {
           isRunning: movementInput.isRunning,
           isCrouching: movementInput.isCrouching,
           isJumping: movementInput.isJumping,
+          isDiving: movementInput.isDiving,
           pointerLocked: this.isPointerLocked
         }, null, 2));
       }

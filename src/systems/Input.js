@@ -11,7 +11,8 @@ export class InputSystem {
       jump: false,
       crouch: false,
       run: false,
-      interact: false
+      interact: false,
+      dive: false
     };
     
     // Track which keys are currently physically pressed
@@ -130,6 +131,9 @@ export class InputSystem {
       case 'KeyE':
         this.keys.interact = true;
         break;
+      case 'KeyR':
+        this.keys.dive = true;
+        break;
     }
     
     // Schedule key validation
@@ -170,6 +174,9 @@ export class InputSystem {
         break;
       case 'KeyE':
         this.keys.interact = false;
+        break;
+      case 'KeyR':
+        this.keys.dive = false;
         break;
     }
     
@@ -361,7 +368,8 @@ export class InputSystem {
       jump: false,
       crouch: false,
       run: false,
-      interact: false
+      interact: false,
+      dive: false
     };
     this.physicalKeys.clear();
     this.resetVirtualMovement();
@@ -394,7 +402,8 @@ export class InputSystem {
       jump: this.physicalKeys.has('Space'),
       run: this.physicalKeys.has('ShiftLeft') || this.physicalKeys.has('ShiftRight'),
       crouch: this.physicalKeys.has('ControlLeft') || this.physicalKeys.has('ControlRight'),
-      interact: this.physicalKeys.has('KeyE')
+      interact: this.physicalKeys.has('KeyE'),
+      dive: this.physicalKeys.has('KeyR')
     };
     
     let hasStuckKeys = false;
@@ -442,6 +451,10 @@ export class InputSystem {
   
   isJumping() {
     return this.keys.jump;
+  }
+
+  isDiving() {
+    return this.keys.dive;
   }
 
   // Update method (call once per frame)

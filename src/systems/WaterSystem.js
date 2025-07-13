@@ -470,20 +470,16 @@ export class WaterSystem {
     
     lilyPadGroup.add(lilyPad);
     
-    // Occasionally add a small white flower
-    if (Math.random() < 0.3) {
-      const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 6);
-      const flowerMaterial = new THREE.MeshLambertMaterial({
-        color: 0xffffff // White flower
-      });
-      const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
-      flower.position.set(
-        (Math.random() - 0.5) * padRadius * 0.5,
+    // Add beautiful lotus flowers with realistic petals
+    if (Math.random() < 0.4) { // Slightly higher chance for flowers
+      const lotusFlower = this.createLotusFlower();
+      lotusFlower.position.set(
+        (Math.random() - 0.5) * padRadius * 0.3, // Closer to center
         0.1,
-        (Math.random() - 0.5) * padRadius * 0.5
+        (Math.random() - 0.5) * padRadius * 0.3
       );
-      flower.scale.setScalar(0.8 + Math.random() * 0.4);
-      lilyPadGroup.add(flower);
+      lotusFlower.scale.setScalar(1.5 + Math.random() * 0.8); // Much larger flowers
+      lilyPadGroup.add(lotusFlower);
     }
     
     // Position lily pad group
@@ -491,6 +487,91 @@ export class WaterSystem {
     
     this.lilyPads.push(lilyPadGroup);
     this.waterMeshes.push(lilyPadGroup); // Add to water meshes for scene addition
+  }
+  
+  /**
+   * Create a beautiful lotus flower with realistic petals
+   */
+  createLotusFlower() {
+    const flowerGroup = new THREE.Group();
+    
+    // Flower center (yellow/orange) - larger
+    const centerGeometry = new THREE.SphereGeometry(0.15, 8, 6);
+    const centerMaterial = new THREE.MeshLambertMaterial({
+      color: 0xffd700 // Golden yellow center
+    });
+    const center = new THREE.Mesh(centerGeometry, centerMaterial);
+    center.position.y = 0.05;
+    flowerGroup.add(center);
+    
+    // Create petals in multiple layers
+    const petalColors = [
+      0xffeef0, // Very light pink/white
+      0xffc0cb, // Light pink
+      0xff69b4  // Hot pink (inner petals)
+    ];
+    
+    const petalLayers = [
+      { count: 8, radius: 0.4, height: 0.02, color: petalColors[0] }, // Outer layer - bigger
+      { count: 6, radius: 0.3, height: 0.03, color: petalColors[1] }, // Middle layer - bigger
+      { count: 4, radius: 0.2, height: 0.04, color: petalColors[2] }  // Inner layer - bigger
+    ];
+    
+    petalLayers.forEach((layer, layerIndex) => {
+      for (let i = 0; i < layer.count; i++) {
+        // Create individual petal - larger size
+        const petalGeometry = new THREE.ConeGeometry(0.12, 0.35, 8);
+        const petalMaterial = new THREE.MeshLambertMaterial({
+          color: layer.color,
+          transparent: true,
+          opacity: 0.9
+        });
+        const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+        
+        // Position petal around flower center
+        const angle = (Math.PI * 2 * i) / layer.count + (layerIndex * 0.3); // Offset layers
+        const x = Math.cos(angle) * layer.radius;
+        const z = Math.sin(angle) * layer.radius;
+        
+        petal.position.set(x, layer.height, z);
+        
+        // Rotate petal to face outward and tilt slightly upward
+        petal.rotation.y = angle + Math.PI / 2; // Face outward
+        petal.rotation.z = -Math.PI / 6; // Tilt upward 30 degrees
+        petal.rotation.x = Math.PI / 2; // Orient correctly
+        
+        // Add slight random variation
+        petal.rotation.z += (Math.random() - 0.5) * 0.3;
+        petal.scale.setScalar(0.8 + Math.random() * 0.4);
+        
+        flowerGroup.add(petal);
+      }
+    });
+    
+    // Add small stamens around the center
+    for (let i = 0; i < 12; i++) {
+      const stamenGeometry = new THREE.SphereGeometry(0.015, 4, 4);
+      const stamenMaterial = new THREE.MeshLambertMaterial({
+        color: 0x8b4513 // Brown stamens
+      });
+      const stamen = new THREE.Mesh(stamenGeometry, stamenMaterial);
+      
+      const angle = (Math.PI * 2 * i) / 12;
+      const radius = 0.06;
+      stamen.position.set(
+        Math.cos(angle) * radius,
+        0.07,
+        Math.sin(angle) * radius
+      );
+      
+      flowerGroup.add(stamen);
+    }
+    
+    // Add slight upward and random rotation
+    flowerGroup.rotation.x = Math.random() * 0.2 - 0.1; // Slight tilt
+    flowerGroup.rotation.y = Math.random() * Math.PI * 2; // Random rotation
+    
+    return flowerGroup;
   }
   
   /**

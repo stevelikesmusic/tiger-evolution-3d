@@ -13,7 +13,7 @@ export class TigerModel {
   createMesh() {
     // Create a group to hold all tiger parts
     this.mesh = new THREE.Group();
-    this.mesh.position.set(0, 0.5, 0); // Slightly above ground
+    this.mesh.position.set(0, 1.5, 0); // Raised higher so paws touch ground properly
     this.mesh.scale.set(1, 1, 1); // Young tiger scale
 
     // Main body (orange box)
@@ -84,8 +84,149 @@ export class TigerModel {
     this.tailTip.position.set(0, 0.8, -2.3); // Back of tiger (negative Z)
     this.mesh.add(this.tailTip);
 
+    // Add tiger legs
+    this.addLegs();
+    
     // Add black stripes to body
     this.addStripes();
+  }
+
+  addLegs() {
+    // Create leg material (same orange as body)
+    const legMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff6600 // Same orange as body
+    });
+    
+    // Paw material (darker for contrast)
+    const pawMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xcc4400 // Darker orange/brown for paws
+    });
+    
+    // Tiger leg proportions - realistic tiger anatomy
+    const upperLegLength = 0.6;
+    const lowerLegLength = 0.5;
+    const legThickness = 0.15;
+    const pawSize = 0.2;
+    
+    // Front legs (closer to head, positive Z)
+    this.createLeg(-0.5, 0.8, 'frontLeft', legMaterial, pawMaterial, upperLegLength, lowerLegLength, legThickness, pawSize);
+    this.createLeg(0.5, 0.8, 'frontRight', legMaterial, pawMaterial, upperLegLength, lowerLegLength, legThickness, pawSize);
+    
+    // Back legs (closer to tail, negative Z)  
+    this.createLeg(-0.5, -0.8, 'backLeft', legMaterial, pawMaterial, upperLegLength, lowerLegLength, legThickness, pawSize);
+    this.createLeg(0.5, -0.8, 'backRight', legMaterial, pawMaterial, upperLegLength, lowerLegLength, legThickness, pawSize);
+  }
+  
+  createLeg(x, z, legName, legMaterial, pawMaterial, upperLength, lowerLength, thickness, pawSize) {
+    // Create leg group for easier animation later
+    const legGroup = new THREE.Group();
+    
+    // Upper leg (thigh/shoulder)
+    const upperLegGeometry = new THREE.CylinderGeometry(thickness, thickness * 0.8, upperLength, 8);
+    const upperLeg = new THREE.Mesh(upperLegGeometry, legMaterial);
+    upperLeg.position.set(0, -upperLength / 2, 0);
+    legGroup.add(upperLeg);
+    
+    // Lower leg (shin/forearm)
+    const lowerLegGeometry = new THREE.CylinderGeometry(thickness * 0.8, thickness * 0.6, lowerLength, 8);
+    const lowerLeg = new THREE.Mesh(lowerLegGeometry, legMaterial);
+    lowerLeg.position.set(0, -upperLength - lowerLength / 2, 0);
+    legGroup.add(lowerLeg);
+    
+    // Paw (foot)
+    const pawGeometry = new THREE.SphereGeometry(pawSize, 8, 6);
+    const paw = new THREE.Mesh(pawGeometry, pawMaterial);
+    paw.position.set(0, -upperLength - lowerLength - pawSize * 0.3, 0);
+    paw.scale.set(1, 0.6, 1.2); // Flatten slightly and make longer for realistic paw shape
+    legGroup.add(paw);
+    
+    // Add toe details (small black claws)
+    const clawMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    for (let i = 0; i < 4; i++) {
+      const clawGeometry = new THREE.ConeGeometry(0.02, 0.08, 4);
+      const claw = new THREE.Mesh(clawGeometry, clawMaterial);
+      
+      // Position claws around front of paw
+      const angle = (Math.PI * (i - 1.5)) / 3; // Spread across front of paw
+      claw.position.set(
+        Math.sin(angle) * pawSize * 0.8,
+        -upperLength - lowerLength - pawSize * 0.7,
+        Math.cos(angle) * pawSize * 0.8
+      );
+      claw.rotation.x = Math.PI; // Point downward
+      legGroup.add(claw);
+    }
+    
+    // Position entire leg group under body (raised higher to avoid ground clipping)
+    legGroup.position.set(x, 0.1, z); // Attach under body, higher position
+    
+    // Add stripes to the leg
+    this.addLegStripes(legGroup, upperLength, lowerLength, thickness);
+    
+    // Store leg reference for potential animation
+    this[legName] = legGroup;
+    this.mesh.add(legGroup);
+  }
+
+  addLegStripes(legGroup, upperLength, lowerLength, thickness) {
+    // Create stripe material
+    const stripeMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x000000,
+      transparent: false,
+      depthTest: false,
+      depthWrite: false
+    });
+    
+    // Upper leg stripes (3-4 horizontal bands)
+    for (let i = 0; i < 3; i++) {
+      const stripeGeometry = new THREE.RingGeometry(thickness * 0.95, thickness * 1.05, 8);
+      const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+      stripe.position.set(0, -0.15 - (i * 0.2), 0);
+      stripe.rotation.x = Math.PI / 2; // Rotate to wrap around leg
+      stripe.renderOrder = 1;
+      legGroup.add(stripe);
+    }
+    
+    // Lower leg stripes (2-3 horizontal bands)
+    for (let i = 0; i < 2; i++) {
+      const stripeGeometry = new THREE.RingGeometry(thickness * 0.7, thickness * 0.85, 8);
+      const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+      stripe.position.set(0, -upperLength - 0.15 - (i * 0.2), 0);
+      stripe.rotation.x = Math.PI / 2; // Rotate to wrap around leg
+      stripe.renderOrder = 1;
+      legGroup.add(stripe);
+    }
+    
+    // Alternative approach: thin rectangular stripes for better visibility
+    for (let i = 0; i < 4; i++) {
+      // Upper leg stripes
+      const upperStripeGeometry = new THREE.BoxGeometry(thickness * 0.3, 0.04, thickness * 0.3);
+      const upperStripe = new THREE.Mesh(upperStripeGeometry, stripeMaterial);
+      upperStripe.position.set(thickness * 0.9, -0.15 - (i * 0.15), 0);
+      upperStripe.renderOrder = 1;
+      legGroup.add(upperStripe);
+      
+      // Mirror on other side
+      const upperStripeLeft = new THREE.Mesh(upperStripeGeometry, stripeMaterial);
+      upperStripeLeft.position.set(-thickness * 0.9, -0.15 - (i * 0.15), 0);
+      upperStripeLeft.renderOrder = 1;
+      legGroup.add(upperStripeLeft);
+      
+      // Lower leg stripes (fewer)
+      if (i < 3) {
+        const lowerStripeGeometry = new THREE.BoxGeometry(thickness * 0.25, 0.04, thickness * 0.25);
+        const lowerStripe = new THREE.Mesh(lowerStripeGeometry, stripeMaterial);
+        lowerStripe.position.set(thickness * 0.7, -upperLength - 0.15 - (i * 0.15), 0);
+        lowerStripe.renderOrder = 1;
+        legGroup.add(lowerStripe);
+        
+        // Mirror on other side
+        const lowerStripeLeft = new THREE.Mesh(lowerStripeGeometry, stripeMaterial);
+        lowerStripeLeft.position.set(-thickness * 0.7, -upperLength - 0.15 - (i * 0.15), 0);
+        lowerStripeLeft.renderOrder = 1;
+        legGroup.add(lowerStripeLeft);
+      }
+    }
   }
 
   addStripes() {
