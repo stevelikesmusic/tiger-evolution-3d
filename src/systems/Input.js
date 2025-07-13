@@ -12,7 +12,9 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      dive: false
+      dive: false,
+      forward_underwater: false,
+      backward_underwater: false
     };
     
     // Track which keys are currently physically pressed
@@ -134,6 +136,12 @@ export class InputSystem {
       case 'KeyR':
         this.keys.dive = true;
         break;
+      case 'KeyG':
+        this.keys.forward_underwater = true;
+        break;
+      case 'KeyB':
+        this.keys.backward_underwater = true;
+        break;
     }
     
     // Schedule key validation
@@ -177,6 +185,12 @@ export class InputSystem {
         break;
       case 'KeyR':
         this.keys.dive = false;
+        break;
+      case 'KeyG':
+        this.keys.forward_underwater = false;
+        break;
+      case 'KeyB':
+        this.keys.backward_underwater = false;
         break;
     }
     
@@ -369,7 +383,9 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      dive: false
+      dive: false,
+      forward_underwater: false,
+      backward_underwater: false
     };
     this.physicalKeys.clear();
     this.resetVirtualMovement();
@@ -403,7 +419,9 @@ export class InputSystem {
       run: this.physicalKeys.has('ShiftLeft') || this.physicalKeys.has('ShiftRight'),
       crouch: this.physicalKeys.has('ControlLeft') || this.physicalKeys.has('ControlRight'),
       interact: this.physicalKeys.has('KeyE'),
-      dive: this.physicalKeys.has('KeyR')
+      dive: this.physicalKeys.has('KeyR'),
+      forward_underwater: this.physicalKeys.has('KeyG'),
+      backward_underwater: this.physicalKeys.has('KeyB')
     };
     
     let hasStuckKeys = false;
@@ -455,6 +473,21 @@ export class InputSystem {
 
   isDiving() {
     return this.keys.dive;
+  }
+
+  // Get underwater movement direction (W=up, S=down, A=same, D=same, G=forward, B=backward)
+  getUnderwaterMovementDirection() {
+    const direction = { x: 0, y: 0, z: 0 };
+    
+    // Simplified underwater controls as per user's plan
+    if (this.keys.forward) direction.y = 1;   // W = Swim up
+    if (this.keys.backward) direction.y = -1; // S = Swim down  
+    if (this.keys.left) direction.x = 1;      // A = same (strafe right)
+    if (this.keys.right) direction.x = -1;    // D = same (strafe left)
+    if (this.keys.forward_underwater) direction.z = 1;  // G = forward
+    if (this.keys.backward_underwater) direction.z = -1; // B = backward
+    
+    return direction;
   }
 
   // Update method (call once per frame)

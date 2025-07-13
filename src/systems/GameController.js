@@ -7,6 +7,7 @@ import { MovementSystem } from './Movement.js';
 import { VegetationSystem } from './VegetationSystem.js';
 import { TerrainRenderer } from './TerrainRenderer.js';
 import { WaterSystem } from './WaterSystem.js';
+import { UnderwaterSystem } from './UnderwaterSystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -23,6 +24,8 @@ export class GameController {
     // Game state
     this.isPaused = false;
     this.isPointerLocked = false;
+    this.isUnderwater = false;
+    this.underwaterSystemReady = false;
 
     // Initialize core systems
     this.initializeSystems();
@@ -63,8 +66,28 @@ export class GameController {
     this.vegetationSystem = new VegetationSystem(this.scene, this.terrain, this.waterSystem);
     this.vegetationSystem.generateVegetation(12345); // Use consistent seed - now avoids water
 
+    // Create underwater system
+    console.log('🎮 GameController: Creating underwater system...');
+    this.underwaterSystem = new UnderwaterSystem(this.terrain, this.waterSystem);
+    
+    // Add underwater meshes to scene (initially hidden)
+    const underwaterMeshes = this.underwaterSystem.getUnderwaterMeshes();
+    console.log(`🎮 GameController: Adding ${underwaterMeshes.length} underwater meshes to scene`);
+    underwaterMeshes.forEach((mesh, index) => {
+      mesh.visible = false; // Hidden by default
+      this.scene.add(mesh);
+      console.log(`  Added mesh ${index + 1}: ${mesh.constructor.name} at (${mesh.position.x.toFixed(1)}, ${mesh.position.y.toFixed(1)}, ${mesh.position.z.toFixed(1)})`);
+    });
+    
+    // Mark underwater system as ready
+    this.underwaterSystemReady = true;
+    console.log('🎮 GameController: Underwater system ready for teleportation');
+
     // Connect water system to movement system
     this.movementSystem.setWaterSystem(this.waterSystem);
+    
+    // Connect underwater system to movement system
+    this.movementSystem.setUnderwaterSystem(this.underwaterSystem);
 
     // Position tiger on terrain surface
     this.positionTigerOnTerrain();
@@ -119,6 +142,24 @@ export class GameController {
         this.waterSystem.update(deltaTime, this.camera.camera);
       }
       
+      // Update underwater system (for seaweed animation)
+      if (this.underwaterSystem) {
+        this.underwaterSystem.update(deltaTime);
+        
+        // Check bubble collisions when underwater
+        if (this.isUnderwater) {
+          const poppedBubbles = this.underwaterSystem.checkBubbleCollisions(
+            this.tiger.position.x,
+            this.tiger.position.y,
+            this.tiger.position.z
+          );
+          
+          if (poppedBubbles.length > 0) {
+            console.log(`💥 Popped ${poppedBubbles.length} bubble(s)!`);
+          }
+        }
+      }
+      
       // Update camera
       this.camera.update(deltaTime);
       
@@ -128,6 +169,122 @@ export class GameController {
     } catch (error) {
       console.error('GameController update error:', error);
       // Continue running despite errors
+    }
+  }
+
+  teleportToUnderwaterTerrain() {
+    if (!this.isUnderwater && this.underwaterSystemReady) {
+      // Teleport to underwater terrain
+      this.isUnderwater = true;
+      this.underwaterSystem.activate();
+      console.log('🌊 TELEPORTING TO UNDERWATER TERRAIN');
+      
+      // Hide surface water/lakes
+      const waterMeshes = this.waterSystem.getWaterMeshes();
+      waterMeshes.forEach(mesh => {
+        mesh.visible = false;
+      });
+      
+      // Hide vegetation (trees) - replace with seagrass in underwater
+      if (this.vegetationSystem) {
+        const vegMeshes = this.vegetationSystem.getVegetationMeshes();
+        vegMeshes.forEach(mesh => {
+          mesh.visible = false;
+        });
+      }
+      
+      // Change terrain color to brown underwater
+      const terrainMesh = this.terrainRenderer.getMesh();
+      if (terrainMesh && terrainMesh.material) {
+        terrainMesh.material.color.setHex(0x8B4513); // Brown underwater ground
+      }
+      
+      // Find the nearest water body center for teleportation
+      const waterBodies = this.waterSystem.getWaterBodies();
+      const tigerPos = this.tiger.position;
+      let nearestWaterBody = null;
+      let minDistance = Infinity;
+      
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(tigerPos.x - waterBody.center.x, 2) + 
+            Math.pow(tigerPos.z - waterBody.center.z, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestWaterBody = waterBody;
+          }
+        }
+      }
+      
+      if (nearestWaterBody) {
+        // Store surface position before teleporting
+        const surfaceX = this.tiger.position.x;
+        const surfaceZ = this.tiger.position.z;
+        
+        // Teleport to underwater terrain level - much safer positioning
+        const terrainHeight = this.terrain.getHeightAt(nearestWaterBody.center.x, nearestWaterBody.center.z);
+        const underwaterDepth = 8 + (nearestWaterBody.radius * 0.1);
+        const underwaterY = terrainHeight - underwaterDepth + 3.0; // Higher above floor for safety
+        
+        // Reset velocity to prevent momentum issues
+        this.movementSystem.setVelocity(0, 0, 0);
+        
+        this.tiger.position.set(
+          nearestWaterBody.center.x,
+          underwaterY,
+          nearestWaterBody.center.z
+        );
+        
+        console.log(`🐅 Tiger safely teleported to underwater at (${nearestWaterBody.center.x}, ${underwaterY.toFixed(1)}, ${nearestWaterBody.center.z})`);
+      }
+      
+      // Change to underwater controls AFTER positioning
+      this.movementSystem.setUnderwaterMode(true);
+    } else if (!this.underwaterSystemReady) {
+      console.log('⚠️ Underwater system not ready yet, please wait...');
+    }
+  }
+
+  teleportToSurface() {
+    if (this.isUnderwater) {
+      // Teleport back to surface
+      this.isUnderwater = false;
+      this.underwaterSystem.deactivate();
+      console.log('🏊 TELEPORTING BACK TO SURFACE');
+      
+      // Show surface water/lakes again
+      const waterMeshes = this.waterSystem.getWaterMeshes();
+      waterMeshes.forEach(mesh => {
+        mesh.visible = true;
+      });
+      
+      // Show vegetation (trees) again
+      if (this.vegetationSystem) {
+        const vegMeshes = this.vegetationSystem.getVegetationMeshes();
+        vegMeshes.forEach(mesh => {
+          mesh.visible = true;
+        });
+      }
+      
+      // Restore terrain color to normal
+      const terrainMesh = this.terrainRenderer.getMesh();
+      if (terrainMesh && terrainMesh.material) {
+        terrainMesh.material.color.setHex(0x3a5f3a); // Original green terrain color
+      }
+      
+      // Reset velocity first to prevent conflicts
+      this.movementSystem.setVelocity(0, 0, 0);
+      
+      // Keep same X,Z position but move to safe surface level
+      const terrainHeight = this.terrain.getHeightAt(this.tiger.position.x, this.tiger.position.z);
+      this.tiger.position.y = terrainHeight + 2.5; // Higher surface level for safety
+      
+      console.log(`🐅 Tiger safely teleported to surface at height: ${this.tiger.position.y.toFixed(1)}`);
+      
+      // Return to surface controls AFTER safe positioning
+      this.movementSystem.setUnderwaterMode(false);
     }
   }
 
@@ -157,14 +314,17 @@ export class GameController {
   }
 
   processInput() {
-    // Get tank controls input - separate movement and rotation
+    // Get movement input based on underwater mode
     const movementInput = {
-      direction: this.input.getMovementDirection(), // Only forward/backward (W/S)
-      rotation: this.input.getRotationDirection(), // Only left/right rotation (A/D)
+      direction: this.isUnderwater ? 
+        this.input.getUnderwaterMovementDirection() : // Underwater: WASD for 3D movement
+        this.input.getMovementDirection(), // Surface: W/S forward/backward only
+      rotation: this.isUnderwater ? 0 : this.input.getRotationDirection(), // No rotation underwater
       isRunning: this.input.isRunning(),
       isCrouching: this.input.isCrouching(),
       isJumping: this.input.isJumping(),
-      isDiving: this.input.isDiving() // R key for diving in water
+      isDiving: this.input.isDiving(), // R key for diving in water
+      isUnderwaterMode: this.isUnderwater
     };
 
     // Log input data when there's significant input (throttled)
@@ -187,6 +347,19 @@ export class GameController {
           pointerLocked: this.isPointerLocked
         }, null, 2));
       }
+    }
+
+    // Handle teleportation between surface and underwater terrain
+    if (movementInput.isDiving && !this.isUnderwater) {
+      // R key: Teleport to underwater terrain (only when on surface)
+      this.teleportToUnderwaterTerrain();
+    }
+    
+    if (movementInput.isJumping && this.isUnderwater) {
+      // Space key while underwater: Teleport back to surface
+      this.teleportToSurface();
+      // Don't pass jumping to movement system when teleporting
+      movementInput.isJumping = false;
     }
 
     // Apply to movement system

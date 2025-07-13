@@ -17,6 +17,8 @@ export class MovementSystem {
     this.isJumping = false;
     this.isDiving = false;
     this.isSwimming = false;
+    this.isUnderwaterMode = false;
+    this.isInsideLog = false;
 
     // Input direction (normalized)
     this.inputDirection = new THREE.Vector3(0, 0, 0);
@@ -44,6 +46,16 @@ export class MovementSystem {
 
   setWaterSystem(waterSystem) {
     this.waterSystem = waterSystem;
+  }
+
+  setUnderwaterMode(isUnderwater) {
+    this.isUnderwaterMode = isUnderwater;
+    this.isInsideLog = false; // Reset log state when changing modes
+    console.log(`🌊 Movement system underwater mode: ${isUnderwater ? 'ON' : 'OFF'}`);
+  }
+
+  setUnderwaterSystem(underwaterSystem) {
+    this.underwaterSystem = underwaterSystem;
   }
 
   updateSwimmingState() {
@@ -77,21 +89,30 @@ export class MovementSystem {
   }
 
   setMovementInput(input) {
-    // Tank controls - separate movement from rotation
-    const { direction, rotation, isRunning, isCrouching, isJumping, isDiving } = input;
+    // Handle both surface and underwater movement
+    const { direction, rotation, isRunning, isCrouching, isJumping, isDiving, isUnderwaterMode } = input;
     
     // Store previous state for comparison
     const prevMoving = this.isMoving;
     
-    // Store movement input (forward/backward only)
-    this.inputDirection.set(0, 0, direction.z);
-    
-    // Store rotation input separately
-    this.rotationInput = rotation || 0;
-    
-    // Update movement state - only forward/backward movement counts as "moving"
-    const movementMagnitude = Math.abs(direction.z);
-    this.isMoving = movementMagnitude > 0.01;
+    // Store movement input based on mode
+    if (isUnderwaterMode) {
+      // Underwater: store full 3D movement (x=left/right, y=up/down, z=forward/back)
+      this.inputDirection.set(direction.x, direction.y, direction.z);
+      this.rotationInput = 0; // No rotation in underwater mode
+      
+      // Underwater: any movement in any direction counts as "moving"
+      const movementMagnitude = Math.abs(direction.x) + Math.abs(direction.y) + Math.abs(direction.z);
+      this.isMoving = movementMagnitude > 0.01;
+    } else {
+      // Surface: store forward/backward only
+      this.inputDirection.set(0, 0, direction.z);
+      this.rotationInput = rotation || 0;
+      
+      // Surface: only forward/backward movement counts as "moving"
+      const movementMagnitude = Math.abs(direction.z);
+      this.isMoving = movementMagnitude > 0.01;
+    }
     this.isRunning = isRunning && this.isMoving;
     this.isCrouching = isCrouching;
     this.isJumping = isJumping;
@@ -149,14 +170,24 @@ export class MovementSystem {
   }
 
   applyMovementForces(deltaTime) {
+    if (this.isUnderwaterMode) {
+      // Underwater movement: direct 3D movement
+      this.applyUnderwaterMovement(deltaTime);
+    } else {
+      // Surface movement: tank controls
+      this.applySurfaceMovement(deltaTime);
+    }
+  }
+
+  applySurfaceMovement(deltaTime) {
     // Tank controls - movement only in tiger's facing direction
-    const forwardBackward = this.inputDirection.z; // -1 for forward, +1 for backward
+    const forwardBackward = this.inputDirection.z;
     
     // Check if there's any movement input
     const hasMovementInput = Math.abs(forwardBackward) > this.minimumMovementThreshold;
     
     if (!hasMovementInput) {
-      // Apply friction when not moving - use stronger friction on lily pads
+      // Apply friction when not moving
       const frictionMultiplier = this.getCurrentFriction();
       this.velocity.x *= frictionMultiplier;
       this.velocity.z *= frictionMultiplier;
@@ -165,40 +196,71 @@ export class MovementSystem {
 
     // Calculate target velocity based on tiger's facing direction
     const speed = this.getCurrentSpeed();
-    
-    // Get tiger's forward direction vector
-    // Tiger faces positive Z at rotation 0 (forward in Three.js coordinate system)
     const tigerRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
     
     // Calculate forward direction using trigonometry
-    // At rotation = 0: tiger faces +Z (forward)
-    // As rotation increases (counter-clockwise): direction changes
-    const forwardX = Math.sin(tigerRotation);   // X component of forward vector
-    const forwardZ = Math.cos(tigerRotation);   // Z component of forward vector
-    
+    const forwardX = Math.sin(tigerRotation);
+    const forwardZ = Math.cos(tigerRotation);
     
     // Apply movement in tiger's facing direction
-    // Note: forwardBackward is positive for forward (W), negative for backward (S)
-    // Tiger faces positive Z, so W should move in positive Z direction
     const targetVelocityX = forwardX * forwardBackward * speed;
     const targetVelocityZ = forwardZ * forwardBackward * speed;
 
-    // Tank controls: immediately change direction, smoothly change speed
-    if (hasMovementInput) {
-      // Enhanced acceleration on lily pads for more responsive control
-      const baseAcceleration = this.acceleration;
-      const isOnLilyPad = this.waterSystem && this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z);
-      const accelerationMultiplier = isOnLilyPad ? 1.5 : 1.0; // Faster response on lily pads
-      
-      const accelerationFactor = Math.min(1.0, baseAcceleration * accelerationMultiplier * deltaTime);
-      this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
-      this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
-    } else {
-      // Apply friction when not moving - use enhanced friction
-      const frictionMultiplier = this.getCurrentFriction();
-      this.velocity.x *= frictionMultiplier;
-      this.velocity.z *= frictionMultiplier;
+    // Enhanced acceleration on lily pads
+    const baseAcceleration = this.acceleration;
+    const isOnLilyPad = this.waterSystem && this.waterSystem.isOnLilyPad(this.tiger.position.x, this.tiger.position.z);
+    const accelerationMultiplier = isOnLilyPad ? 1.5 : 1.0;
+    
+    const accelerationFactor = Math.min(1.0, baseAcceleration * accelerationMultiplier * deltaTime);
+    this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
+    this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
+  }
+
+  applyUnderwaterMovement(deltaTime) {
+    // Check if tiger is inside a log for special controls
+    const wasInsideLog = this.isInsideLog;
+    this.isInsideLog = this.underwaterSystem ? 
+      this.underwaterSystem.isInsideLog(this.tiger.position.x, this.tiger.position.y, this.tiger.position.z) : 
+      false;
+    
+    if (wasInsideLog !== this.isInsideLog) {
+      console.log(`🪵 Tiger ${this.isInsideLog ? 'entered' : 'exited'} log tunnel`);
     }
+
+    // Underwater movement: full 3D movement
+    const leftRight = this.inputDirection.x;   // A/D keys (strafe)
+    const upDown = this.inputDirection.y;      // W/S keys (up/down)
+    const forwardBack = this.inputDirection.z; // G/B keys (forward/backward)
+    
+    // Check if there's any movement input
+    const hasMovementInput = Math.abs(leftRight) > this.minimumMovementThreshold || 
+                            Math.abs(upDown) > this.minimumMovementThreshold ||
+                            Math.abs(forwardBack) > this.minimumMovementThreshold;
+    
+    if (!hasMovementInput) {
+      // Apply underwater friction
+      const underwaterFriction = this.isInsideLog ? 0.95 : 0.9; // Less friction inside logs
+      this.velocity.x *= underwaterFriction;
+      this.velocity.y *= underwaterFriction;
+      this.velocity.z *= underwaterFriction;
+      return;
+    }
+
+    // Calculate target velocities for underwater movement
+    const speed = this.getCurrentSpeed();
+    const speedMultiplier = this.isInsideLog ? 1.3 : 1.0; // Faster movement inside logs
+    
+    const targetVelocityX = leftRight * speed * speedMultiplier;  // A/D = strafe left/right
+    const targetVelocityY = upDown * speed * speedMultiplier;     // W/S = up/down
+    const targetVelocityZ = forwardBack * speed * speedMultiplier; // G/B = forward/backward
+
+    // Apply underwater movement with responsive acceleration
+    const underwaterAcceleration = this.acceleration * (this.isInsideLog ? 1.5 : 1.2);
+    const accelerationFactor = Math.min(1.0, underwaterAcceleration * deltaTime);
+    
+    this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
+    this.velocity.y = this.velocity.y + (targetVelocityY - this.velocity.y) * accelerationFactor;
+    this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
   }
 
   applyJump() {
@@ -443,6 +505,8 @@ export class MovementSystem {
     this.isJumping = false;
     this.isDiving = false;
     this.isGrounded = true;
+    this.isUnderwaterMode = false;
+    this.isInsideLog = false;
     this.targetRotation = 0;
     if (this.tiger && this.tiger.rotation) {
       this.tiger.rotation.y = 0;

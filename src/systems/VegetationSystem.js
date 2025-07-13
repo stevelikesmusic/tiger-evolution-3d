@@ -533,6 +533,13 @@ export class VegetationSystem {
       total: this.trees.length + this.bushes.length + this.grass.length + this.foliage.length
     };
   }
+
+  /**
+   * Get all vegetation meshes for hiding/showing
+   */
+  getVegetationMeshes() {
+    return [this.treeGroup, this.bushGroup, this.grassGroup, this.foliageGroup];
+  }
   
   /**
    * Dispose of vegetation system
