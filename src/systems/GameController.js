@@ -66,6 +66,7 @@ export class GameController {
     this.vegetationSystem = new VegetationSystem(this.scene, this.terrain, this.waterSystem);
     this.vegetationSystem.generateVegetation(12345); // Use consistent seed - now avoids water
 
+
     // Create underwater system
     console.log('🎮 GameController: Creating underwater system...');
     this.underwaterSystem = new UnderwaterSystem(this.terrain, this.waterSystem);
@@ -142,6 +143,7 @@ export class GameController {
         this.waterSystem.update(deltaTime, this.camera.camera);
       }
       
+      
       // Update underwater system (for seaweed animation)
       if (this.underwaterSystem) {
         this.underwaterSystem.update(deltaTime);
@@ -156,6 +158,11 @@ export class GameController {
           
           if (poppedBubbles.length > 0) {
             console.log(`💥 Popped ${poppedBubbles.length} bubble(s)!`);
+          }
+        } else {
+          // Debug: check if we're supposed to be underwater
+          if (this.underwaterSystem && this.underwaterSystem.isActive) {
+            console.log(`⚠️ DEBUG: UnderwaterSystem is active but GameController isUnderwater=${this.isUnderwater}`);
           }
         }
       }
@@ -192,6 +199,7 @@ export class GameController {
           mesh.visible = false;
         });
       }
+      
       
       // Change terrain color to brown underwater
       const terrainMesh = this.terrainRenderer.getMesh();
@@ -268,6 +276,7 @@ export class GameController {
         });
       }
       
+      
       // Restore terrain color to normal
       const terrainMesh = this.terrainRenderer.getMesh();
       if (terrainMesh && terrainMesh.material) {
@@ -317,9 +326,11 @@ export class GameController {
     // Get movement input based on underwater mode
     const movementInput = {
       direction: this.isUnderwater ? 
-        this.input.getUnderwaterMovementDirection() : // Underwater: WASD for 3D movement
+        this.input.getUnderwaterMovementDirection() : // Underwater: T/G/F/H movement
         this.input.getMovementDirection(), // Surface: W/S forward/backward only
-      rotation: this.isUnderwater ? 0 : this.input.getRotationDirection(), // No rotation underwater
+      rotation: this.isUnderwater ? 
+        this.input.getUnderwaterRotationDirection() : // Underwater: Q/E rotation
+        this.input.getRotationDirection(), // Surface: A/D rotation
       isRunning: this.input.isRunning(),
       isCrouching: this.input.isCrouching(),
       isJumping: this.input.isJumping(),
@@ -463,6 +474,7 @@ export class GameController {
     if (this.vegetationSystem) {
       this.vegetationSystem.generateVegetation();
     }
+    
 
     // Reset tiger to starting state
     this.tiger = new Tiger();
@@ -559,6 +571,14 @@ export class GameController {
       this.vegetationSystem.dispose();
     }
 
+
+    // Clean up underwater system
+    if (this.underwaterSystem) {
+      const underwaterMeshes = this.underwaterSystem.getUnderwaterMeshes();
+      underwaterMeshes.forEach(mesh => this.scene.remove(mesh));
+      this.underwaterSystem.dispose();
+    }
+
     // Clean up terrain renderer
     if (this.terrainRenderer) {
       this.scene.remove(this.terrainRenderer.getMesh());
@@ -585,6 +605,7 @@ export class GameController {
     this.terrainRenderer = null;
     this.vegetationSystem = null;
     this.waterSystem = null;
+    this.underwaterSystem = null;
     this.camera = null;
     this.input = null;
     this.movementSystem = null;
@@ -722,6 +743,7 @@ export class GameController {
     };
   }
 
+
   positionTigerOnTerrain() {
     if (this.terrain && this.tiger && this.tigerModel) {
       // Start tiger at center of terrain
@@ -773,6 +795,7 @@ export class GameController {
         // Reconnect to movement system
         this.movementSystem.setWaterSystem(this.waterSystem);
       }
+
 
       // Reposition tiger on new terrain
       this.positionTigerOnTerrain();

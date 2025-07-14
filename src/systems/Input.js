@@ -14,7 +14,9 @@ export class InputSystem {
       interact: false,
       dive: false,
       forward_underwater: false,
-      backward_underwater: false
+      backward_underwater: false,
+      left_underwater: false,
+      right_underwater: false
     };
     
     // Track which keys are currently physically pressed
@@ -136,11 +138,23 @@ export class InputSystem {
       case 'KeyR':
         this.keys.dive = true;
         break;
-      case 'KeyG':
+      case 'KeyT':
         this.keys.forward_underwater = true;
         break;
-      case 'KeyB':
+      case 'KeyG':
         this.keys.backward_underwater = true;
+        break;
+      case 'KeyF':
+        this.keys.left = true; // F = left in underwater mode
+        break;
+      case 'KeyH':
+        this.keys.right = true; // H = right in underwater mode
+        break;
+      case 'KeyQ':
+        this.keys.left_underwater = true; // Q = rotate left underwater
+        break;
+      case 'KeyE':
+        this.keys.right_underwater = true; // E = rotate right underwater
         break;
     }
     
@@ -186,11 +200,23 @@ export class InputSystem {
       case 'KeyR':
         this.keys.dive = false;
         break;
-      case 'KeyG':
+      case 'KeyT':
         this.keys.forward_underwater = false;
         break;
-      case 'KeyB':
+      case 'KeyG':
         this.keys.backward_underwater = false;
+        break;
+      case 'KeyF':
+        this.keys.left = false; // F = left in underwater mode
+        break;
+      case 'KeyH':
+        this.keys.right = false; // H = right in underwater mode
+        break;
+      case 'KeyQ':
+        this.keys.left_underwater = false; // Q = rotate left underwater
+        break;
+      case 'KeyE':
+        this.keys.right_underwater = false; // E = rotate right underwater
         break;
     }
     
@@ -475,19 +501,27 @@ export class InputSystem {
     return this.keys.dive;
   }
 
-  // Get underwater movement direction (W=up, S=down, A=same, D=same, G=forward, B=backward)
+  // Get underwater movement direction (T/G/F/H keys, same movement method as surface)
   getUnderwaterMovementDirection() {
     const direction = { x: 0, y: 0, z: 0 };
     
-    // Simplified underwater controls as per user's plan
-    if (this.keys.forward) direction.y = 1;   // W = Swim up
-    if (this.keys.backward) direction.y = -1; // S = Swim down  
-    if (this.keys.left) direction.x = 1;      // A = same (strafe right)
-    if (this.keys.right) direction.x = -1;    // D = same (strafe left)
-    if (this.keys.forward_underwater) direction.z = 1;  // G = forward
-    if (this.keys.backward_underwater) direction.z = -1; // B = backward
+    // T/G/F/H keys with same tank movement method as surface
+    if (this.keys.forward_underwater) direction.z = 1;  // T = forward
+    if (this.keys.backward_underwater) direction.z = -1; // G = backward
+    if (this.keys.left) direction.x = -1;     // F = left
+    if (this.keys.right) direction.x = 1;     // H = right
     
     return direction;
+  }
+
+  // Get underwater rotation direction (Q/E keys)
+  getUnderwaterRotationDirection() {
+    let rotation = 0;
+    
+    if (this.keys.left_underwater) rotation -= 1;  // Q = rotate left
+    if (this.keys.right_underwater) rotation += 1; // E = rotate right
+    
+    return rotation;
   }
 
   // Update method (call once per frame)

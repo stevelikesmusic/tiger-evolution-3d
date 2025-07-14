@@ -52,13 +52,48 @@ export class UnderwaterSystem {
       if (waterBody.type === 'lake' || waterBody.type === 'pond') {
         console.log(`🌊 Creating underwater terrain for ${waterBody.type} ${index + 1}/${waterBodies.length}`);
         this.createUnderwaterFloor(waterBody);
-        this.addSeaweedAndGrass(waterBody);
-        this.addRocks(waterBody);
-        this.addLogs(waterBody);
       }
     });
     
+    // Spread objects across entire underwater terrain map
+    this.spreadObjectsAcrossMap(waterBodies);
+    
     console.log(`🌊 UnderwaterSystem: Finished creating terrain. Total meshes: ${this.underwaterMeshes.length}`);
+  }
+  
+  /**
+   * Spread underwater objects across the entire map instead of clustering
+   */
+  spreadObjectsAcrossMap(waterBodies) {
+    // Calculate map bounds from all water bodies
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    
+    waterBodies.forEach(waterBody => {
+      if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+        const radius = waterBody.radius;
+        minX = Math.min(minX, waterBody.center.x - radius);
+        maxX = Math.max(maxX, waterBody.center.x + radius);
+        minZ = Math.min(minZ, waterBody.center.z - radius);
+        maxZ = Math.max(maxZ, waterBody.center.z + radius);
+      }
+    });
+    
+    // Expand bounds for wider distribution
+    const expansion = 50; // Expand by 50 units in all directions
+    minX -= expansion;
+    maxX += expansion;
+    minZ -= expansion;
+    maxZ += expansion;
+    
+    const mapWidth = maxX - minX;
+    const mapHeight = maxZ - minZ;
+    
+    console.log(`🗺️ Spreading objects across map: ${mapWidth.toFixed(1)} x ${mapHeight.toFixed(1)} units`);
+    
+    // Distribute objects across the entire map
+    this.distributeSeaweedAndGrass(minX, maxX, minZ, maxZ, waterBodies);
+    this.distributeRocks(minX, maxX, minZ, maxZ, waterBodies);
+    this.distributeLogs(minX, maxX, minZ, maxZ, waterBodies);
   }
   
   /**
@@ -100,46 +135,43 @@ export class UnderwaterSystem {
   }
   
   /**
-   * Add seaweed and seagrass spread around the underwater area
+   * Distribute seaweed and seagrass across entire underwater map
    */
-  addSeaweedAndGrass(waterBody) {
-    const radius = waterBody.radius;
+  distributeSeaweedAndGrass(minX, maxX, minZ, maxZ, waterBodies) {
+    const mapWidth = maxX - minX;
+    const mapHeight = maxZ - minZ;
+    const density = 0.002; // Much lower density - 0.002 instead of 0.02
+    const totalPlants = Math.floor(mapWidth * mapHeight * density);
     
-    // Spread vegetation in a wider area around the water body
-    const spreadRadius = radius * 2; // Much wider spread
-    const numPlants = Math.floor(radius * 2); // Fewer plants but spread out
+    console.log(`🌿 Distributing ${totalPlants} seaweed/seagrass plants across ${mapWidth.toFixed(1)} x ${mapHeight.toFixed(1)} map`);
     
-    for (let i = 0; i < numPlants; i++) {
-      // Random position in wider area around water body
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * spreadRadius;
+    for (let i = 0; i < totalPlants; i++) {
+      // Random position across entire map
+      const x = minX + Math.random() * mapWidth;
+      const z = minZ + Math.random() * mapHeight;
       
-      const x = waterBody.center.x + Math.cos(angle) * distance;
-      const z = waterBody.center.z + Math.sin(angle) * distance;
+      // Find nearest water body for depth calculation
+      let nearestWaterBody = waterBodies[0];
+      let minDistance = Infinity;
       
-      // Scattered placement - random distribution
-      if (Math.random() < 0.4) { // 40% chance to place vegetation
-        if (Math.random() < 0.6) {
-          this.createSeaweed(x, z, waterBody);
-        } else {
-          this.createSeagrass(x, z, waterBody);
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(x - waterBody.center.x, 2) + 
+            Math.pow(z - waterBody.center.z, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestWaterBody = waterBody;
+          }
         }
       }
-    }
-    
-    // Add additional scattered plants across the entire underwater terrain
-    const extraPlants = Math.floor(radius * 1.5);
-    for (let i = 0; i < extraPlants; i++) {
-      // Completely random positions across larger area
-      const randX = waterBody.center.x + (Math.random() - 0.5) * radius * 4;
-      const randZ = waterBody.center.z + (Math.random() - 0.5) * radius * 4;
       
-      if (Math.random() < 0.3) { // 30% chance for scattered vegetation
-        if (Math.random() < 0.5) {
-          this.createSeaweed(randX, randZ, waterBody);
-        } else {
-          this.createSeagrass(randX, randZ, waterBody);
-        }
+      // Create plant type randomly
+      if (Math.random() < 0.6) {
+        this.createSeaweed(x, z, nearestWaterBody);
+      } else {
+        this.createSeagrass(x, z, nearestWaterBody);
       }
     }
   }
@@ -252,21 +284,39 @@ export class UnderwaterSystem {
   }
   
   /**
-   * Add rocks to underwater floor
+   * Distribute rocks across entire underwater map
    */
-  addRocks(waterBody) {
-    const radius = waterBody.radius;
-    const numRocks = Math.floor(radius * 1.5); // More rocks scattered around
+  distributeRocks(minX, maxX, minZ, maxZ, waterBodies) {
+    const mapWidth = maxX - minX;
+    const mapHeight = maxZ - minZ;
+    const density = 0.003; // Reduced from 0.01 to 0.003
+    const totalRocks = Math.floor(mapWidth * mapHeight * density);
     
-    for (let i = 0; i < numRocks; i++) {
-      // Random position within water body
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * radius * 0.9;
+    console.log(`🪨 Distributing ${totalRocks} rocks across ${mapWidth.toFixed(1)} x ${mapHeight.toFixed(1)} map`);
+    
+    for (let i = 0; i < totalRocks; i++) {
+      // Random position across entire map
+      const x = minX + Math.random() * mapWidth;
+      const z = minZ + Math.random() * mapHeight;
       
-      const x = waterBody.center.x + Math.cos(angle) * distance;
-      const z = waterBody.center.z + Math.sin(angle) * distance;
+      // Find nearest water body for depth calculation
+      let nearestWaterBody = waterBodies[0];
+      let minDistance = Infinity;
       
-      this.createRock(x, z, waterBody);
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(x - waterBody.center.x, 2) + 
+            Math.pow(z - waterBody.center.z, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestWaterBody = waterBody;
+          }
+        }
+      }
+      
+      this.createRock(x, z, nearestWaterBody);
     }
   }
   
@@ -316,25 +366,39 @@ export class UnderwaterSystem {
   }
   
   /**
-   * Add logs that tiger can swim through
+   * Distribute logs across entire underwater map
    */
-  addLogs(waterBody) {
-    const radius = waterBody.radius;
+  distributeLogs(minX, maxX, minZ, maxZ, waterBodies) {
+    const mapWidth = maxX - minX;
+    const mapHeight = maxZ - minZ;
+    const density = 0.001; // Reduced from 0.003 to 0.001
+    const totalLogs = Math.floor(mapWidth * mapHeight * density);
     
-    // Add logs to all water bodies
-    if (radius > 15) {
-      const numLogs = 2 + Math.floor(radius / 20); // More logs for swimming through
+    console.log(`🪵 Distributing ${totalLogs} swim-through logs across ${mapWidth.toFixed(1)} x ${mapHeight.toFixed(1)} map`);
+    
+    for (let i = 0; i < totalLogs; i++) {
+      // Random position across entire map
+      const x = minX + Math.random() * mapWidth;
+      const z = minZ + Math.random() * mapHeight;
       
-      for (let i = 0; i < numLogs; i++) {
-        // Random position within water body
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * radius * 0.6; // More central placement
-        
-        const x = waterBody.center.x + Math.cos(angle) * distance;
-        const z = waterBody.center.z + Math.sin(angle) * distance;
-        
-        this.createLog(x, z, waterBody);
+      // Find nearest water body for depth calculation
+      let nearestWaterBody = waterBodies[0];
+      let minDistance = Infinity;
+      
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(x - waterBody.center.x, 2) + 
+            Math.pow(z - waterBody.center.z, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestWaterBody = waterBody;
+          }
+        }
       }
+      
+      this.createLog(x, z, nearestWaterBody);
     }
   }
   
@@ -396,31 +460,67 @@ export class UnderwaterSystem {
    * Create floating bubble system
    */
   createBubbleSystem() {
-    this.waterSystem.getWaterBodies().forEach(waterBody => {
+    const waterBodies = this.waterSystem.getWaterBodies();
+    
+    // Calculate map bounds for bubble distribution
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    
+    waterBodies.forEach(waterBody => {
       if (waterBody.type === 'lake' || waterBody.type === 'pond') {
-        this.addBubbles(waterBody);
+        const radius = waterBody.radius;
+        minX = Math.min(minX, waterBody.center.x - radius);
+        maxX = Math.max(maxX, waterBody.center.x + radius);
+        minZ = Math.min(minZ, waterBody.center.z - radius);
+        maxZ = Math.max(maxZ, waterBody.center.z + radius);
       }
     });
+    
+    // Expand bounds for bubble distribution
+    const expansion = 30;
+    minX -= expansion;
+    maxX += expansion;
+    minZ -= expansion;
+    maxZ += expansion;
+    
+    this.distributeBubbles(minX, maxX, minZ, maxZ, waterBodies);
   }
 
   /**
-   * Add floating bubbles to water body
+   * Distribute bubbles across entire underwater map
    */
-  addBubbles(waterBody) {
-    const radius = waterBody.radius;
-    const numBubbles = Math.floor(radius * 0.5); // Fewer bubbles for better performance
+  distributeBubbles(minX, maxX, minZ, maxZ, waterBodies) {
+    const mapWidth = maxX - minX;
+    const mapHeight = maxZ - minZ;
+    const density = 0.003; // Reduced from 0.008 to 0.003 
+    const totalBubbles = Math.floor(mapWidth * mapHeight * density);
     
-    for (let i = 0; i < numBubbles; i++) {
-      // Random position within water body
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * radius * 0.8;
+    console.log(`🎈 Distributing ${totalBubbles} bubbles across ${mapWidth.toFixed(1)} x ${mapHeight.toFixed(1)} map`);
+    
+    for (let i = 0; i < totalBubbles; i++) {
+      // Random position across entire map
+      const x = minX + Math.random() * mapWidth;
+      const z = minZ + Math.random() * mapHeight;
       
-      const x = waterBody.center.x + Math.cos(angle) * distance;
-      const z = waterBody.center.z + Math.sin(angle) * distance;
+      // Find nearest water body for depth calculation
+      let nearestWaterBody = waterBodies[0];
+      let minDistance = Infinity;
+      
+      for (const waterBody of waterBodies) {
+        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+          const distance = Math.sqrt(
+            Math.pow(x - waterBody.center.x, 2) + 
+            Math.pow(z - waterBody.center.z, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestWaterBody = waterBody;
+          }
+        }
+      }
       
       // Random height in deep water column
       const terrainHeight = this.terrain.getHeightAt(x, z);
-      const underwaterDepth = 8 + (waterBody.radius * 0.1); // Same depth as floor
+      const underwaterDepth = 8 + (nearestWaterBody.radius * 0.1);
       const waterBottom = terrainHeight - underwaterDepth + 0.5;
       const waterTop = terrainHeight - 1; // Surface level
       const y = waterBottom + Math.random() * (waterTop - waterBottom);
@@ -433,6 +533,8 @@ export class UnderwaterSystem {
    * Create balloon-like bubble that tiger needle can pop
    */
   createBubble(x, y, z) {
+    console.log(`🎈 Creating bubble at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+    
     // Small balloon size - no lag
     const size = 0.3 + Math.random() * 0.4; // 0.3-0.7 units
     
@@ -459,19 +561,31 @@ export class UnderwaterSystem {
     
     this.bubbleMeshes.push(bubble);
     this.underwaterMeshes.push(bubble);
+    
+    console.log(`🎈 Bubble created! Total bubbles: ${this.bubbleMeshes.length}`);
   }
 
   /**
    * Tiger needle pops balloon bubbles - precise collision
    */
   checkBubbleCollisions(tigerX, tigerY, tigerZ) {
-    if (!this.isActive || this.bubbleMeshes.length === 0) return [];
+    // Debug logging to identify the issue
+    console.log(`🔍 DEBUG: checkBubbleCollisions called with tiger at (${tigerX.toFixed(2)}, ${tigerY.toFixed(2)}, ${tigerZ.toFixed(2)})`);
+    console.log(`🔍 DEBUG: isActive=${this.isActive}, bubbleMeshes.length=${this.bubbleMeshes.length}`);
+    
+    if (!this.isActive || this.bubbleMeshes.length === 0) {
+      console.log(`🔍 DEBUG: Early return - isActive=${this.isActive}, bubbleCount=${this.bubbleMeshes.length}`);
+      return [];
+    }
     
     const poppedBubbles = [];
     
     for (let i = this.bubbleMeshes.length - 1; i >= 0; i--) {
       const bubble = this.bubbleMeshes[i];
-      if (!bubble || !bubble.userData) continue;
+      if (!bubble || !bubble.userData) {
+        console.log(`🔍 DEBUG: Skipping invalid bubble ${i}`);
+        continue;
+      }
       
       // Calculate exact distance from tiger needle to balloon center
       const distance = Math.sqrt(
@@ -481,7 +595,10 @@ export class UnderwaterSystem {
       );
       
       // Tiger needle pops balloon if it touches the bubble surface
-      const popDistance = bubble.userData.size + 0.5; // Balloon radius + small needle reach
+      const popDistance = bubble.userData.size + 3.0; // Much larger collision radius for easier popping
+      
+      // Debug logging for each bubble
+      console.log(`🔍 DEBUG: Bubble ${i} at (${bubble.position.x.toFixed(2)}, ${bubble.position.y.toFixed(2)}, ${bubble.position.z.toFixed(2)}), distance=${distance.toFixed(2)}, popDistance=${popDistance.toFixed(2)}`);
       
       if (distance <= popDistance) {
         console.log(`💥 POP! Tiger needle popped balloon at distance ${distance.toFixed(2)}`);
@@ -490,6 +607,7 @@ export class UnderwaterSystem {
       }
     }
     
+    console.log(`🔍 DEBUG: checkBubbleCollisions returning ${poppedBubbles.length} popped bubbles`);
     return poppedBubbles;
   }
 
@@ -593,6 +711,7 @@ export class UnderwaterSystem {
   activate() {
     this.isActive = true;
     console.log(`🌊 Activating underwater terrain mode`);
+    console.log(`🔍 DEBUG: UnderwaterSystem activated - isActive=${this.isActive}, bubbleMeshes.length=${this.bubbleMeshes.length}`);
     
     // Show underwater terrain
     this.underwaterMeshes.forEach(mesh => {

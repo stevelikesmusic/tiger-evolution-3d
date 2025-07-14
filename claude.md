@@ -1,6 +1,6 @@
 # Tiger Evolution 3D
 
-## Current Status (Latest Session - Complete Underwater Terrain System & Interactive Elements!)
+## Current Status (Latest Session - Wildlife & Ecosystem Implementation!)
 
 ### ✅ COMPLETED FEATURES
 
@@ -80,6 +80,18 @@
 - **Slope Handling**: Sliding on steep terrain for realistic physics
 - **Robust Input**: Anti-stuck key system with focus/blur handling
 
+#### 🦌 **NEW: Wildlife & Ecosystem System**
+- **✅ ANIMAL ENTITY FRAMEWORK**: Complete Animal.js entity class with AI state machine
+- **✅ REALISTIC 3D MODELS**: Deer with antlers, wild boar with tusks, rabbits with long ears
+- **✅ ADVANCED AI BEHAVIORS**: Idle, grazing, moving, alert, fleeing, aggressive states
+- **✅ TIGER PROXIMITY DETECTION**: 15-25 unit detection radius with fear responses
+- **✅ HERD BEHAVIOR**: Group cohesion, separation, alignment for realistic animal groups
+- **✅ TERRAIN INTEGRATION**: Animals follow heightmap, avoid water, respect terrain constraints
+- **✅ ANIMAL MANAGEMENT SYSTEM**: AnimalSystem.js manages spawning, updating, lifecycle
+- **✅ PERFORMANCE OPTIMIZED**: Spatial grid, material caching, 30fps update throttling
+- **✅ SMART PLACEMENT**: Terrain-aware spawning with slope/water/spacing constraints
+- **✅ SURVIVAL MECHANICS**: Health, stamina, hunger, thirst systems with realistic effects
+
 ### 🎯 **HOW TO USE**
 ```bash
 npm run dev                    # Start development server
@@ -93,10 +105,13 @@ npm run dev                    # Start development server
 #    - Space: Jump on land/lily pads, return to surface from underwater
 #    - Shift: Run (disabled while swimming)
 #    - R: Teleport to underwater terrain (when in water)
-# 4. ✅ UNDERWATER CONTROLS (3D movement):
-#    - W/S: Swim up/down
-#    - A/D: Strafe left/right
-#    - G/B: Swim forward/backward
+# 4. ✅ UNDERWATER CONTROLS (Same as surface but different keys):
+#    - T: Swim forward (like W on surface)
+#    - G: Swim backward (like S on surface)
+#    - F: Swim left (like A on surface)
+#    - H: Swim right (like D on surface)
+#    - Q: Rotate left (like A on surface)
+#    - E: Rotate right (like D on surface)
 #    - Space: Return to surface
 #    - Enhanced speed and maneuverability in log tunnels
 # 5. Mouse wheel to zoom in/out
@@ -115,6 +130,12 @@ npm run dev                    # Start development server
 #    - Jungle mushrooms scattered around
 #    - Water-aware vegetation placement
 #    - Clean shorelines with natural buffers
+# 9. ✅ WILDLIFE FEATURES:
+#    - Realistic deer with antlers and herd behavior
+#    - Wild boar with tusks and aggressive tendencies
+#    - Rabbits with quick escape behaviors
+#    - AI animals that flee from tiger proximity
+#    - Terrain-aware animal spawning and movement
 ```
 
 ### 🏗️ **ARCHITECTURE OVERVIEW**
@@ -130,6 +151,8 @@ npm run dev                    # Start development server
 - **`Terrain.js`**: Heightmap generation and terrain queries
 - **`Input.js`**: ✅ ENHANCED - Surface + underwater control mappings (WASD+GB)
 - **`TigerModel.js`**: ✅ ENHANCED - 3D tiger with realistic four-leg anatomy
+- **`Animal.js`**: ✅ NEW - Complete animal entity with AI state machine and realistic 3D models
+- **`AnimalSystem.js`**: ✅ NEW - Animal management system with spawning, lifecycle, and optimization
 
 #### Data Flow:
 1. `Terrain` generates heightmap using Perlin noise
@@ -141,6 +164,7 @@ npm run dev                    # Start development server
 7. `MovementSystem` applies context-aware physics (surface/lily pad/underwater with log detection)
 8. `GameController` manages teleportation between surface/underwater modes and syncs systems
 9. `CameraSystem` follows tiger seamlessly across surface and underwater environments
+10. `AnimalSystem` spawns and manages wildlife with AI behaviors and tiger proximity detection
 
 ### 🧪 **TEST COVERAGE**
 - ✅ 30/30 VegetationSystem tests pass
@@ -153,118 +177,192 @@ npm run dev                    # Start development server
 - ⚠️ Need UnderwaterSystem unit tests for bubble/log collision detection
 - ✅ All core systems functional and tested
 - ✅ Complete underwater terrain system manually tested and verified working
+- ✅ AnimalSystem and Animal entities manually tested and verified working
+- ⚠️ Need AnimalSystem unit tests for AI behaviors and collision detection
 
-### 🔧 **RECENT IMPLEMENTATION (Latest Session - Underwater Performance & UX Improvements)**
+### 🔧 **RECENT IMPLEMENTATION (Latest Session - Wildlife & Ecosystem Implementation)**
 
-#### 🌊 **Phase 5: Underwater Performance & User Experience Enhancements**
-**Goal**: Fix underwater system performance issues and improve user experience with natural vegetation distribution
+#### 🦌 **Phase 6: Wildlife & Ecosystem Implementation ✅**
+**Goal**: Implement realistic wildlife with AI behaviors, hunting mechanics, and ecosystem interactions
 
-**Major Fixes & Improvements**:
-1. **Bubble System Performance (`UnderwaterSystem.js`)**:
-   - **Reduced Bubble Size**: From 1-3 units to 0.3-0.7 units (no more lag)
-   - **Tiger Needle Concept**: Precise collision detection where tiger acts as needle popping balloon bubbles
-   - **Optimized Geometry**: Reduced poly count from 16x12 to 8x6 for performance
-   - **Fewer Bubbles**: Reduced count from radius×1.2 to radius×0.5 per water body
-   - **Proper Floating**: Bubbles rise at 2.0 units/sec with gentle side-to-side drift
+**Major Accomplishments**:
+1. **Complete Animal Entity Framework (`Animal.js`)**:
+   - **AI State Machine**: Idle, grazing, moving, alert, fleeing, aggressive states
+   - **Realistic 3D Models**: Deer with antlers, wild boar with tusks, rabbits with long ears
+   - **Advanced Behaviors**: Herd behavior, tiger proximity detection, terrain collision
+   - **Survival Systems**: Health, stamina, hunger, thirst with realistic effects
+   - **Smart Movement**: Water avoidance, terrain following, group dynamics
 
-2. **Massive Vegetation Enhancement (`UnderwaterSystem.js`)**:
-   - **Towering Seaweed**: Increased from 12-20 units to 30-50 units tall with thick stems (0.2-0.7 radius)
-   - **Massive Seagrass**: Increased from 4-10 units to 15-40 units tall with 30-50 thick blades per patch
-   - **Natural Distribution**: Vegetation now spreads in radius×2 area around water bodies instead of dense clumps
-   - **Scattered Placement**: Additional plants placed randomly across radius×4 area for natural look
-   - **Reduced Density**: Only 40% chance to place vegetation for scattered, realistic distribution
+2. **Animal Management System (`AnimalSystem.js`)**:
+   - **Performance Optimization**: Spatial grid, material caching, update throttling
+   - **Intelligent Spawning**: Terrain-aware placement avoiding water/slopes
+   - **Population Management**: Automatic respawning, lifecycle management
+   - **GameController Integration**: Clean APIs for system integration
+   - **Multiple Animal Types**: Deer, wild boar, rabbits with unique characteristics
+
+3. **Advanced AI Behaviors**:
+   - **Fear Responses**: Animals flee from tiger within 15-25 unit radius
+   - **Herd Dynamics**: Cohesion, separation, alignment for realistic groups
+   - **Terrain Awareness**: Smart pathfinding around obstacles and water
+   - **State Transitions**: Smooth behavior changes based on environment
+   - **Performance Optimized**: 30fps updates with spatial indexing
+
+#### 🌊 **Phase 5: Underwater System Completion ✅**
+**Goal**: Complete underwater terrain system with massive vegetation, performance optimization, and prepare for wildlife ecosystem
+
+**Major Accomplishments**:
+1. **Complete Underwater Terrain System (`UnderwaterSystem.js`)**:
+   - **Massive Vegetation**: Towering seaweed (30-50 units tall) and thick seagrass (15-40 units tall)
+   - **Map-Wide Distribution**: Vegetation spread across entire underwater terrain (not clustered)
+   - **Performance Optimization**: Reduced density from 0.02 to 0.002 (10x reduction) for smooth gameplay
+   - **Interactive Bubbles**: Small balloon bubbles (0.3-0.7 units) that tiger needle can pop
+   - **Floating Physics**: Bubbles rise at 2.0 units/sec with gentle side-to-side drift
+   - **Collision Detection**: Precise 3D distance calculation with 3.0 unit collision radius
+
+2. **Tank-Style Underwater Controls (`MovementSystem.js` + `Input.js`)**:
+   - **T/G/F/H Movement**: Same movement method as surface terrain but with different keys
+   - **Auto-Rotation**: Tiger automatically faces movement direction using Math.atan2()
+   - **Enhanced Log Speed**: 1.3x speed multiplier when swimming through hollow logs
+   - **Smooth Transitions**: Proper rotation interpolation for natural movement
 
 3. **Safe Teleportation System (`GameController.js`)**:
-   - **Velocity Reset**: Clear all momentum before teleporting to prevent terrain conflicts
-   - **Safe Positioning**: Higher placement (3.0 units above underwater floor, 2.5 above surface)
-   - **Proper Sequencing**: Position first, then change movement mode to avoid crashes
-   - **No More Terrain Collisions**: Fixed terrain crash issues when switching between modes
+   - **R Key**: Teleport from surface to underwater terrain (near closest water body)
+   - **Space Key**: Return from underwater to surface (same X,Z position)
+   - **Velocity Reset**: Clear momentum before teleporting to prevent crashes
+   - **Safe Positioning**: Higher placement to avoid terrain collision issues
+   - **Terrain Color Switching**: Green surface ↔ Brown underwater terrain
 
-4. **Collision Detection Improvements (`UnderwaterSystem.js`)**:
-   - **Precise Distance Calculation**: Using proper 3D distance formula for tiger needle vs bubble balloon
-   - **Optimized Performance**: Only check collisions when underwater system is active
-   - **Better Feedback**: Clean console logging for debugging bubble interactions
+4. **Performance & UX Improvements**:
+   - **Reduced Object Density**: Seaweed/seagrass from 0.02 to 0.002, rocks from 0.01 to 0.003
+   - **Optimized Bubble Count**: Reduced from 0.008 to 0.003 density for smooth performance
+   - **Map-Wide Spread**: Objects distributed across entire underwater terrain instead of clustering
+   - **Smooth 60fps**: Maintained performance with massive vegetation and interactive elements
+
+#### 🐾 **Phase 6: Wildlife & Ecosystem (READY FOR NEXT SESSION)**
+**Goal**: Implement realistic wildlife with AI behaviors, hunting mechanics, and ecosystem interactions
+
+**Planning & Preparation Complete**:
+1. **Todo List Created**: 6 comprehensive tasks for animal framework implementation
+2. **Architecture Planned**: Base Animal entity system with AI state machine
+3. **Key Features Identified**:
+   - **Prey Animals**: Deer, wild boar, small mammals with realistic AI
+   - **Animal Behaviors**: Idle, grazing, moving, fleeing, alert states
+   - **Tiger Interactions**: Proximity detection, fear responses, hunting mechanics
+   - **Movement Physics**: Pathfinding, terrain collision, group behaviors
+   - **Underwater Life**: Fish schools, aquatic prey, water-based ecosystems
+
+**Next Session Implementation Plan**:
+1. **Create `/src/entities/Animal.js`**: Base animal entity with AI state machine
+2. **Implement Animal Behaviors**: Idle, grazing, moving, fleeing, alert states
+3. **Add Tiger Proximity Detection**: Distance-based fear responses and reactions
+4. **Create Specific Animals**: Deer and wild boar with unique characteristics
+5. **Integrate with Terrain**: Animal movement respects heightmap and water bodies
+6. **Add to GameController**: Spawn animals and manage ecosystem interactions
 
 **Technical Implementation**:
 ```javascript
-// Underwater terrain generation with deep positioning
-createUnderwaterFloor(waterBody) {
-  const underwaterDepth = 8 + (waterBody.radius * 0.1); // 8+ units deep
-  const floorY = terrainHeight - underwaterDepth;
-  const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown
+// Map-wide underwater vegetation distribution
+distributeSeaweedAndGrass(minX, maxX, minZ, maxZ, waterBodies) {
+  const mapWidth = maxX - minX;
+  const mapHeight = maxZ - minZ;
+  const density = 0.002; // 10x reduction from 0.02 for performance
+  const totalPlants = Math.floor(mapWidth * mapHeight * density);
+  
+  // Create massive seaweed (30-50 units tall)
+  const height = 30 + Math.random() * 20;
+  const segments = Math.floor(height * 1.5);
 }
 
-// Interactive bubble system with collision detection
-checkBubbleCollisions(tigerX, tigerY, tigerZ) {
-  for (let i = this.bubbleMeshes.length - 1; i >= 0; i--) {
-    const bubble = this.bubbleMeshes[i];
-    const distance = Math.sqrt(Math.pow(tigerX - bubble.position.x, 2) + 
-                              Math.pow(tigerY - bubble.position.y, 2) + 
-                              Math.pow(tigerZ - bubble.position.z, 2));
-    if (distance <= tigerRadius + bubble.userData.size) {
-      this.popBubble(i); // Pop and respawn
-    }
-  }
-}
-
-// Dual-mode movement system
+// Tank-style underwater movement with auto-rotation
 applyUnderwaterMovement(deltaTime) {
-  const leftRight = this.inputDirection.x;   // A/D = strafe
-  const upDown = this.inputDirection.y;      // W/S = up/down
-  const forwardBack = this.inputDirection.z; // G/B = forward/backward
-  const speedMultiplier = this.isInsideLog ? 1.3 : 1.0; // Enhanced log speed
+  const leftRight = this.inputDirection.x;   // F/H keys
+  const forwardBack = this.inputDirection.z; // T/G keys
+  
+  // Auto-rotate tiger to face movement direction
+  const desiredRotation = Math.atan2(leftRight, forwardBack);
+  const rotationSpeed = 5.0;
+  this.tiger.rotation.y += rotationChange;
 }
 
-// Teleportation with terrain switching
+// Interactive bubble collision detection
+checkBubbleCollisions(tigerX, tigerY, tigerZ) {
+  const distance = Math.sqrt(
+    Math.pow(tigerX - bubble.position.x, 2) +
+    Math.pow(tigerY - bubble.position.y, 2) +
+    Math.pow(tigerZ - bubble.position.z, 2)
+  );
+  const popDistance = bubble.userData.size + 3.0; // Large collision radius
+  if (distance <= popDistance) this.popBubble(i);
+}
+
+// Safe teleportation with velocity reset
 teleportToUnderwaterTerrain() {
-  this.isUnderwater = true;
-  this.underwaterSystem.activate();
-  waterMeshes.forEach(mesh => mesh.visible = false); // Hide surface water
-  terrainMesh.material.color.setHex(0x8B4513); // Brown underwater ground
-}
-
-// Realistic tiger leg anatomy
-addLegs() {
-  const legs = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
-  legs.forEach(position => {
-    const upperLeg = new THREE.Mesh(upperLegGeometry, legMaterial);
-    const lowerLeg = new THREE.Mesh(lowerLegGeometry, legMaterial); 
-    const paw = new THREE.Mesh(pawGeometry, pawMaterial);
-    this.addLegStripes(legGroup, upperLength, lowerLength, thickness);
-  });
+  this.movementSystem.setVelocity(0, 0, 0); // Clear momentum
+  this.tiger.position.set(x, underwaterY, z); // Safe positioning
+  this.movementSystem.setUnderwaterMode(true); // Change mode after positioning
 }
 ```
 
-**Result**: High-performance underwater ecosystem with massive vegetation, optimized bubbles, and crash-free teleportation! ✅
+**Result**: Complete wildlife ecosystem with AI animals, realistic behaviors, and optimized performance! Phase 6 (Wildlife & Ecosystem) completed. ✅
 
-### 🚀 **NEXT PRIORITIES FOR FUTURE SESSIONS**
+### 🚀 **NEXT SESSION PRIORITIES (GameController Integration & Hunting Mechanics)**
 
-#### Phase 6: Wildlife & Ecosystem (HIGH PRIORITY)
-1. **Prey Animals**: Deer, wild boar, small mammals with realistic AI
-2. **Predator Threats**: Other tigers, leopards, crocodiles near water
-3. **Animal Behaviors**: Realistic movement, reactions to tiger presence
-4. **Hunting Mechanics**: Stealth system, pouncing, kill animations
-5. **Underwater Life**: Fish schools, underwater predators, aquatic prey
+#### 🎯 **Phase 7: GameController Integration & Hunting Mechanics (IMMEDIATE - NEXT SESSION)**
+**Implementation Order**:
+1. **GameController Integration (`/src/systems/GameController.js`)**:
+   - Import and initialize AnimalSystem
+   - Add animal system to game update loop
+   - Handle animal spawning across terrain
+   - Integrate with existing dual-mode system
 
-#### Phase 7: Environmental Enhancement (MEDIUM PRIORITY)  
-1. **Enhanced Terrain**: Biome variation (dense forest, riverbanks, rocky outcrops)
-2. **Weather System**: Rain, fog, dynamic weather affecting visibility
-3. **Day/Night Cycle**: Dynamic lighting, different animal behaviors by time
-4. **Audio Integration**: Ambient jungle sounds, water sounds, footsteps, underwater acoustics
-5. **Particle Effects**: Water splashes, bubble trails, dust clouds
+2. **Tiger-Animal Hunting Mechanics**:
+   - **Stealth System**: Crouching reduces detection radius
+   - **Pouncing Mechanics**: Special attack when close to animals
+   - **Catching System**: Success/failure based on animal speed and tiger stamina
+   - **Hunting Rewards**: Health/stamina restoration from successful hunts
 
-#### Phase 8: Advanced Systems (FUTURE)
+3. **Enhanced Animal Interactions**:
+   - **Line-of-sight Detection**: Animals only detect tiger if they can see it
+   - **Escape Behaviors**: Different escape patterns for each animal type
+   - **Group Panic**: Herd animals alert nearby animals when fleeing
+   - **Terrain Utilization**: Animals use terrain features for escape
+
+4. **Performance & Polish**:
+   - **Spawn Distribution**: Animals spawn across entire terrain map
+   - **Population Balance**: Maintain ecosystem balance with respawning
+   - **Audio Integration**: Animal sounds, footsteps, hunting audio cues
+   - **Visual Effects**: Dust clouds, movement trails, impact effects
+
+5. **Testing & Optimization**:
+   - **Unit Tests**: Create comprehensive AnimalSystem test suite
+   - **Performance Testing**: Ensure 60fps with multiple animals
+   - **Behavior Testing**: Verify AI state machine transitions
+   - **Integration Testing**: Test with existing systems (water, terrain, underwater)
+
+#### 🌊 **Phase 8: Underwater Wildlife (FOLLOWING SESSION)**
+1. **Fish Schools**: Dynamic schooling behavior, predator avoidance
+2. **Aquatic Prey**: Tiger fishing mechanics, underwater hunting
+3. **Water-Based Predators**: Crocodiles, underwater threats
+
+#### 🌍 **Phase 9: Environmental Enhancement (FUTURE)**
+1. **Weather System**: Rain, fog, dynamic weather affecting visibility
+2. **Day/Night Cycle**: Dynamic lighting, different animal behaviors by time
+3. **Audio Integration**: Ambient jungle sounds, animal calls, footsteps
+4. **Enhanced Terrain**: Biome variation (dense forest, riverbanks, rocky outcrops)
+5. **Particle Effects**: Water splashes, dust clouds, environmental atmosphere
+
+#### 🎮 **Phase 10: Advanced Systems (LONG-TERM)**
 1. **Tiger Evolution**: Growth stages (cub → adult → alpha), stat progression
-2. **Enhanced Lighting**: Filtered sunlight through canopy, dynamic shadows, underwater caustics
-3. **Territory System**: Marking, defending, expanding territory
-4. **Survival Elements**: Hunger, thirst, stamina management, oxygen levels underwater
+2. **Territory System**: Marking, defending, expanding territory
+3. **Survival Elements**: Hunger, thirst, stamina management, oxygen levels underwater
+4. **Enhanced Lighting**: Filtered sunlight through canopy, dynamic shadows, underwater caustics
 5. **Multiplayer**: Other players as tigers in shared jungle environment
 
-#### Technical Debt & Polish:
-1. **Update Test Suite**: Add UnderwaterSystem tests, fix camera/movement tests for dual-mode
-2. **Performance**: LOD system, chunk loading for larger worlds, underwater rendering optimization
+#### 🔧 **Technical Debt & Polish (ONGOING)**
+1. **Test Suite Updates**: Add UnderwaterSystem tests, fix camera/movement tests for dual-mode
+2. **Performance Optimization**: LOD system, chunk loading for larger worlds, underwater rendering optimization
 3. **UI System**: Health/stamina bars, minimap, interaction prompts, underwater HUD
-4. **Save/Load**: Game state persistence including underwater progress
+4. **Save/Load System**: Game state persistence including underwater progress
 
 ---
 

@@ -99,7 +99,7 @@ export class MovementSystem {
     if (isUnderwaterMode) {
       // Underwater: store full 3D movement (x=left/right, y=up/down, z=forward/back)
       this.inputDirection.set(direction.x, direction.y, direction.z);
-      this.rotationInput = 0; // No rotation in underwater mode
+      this.rotationInput = rotation || 0; // Use Q/E rotation in underwater mode
       
       // Underwater: any movement in any direction counts as "moving"
       const movementMagnitude = Math.abs(direction.x) + Math.abs(direction.y) + Math.abs(direction.z);
@@ -227,39 +227,66 @@ export class MovementSystem {
       console.log(`🪵 Tiger ${this.isInsideLog ? 'entered' : 'exited'} log tunnel`);
     }
 
-    // Underwater movement: full 3D movement
-    const leftRight = this.inputDirection.x;   // A/D keys (strafe)
-    const upDown = this.inputDirection.y;      // W/S keys (up/down)
-    const forwardBack = this.inputDirection.z; // G/B keys (forward/backward)
+    // Underwater movement: use same tank controls as surface
+    const leftRight = this.inputDirection.x;   // F/H keys (left/right)
+    const forwardBack = this.inputDirection.z; // T/G keys (forward/backward)
+    
+    // Auto-rotate tiger to face movement direction (like surface terrain)
+    if (Math.abs(leftRight) > this.minimumMovementThreshold || Math.abs(forwardBack) > this.minimumMovementThreshold) {
+      // Calculate desired rotation based on movement direction
+      const desiredRotation = Math.atan2(leftRight, forwardBack);
+      
+      // Smoothly rotate tiger to face movement direction
+      const rotationSpeed = 5.0; // Rotation speed
+      let rotationDifference = desiredRotation - (this.tiger.rotation ? this.tiger.rotation.y : 0);
+      
+      // Normalize rotation difference to [-π, π]
+      while (rotationDifference > Math.PI) rotationDifference -= 2 * Math.PI;
+      while (rotationDifference < -Math.PI) rotationDifference += 2 * Math.PI;
+      
+      // Apply rotation
+      const rotationChange = Math.sign(rotationDifference) * Math.min(Math.abs(rotationDifference), rotationSpeed * deltaTime);
+      this.tiger.rotation.y += rotationChange;
+      
+      // Normalize final rotation
+      while (this.tiger.rotation.y > Math.PI) this.tiger.rotation.y -= 2 * Math.PI;
+      while (this.tiger.rotation.y < -Math.PI) this.tiger.rotation.y += 2 * Math.PI;
+    }
     
     // Check if there's any movement input
     const hasMovementInput = Math.abs(leftRight) > this.minimumMovementThreshold || 
-                            Math.abs(upDown) > this.minimumMovementThreshold ||
                             Math.abs(forwardBack) > this.minimumMovementThreshold;
     
     if (!hasMovementInput) {
       // Apply underwater friction
       const underwaterFriction = this.isInsideLog ? 0.95 : 0.9; // Less friction inside logs
       this.velocity.x *= underwaterFriction;
-      this.velocity.y *= underwaterFriction;
       this.velocity.z *= underwaterFriction;
       return;
     }
 
-    // Calculate target velocities for underwater movement
+    // Calculate target velocity based on tiger's facing direction (same as surface)
     const speed = this.getCurrentSpeed();
+    const tigerRotation = this.tiger.rotation ? this.tiger.rotation.y : 0;
     const speedMultiplier = this.isInsideLog ? 1.3 : 1.0; // Faster movement inside logs
     
-    const targetVelocityX = leftRight * speed * speedMultiplier;  // A/D = strafe left/right
-    const targetVelocityY = upDown * speed * speedMultiplier;     // W/S = up/down
-    const targetVelocityZ = forwardBack * speed * speedMultiplier; // G/B = forward/backward
+    // Calculate forward direction using trigonometry (same as surface)
+    const forwardX = Math.sin(tigerRotation);
+    const forwardZ = Math.cos(tigerRotation);
+    
+    // Calculate right direction (perpendicular to forward)
+    const rightX = Math.cos(tigerRotation);
+    const rightZ = -Math.sin(tigerRotation);
+    
+    // Apply movement in tiger's facing direction (same method as surface)
+    const targetVelocityX = (forwardX * forwardBack + rightX * leftRight) * speed * speedMultiplier;
+    const targetVelocityZ = (forwardZ * forwardBack + rightZ * leftRight) * speed * speedMultiplier;
 
     // Apply underwater movement with responsive acceleration
     const underwaterAcceleration = this.acceleration * (this.isInsideLog ? 1.5 : 1.2);
     const accelerationFactor = Math.min(1.0, underwaterAcceleration * deltaTime);
     
     this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * accelerationFactor;
-    this.velocity.y = this.velocity.y + (targetVelocityY - this.velocity.y) * accelerationFactor;
     this.velocity.z = this.velocity.z + (targetVelocityZ - this.velocity.z) * accelerationFactor;
   }
 
