@@ -16,7 +16,8 @@ export class InputSystem {
       forward_underwater: false,
       backward_underwater: false,
       left_underwater: false,
-      right_underwater: false
+      right_underwater: false,
+      hunt: false
     };
     
     // Track which keys are currently physically pressed
@@ -156,6 +157,10 @@ export class InputSystem {
       case 'KeyE':
         this.keys.right_underwater = true; // E = rotate right underwater
         break;
+      case 'KeyZ':
+        this.keys.hunt = true; // Z = hunt/attack
+        console.log('🎯 Z key pressed - hunt = true');
+        break;
     }
     
     // Schedule key validation
@@ -217,6 +222,10 @@ export class InputSystem {
         break;
       case 'KeyE':
         this.keys.right_underwater = false; // E = rotate right underwater
+        break;
+      case 'KeyZ':
+        this.keys.hunt = false; // Z = hunt/attack
+        console.log('🎯 Z key released - hunt = false');
         break;
     }
     
@@ -331,6 +340,10 @@ export class InputSystem {
     return this.keys.interact;
   }
 
+  isHunting() {
+    return this.keys.hunt;
+  }
+
   isPointerLocked() {
     return document.pointerLockElement === this.canvas;
   }
@@ -411,7 +424,8 @@ export class InputSystem {
       interact: false,
       dive: false,
       forward_underwater: false,
-      backward_underwater: false
+      backward_underwater: false,
+      hunt: false
     };
     this.physicalKeys.clear();
     this.resetVirtualMovement();
@@ -447,7 +461,8 @@ export class InputSystem {
       interact: this.physicalKeys.has('KeyE'),
       dive: this.physicalKeys.has('KeyR'),
       forward_underwater: this.physicalKeys.has('KeyG'),
-      backward_underwater: this.physicalKeys.has('KeyB')
+      backward_underwater: this.physicalKeys.has('KeyB'),
+      hunt: this.physicalKeys.has('KeyZ')
     };
     
     let hasStuckKeys = false;

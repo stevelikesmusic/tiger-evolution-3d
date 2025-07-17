@@ -96,13 +96,14 @@ export class MovementSystem {
     const prevMoving = this.isMoving;
     
     // Store movement input based on mode
+    let movementMagnitude;
     if (isUnderwaterMode) {
       // Underwater: store full 3D movement (x=left/right, y=up/down, z=forward/back)
       this.inputDirection.set(direction.x, direction.y, direction.z);
       this.rotationInput = rotation || 0; // Use Q/E rotation in underwater mode
       
       // Underwater: any movement in any direction counts as "moving"
-      const movementMagnitude = Math.abs(direction.x) + Math.abs(direction.y) + Math.abs(direction.z);
+      movementMagnitude = Math.abs(direction.x) + Math.abs(direction.y) + Math.abs(direction.z);
       this.isMoving = movementMagnitude > 0.01;
     } else {
       // Surface: store forward/backward only
@@ -110,7 +111,7 @@ export class MovementSystem {
       this.rotationInput = rotation || 0;
       
       // Surface: only forward/backward movement counts as "moving"
-      const movementMagnitude = Math.abs(direction.z);
+      movementMagnitude = Math.abs(direction.z);
       this.isMoving = movementMagnitude > 0.01;
     }
     this.isRunning = isRunning && this.isMoving;
@@ -417,7 +418,7 @@ export class MovementSystem {
   consumeStamina(deltaTime) {
     // Only consume stamina when running and moving
     if (this.isRunning && this.isMoving) {
-      const staminaCost = 30; // Stamina per second when running
+      const staminaCost = 5; // Stamina per second when running
       this.tiger.consumeStamina(staminaCost * deltaTime);
     }
   }
@@ -477,7 +478,7 @@ export class MovementSystem {
     const positionDelta = currentPosition.sub(prevPosition);
     const rotationDelta = currentRotation - prevRotation;
     
-    console.log('🐅 TIGER MOVEMENT:', JSON.stringify({
+    const movementLog = {
       deltaTime: deltaTime.toFixed(4),
       position: {
         x: this.tiger.position.x.toFixed(2),
@@ -511,7 +512,8 @@ export class MovementSystem {
       },
       state: this.tiger.state,
       isGrounded: this.isGrounded
-    }, null, 2));
+    }
+    // console.log('🐅 TIGER MOVEMENT:', JSON.stringify(movementLog, null, 2));
   }
 
   // Helper methods for debugging/testing

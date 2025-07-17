@@ -8,6 +8,8 @@ import { VegetationSystem } from './VegetationSystem.js';
 import { TerrainRenderer } from './TerrainRenderer.js';
 import { WaterSystem } from './WaterSystem.js';
 import { UnderwaterSystem } from './UnderwaterSystem.js';
+import { AnimalSystem } from './AnimalSystem.js';
+import { UISystem } from './UISystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -66,6 +68,13 @@ export class GameController {
     this.vegetationSystem = new VegetationSystem(this.scene, this.terrain, this.waterSystem);
     this.vegetationSystem.generateVegetation(12345); // Use consistent seed - now avoids water
 
+    // Create animal system AFTER vegetation system
+    this.animalSystem = new AnimalSystem(this.scene, this.terrain, this.waterSystem, this.vegetationSystem);
+    console.log('🦌 GameController: Animal system created');
+
+    // Create UI system
+    this.uiSystem = new UISystem();
+    console.log('🎮 GameController: UI system created');
 
     // Create underwater system
     console.log('🎮 GameController: Creating underwater system...');
@@ -143,6 +152,15 @@ export class GameController {
         this.waterSystem.update(deltaTime, this.camera.camera);
       }
       
+      // Update animal system (for wildlife behavior)
+      if (this.animalSystem) {
+        this.animalSystem.update(deltaTime, this.tiger);
+      }
+      
+      // Update UI system (for stats display)
+      if (this.uiSystem) {
+        this.uiSystem.updateStats(this.tiger);
+      }
       
       // Update underwater system (for seaweed animation)
       if (this.underwaterSystem) {
@@ -214,7 +232,7 @@ export class GameController {
       let minDistance = Infinity;
       
       for (const waterBody of waterBodies) {
-        if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+        if ((waterBody.type === 'lake' || waterBody.type === 'pond') && waterBody.center) {
           const distance = Math.sqrt(
             Math.pow(tigerPos.x - waterBody.center.x, 2) + 
             Math.pow(tigerPos.z - waterBody.center.z, 2)
@@ -335,6 +353,8 @@ export class GameController {
       isCrouching: this.input.isCrouching(),
       isJumping: this.input.isJumping(),
       isDiving: this.input.isDiving(), // R key for diving in water
+      isHunting: this.input.isHunting(), // Z key for hunting
+      isInteracting: this.input.isInteracting(), // E key for eating
       isUnderwaterMode: this.isUnderwater
     };
 
@@ -345,7 +365,7 @@ export class GameController {
       // Only log every 30 frames to reduce spam
       this.inputLogCounter = (this.inputLogCounter || 0) + 1;
       if (this.inputLogCounter % 30 === 0) {
-        console.log('🎮 TANK CONTROLS INPUT:', JSON.stringify({
+        const movementLog = {
           movement: {
             z: movementInput.direction.z.toFixed(2),
             magnitude: inputMagnitude.toFixed(2)
@@ -356,7 +376,8 @@ export class GameController {
           isJumping: movementInput.isJumping,
           isDiving: movementInput.isDiving,
           pointerLocked: this.isPointerLocked
-        }, null, 2));
+        }
+        // console.log('🎮 TANK CONTROLS INPUT:', JSON.stringify(movementLog, null, 2));
       }
     }
 
@@ -371,6 +392,34 @@ export class GameController {
       this.teleportToSurface();
       // Don't pass jumping to movement system when teleporting
       movementInput.isJumping = false;
+    }
+
+    // Handle hunting
+    if (movementInput.isHunting && this.animalSystem && !this.isUnderwater) {
+      // Z key: Attempt to hunt nearby animals (only on surface)
+      console.log('🎯 Hunt key pressed! Attempting to hunt...');
+      console.log(`🎯 Tiger position: (${this.tiger.position.x.toFixed(1)}, ${this.tiger.position.y.toFixed(1)}, ${this.tiger.position.z.toFixed(1)})`);
+      console.log(`🎯 Tiger attack range: ${this.tiger.getAttackRange()}`);
+      console.log(`🎯 Total animals in system: ${this.animalSystem.getAnimalCount()}`);
+      
+      const huntSuccess = this.animalSystem.attemptHunt(this.tiger);
+      if (huntSuccess) {
+        console.log('🎯 Hunt successful!');
+      } else {
+        console.log('🎯 Hunt failed - no animals in range');
+      }
+    }
+
+    // Handle eating
+    if (movementInput.isInteracting && this.animalSystem && !this.isUnderwater) {
+      // E key: Attempt to eat nearby dead animals (only on surface)
+      console.log('🍖 Eat key pressed! Attempting to eat...');
+      const eatSuccess = this.animalSystem.attemptEat(this.tiger);
+      if (eatSuccess) {
+        console.log('🍖 Eating successful! +20 hunger');
+      } else {
+        console.log('🍖 Eating failed - no dead animals in range');
+      }
     }
 
     // Apply to movement system
@@ -541,6 +590,20 @@ export class GameController {
               distance: this.camera.distance.toFixed(2)
             }
           }, null, 2));
+        },
+        addExperience: (amount) => {
+          this.tiger.gainExperience(amount);
+          console.log(`🎯 Added ${amount} XP. Tiger level: ${this.tiger.level}, XP: ${this.tiger.experience}, Stage: ${this.tiger.evolutionStage}`);
+        },
+        evolveToAdult: () => {
+          this.tiger.level = this.tiger.adultLevel;
+          this.tiger.evolve();
+          console.log(`🐅 Forced evolution to Adult! Level: ${this.tiger.level}, Stage: ${this.tiger.evolutionStage}`);
+        },
+        evolveToAlpha: () => {
+          this.tiger.level = this.tiger.alphaLevel;
+          this.tiger.evolve();
+          console.log(`🐅 Forced evolution to Alpha! Level: ${this.tiger.level}, Stage: ${this.tiger.evolutionStage}`);
         }
       };
       console.log('🔍 Debug API exposed: window.tigerGame');
@@ -554,6 +617,9 @@ export class GameController {
       console.log('  window.tigerGame.getPhysicalKeys() - Show physically pressed keys');
       console.log('  window.tigerGame.forceKeyState(key, state) - Manually set key state');
       console.log('  window.tigerGame.logPositions() - Log tiger and camera positions');
+      console.log('  window.tigerGame.addExperience(amount) - Add XP to tiger');
+      console.log('  window.tigerGame.evolveToAdult() - Force evolution to Adult (level 10)');
+      console.log('  window.tigerGame.evolveToAlpha() - Force evolution to Alpha (level 30)');
     }
   }
 
@@ -571,6 +637,15 @@ export class GameController {
       this.vegetationSystem.dispose();
     }
 
+    // Clean up animal system
+    if (this.animalSystem) {
+      this.animalSystem.dispose();
+    }
+
+    // Clean up UI system
+    if (this.uiSystem) {
+      this.uiSystem.dispose();
+    }
 
     // Clean up underwater system
     if (this.underwaterSystem) {
@@ -604,6 +679,8 @@ export class GameController {
     this.terrain = null;
     this.terrainRenderer = null;
     this.vegetationSystem = null;
+    this.animalSystem = null;
+    this.uiSystem = null;
     this.waterSystem = null;
     this.underwaterSystem = null;
     this.camera = null;
@@ -741,6 +818,16 @@ export class GameController {
       ponds: this.waterSystem.getWaterBodies().filter(body => body.type === 'pond').length,
       waterLevel: this.waterSystem.waterLevel
     };
+  }
+
+  getAnimalSystem() {
+    return this.animalSystem;
+  }
+
+  getAnimalStats() {
+    if (!this.animalSystem) return null;
+    
+    return this.animalSystem.getStatistics();
   }
 
 

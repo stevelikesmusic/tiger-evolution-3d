@@ -1,24 +1,33 @@
 # Tiger Evolution 3D 🐅
 
-**Status**: 🟢 **PLAYABLE TIGER SIMULATION** *(Phase 2 - 75% Complete)*
+**Status**: 🟢 **FULL HUNTING ECOSYSTEM** *(Phase 6 - 90% Complete)*
 
-A realistic 3D tiger evolution and survival game built with Three.js and modern web technologies. Control a tiger through its evolution from Young to Alpha while hunting, surviving, and exploring a dynamic 3D jungle ecosystem.
+A realistic 3D tiger evolution and survival game built with Three.js and modern web technologies. Control a tiger through its evolution from Young to Alpha while hunting wildlife, surviving, and exploring a dynamic 3D jungle ecosystem with underwater terrain.
 
 ## 🎮 **Current Features - FULLY PLAYABLE**
 
 ### ✅ **Core Gameplay**
-- **Controllable 3D Tiger**: WASD movement with realistic physics
+- **Controllable 3D Tiger**: Tank-style movement with realistic physics
 - **Third-Person Camera**: Smooth following camera with mouse orbital controls  
 - **Movement Modes**: Walking, running (Shift), crouching (Ctrl), jumping (Spacebar)
 - **Stamina System**: Running consumes stamina and affects speed
 - **Evolution System**: Tiger evolves from Young → Adult → Alpha with stat bonuses
-- **3D Environment**: Ground plane with atmospheric lighting and fog
+- **Complete 3D Jungle**: Procedural terrain with vegetation, water systems, and wildlife
 
-### ✅ **Technical Features**  
-- **Real-time Physics**: Acceleration, friction, gravity, ground collision
-- **Animation Sync**: Tiger state automatically drives 3D model animations
-- **Cross-platform Input**: Keyboard, mouse, and touch controls
-- **Performance Optimized**: 60 FPS target with efficient rendering
+### ✅ **Hunting & Wildlife System**
+- **Realistic Animals**: Deer with antlers, boars with tusks, rabbits with ears, leopards with spots
+- **Simple Combat**: Press Z near animals to attack (Young tiger deals 10 damage)
+- **Visual Health Bars**: Red/green health bars appear above animals when attacked
+- **Animal Fight-Back**: ALL animals become aggressive and counter-attack when attacked
+- **Balanced Damage**: Rabbit=5, Deer=20, Boar=30, Leopard=50 damage
+- **AI Behaviors**: Animals graze, move, flee, and fight with realistic group behavior
+
+### ✅ **Advanced World Systems**
+- **Professional Water**: Reflective lakes, rivers, lily pad platforms with lotus flowers
+- **Underwater Terrain**: Complete underwater world with seaweed, rocks, bubbles, and log tunnels
+- **Dual Movement**: Surface tank controls + underwater 3D movement with teleportation
+- **UI System**: Real-time health, stamina, XP, hunger, level, and evolution display
+- **Performance Optimized**: 60 FPS with thousands of vegetation objects and animals
 
 ## 🚀 **Quick Start**
 
@@ -36,13 +45,46 @@ npm test
 npm run build
 ```
 
-**Controls:**
-- `WASD` - Move tiger
-- `Mouse` - Camera control  
-- `Shift` - Run (consumes stamina)
-- `Ctrl` - Crouch (stealth mode)
-- `Spacebar` - Jump/Pounce
-- `Mouse Wheel` - Zoom in/out
+## 🎮 **Game Controls**
+
+### 🏃 **Surface Movement (Tank Controls)**
+- `W` - Move forward in tiger's facing direction
+- `S` - Move backward in tiger's facing direction  
+- `A` - Rotate tiger left (counter-clockwise)
+- `D` - Rotate tiger right (clockwise)
+- `Shift` - Run (consumes stamina, disabled while swimming)
+- `Ctrl` - Crouch (stealth mode, reduced detection)
+- `Spacebar` - Jump on land/lily pads
+
+### 🌊 **Water & Underwater**
+- `R` - Teleport to underwater terrain (when in water)
+- `Spacebar` - Return to surface (when underwater)
+- **Underwater Controls:**
+  - `T` - Swim forward
+  - `G` - Swim backward
+  - `F` - Swim left
+  - `H` - Swim right
+  - `Q` - Rotate left
+  - `E` - Rotate right
+
+### 🦌 **Hunting & Combat**
+- `Z` - Attack nearby animals (Young tiger deals 10 damage)
+- Get close to animals and press Z to hunt
+- Animals will fight back with their own damage values
+- Health bars appear above animals when attacked
+
+### 📷 **Camera Controls**
+- `Mouse` - Look around (click canvas first to enable)
+- `Mouse Wheel` - Zoom in/out (5-25 units)
+- Camera follows tiger and rotates with movement
+
+### 📊 **UI Information**
+- **Health Bar**: Tiger's current health (red when low)
+- **Stamina Bar**: Current stamina (yellow when low)  
+- **XP Bar**: Experience progress toward next level
+- **Hunger Bar**: Hunger level (decreases over time)
+- **Level**: Current level and evolution stage
+- **Controls**: On-screen control reminder
 
 ## 🏗️ **Architecture**
 
@@ -91,28 +133,31 @@ src/
 
 ## 🎯 **Development Roadmap**
 
-### ✅ **Phase 1 Complete**: Core Foundation
-- Three.js setup, camera system, input controls, tiger character
+### ✅ **Phase 1-6 Complete**: Full Hunting Ecosystem
+- **Phase 1**: Core foundation (Three.js, camera, input, tiger character)
+- **Phase 2**: Basic water system and swimming mechanics
+- **Phase 3**: Professional water with reflections and lily pads
+- **Phase 4**: Complete underwater terrain with seaweed and interactive elements
+- **Phase 5**: Wildlife system with realistic animals and AI behaviors
+- **Phase 6**: Simplified hunting system with immediate combat mechanics
 
-### 🚧 **Phase 2 In Progress**: Gameplay Systems (75% Complete)
-- ✅ Tiger movement and controls
-- ✅ Camera integration  
-- ✅ Physics and animation
-- ⏳ **Next**: Animal AI ecosystem (deer, predators)
-- ⏳ **Next**: Hunting mechanics
-- ⏳ **Next**: UI/HUD system
+### 🚧 **Phase 7 Next**: Environmental Enhancement
+- Enhanced terrain biomes (dense forest, riverbanks, rocky outcrops)
+- Weather system (rain, fog) affecting visibility and animal behavior
+- Day/night cycle with dynamic lighting and different animal activity patterns
+- Audio integration (ambient jungle sounds, water sounds, footsteps, animal calls)
 
-### 📋 **Phase 3 Planned**: Environmental Polish
-- Procedural terrain generation
-- Day/night cycle with dynamic lighting  
-- Weather effects and particle systems
-- Advanced AI behaviors
+### 📋 **Phase 8 Planned**: Advanced Evolution & Systems
+- Tiger evolution system (cub → adult → alpha) with enhanced stats and abilities
+- Advanced hunting: stealth system, kill animations, prey tracking, combo attacks
+- Territory management: marking, defending, expanding controlled areas
+- Survival elements: hunger, thirst, stamina management with consequences
 
-### 🎨 **Phase 4 Planned**: Advanced Features
-- Alpha Tiger special abilities (laser breath)
-- Territory system and safe zones
-- Mobile optimization  
-- Performance optimization
+### 🎨 **Phase 9 Future**: Multiplayer & Advanced Features
+- Other player tigers in shared jungle environment
+- Cooperative hunting mechanics and territory disputes
+- Advanced AI predators (crocodiles, other apex predators)
+- Seasonal changes and migration patterns
 
 ## 🔧 **Technology Stack**
 
@@ -145,5 +190,28 @@ See `.claude/spec.md` for detailed game specifications and `.claude/progress.md`
 MIT License - See LICENSE file for details.
 
 ---
+
+## 🎮 **Gameplay Tips**
+
+### 🦌 **Hunting Strategy**
+- **Find Animals**: Look for deer, boars, rabbits, and leopards roaming the jungle
+- **Get Close**: Walk up to animals until you're within attack range  
+- **Press Z**: Attack with Z key (Young tiger deals 10 damage)
+- **Health Bars**: Watch the red/green health bar above animals
+- **Fight Back**: Be ready! All animals will counter-attack when hit
+- **Gain XP**: Successfully kill animals to gain experience and evolve
+
+### 🏊 **Exploration**
+- **Water Areas**: Jump on lily pads to cross water safely
+- **Underwater**: Press R in water to teleport to underwater terrain
+- **Seaweed Forests**: Explore massive underwater vegetation
+- **Bubble Popping**: Swim into bubbles to pop them for fun
+- **Log Tunnels**: Swim through hollow logs for speed bonuses
+
+### 💪 **Survival**
+- **Stamina Management**: Don't run constantly - stamina affects movement speed
+- **Health Monitoring**: Keep an eye on your health bar and avoid strong animals when low
+- **Hunger System**: Hunt animals to restore hunger and stay healthy
+- **Evolution**: Gain XP to evolve from Young → Adult → Alpha with enhanced abilities
 
 **Ready to hunt?** Run `npm run dev` and control your tiger! 🐅

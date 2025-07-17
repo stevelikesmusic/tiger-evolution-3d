@@ -136,6 +136,8 @@ npm run dev                    # Start development server
 #    - Rabbits with quick escape behaviors
 #    - AI animals that flee from tiger proximity
 #    - Terrain-aware animal spawning and movement
+#    - Z key hunting (may have bugs - needs debugging)
+#    - Health bars and combat system with fight-back mechanics
 ```
 
 ### 🏗️ **ARCHITECTURE OVERVIEW**
@@ -187,25 +189,25 @@ npm run dev                    # Start development server
 
 **Major Accomplishments**:
 1. **Complete Animal Entity Framework (`Animal.js`)**:
-   - **AI State Machine**: Idle, grazing, moving, alert, fleeing, aggressive states
-   - **Realistic 3D Models**: Deer with antlers, wild boar with tusks, rabbits with long ears
-   - **Advanced Behaviors**: Herd behavior, tiger proximity detection, terrain collision
-   - **Survival Systems**: Health, stamina, hunger, thirst with realistic effects
-   - **Smart Movement**: Water avoidance, terrain following, group dynamics
+   - **✅ BLOCKBENCH-STYLE MODELS**: Cube-based 3D models with realistic animal features
+   - **✅ ANIMAL VARIETY**: Deer (brown with antlers), wild boar (grey with tusks), rabbits (multicolor), leopards (golden with spots)
+   - **✅ HEALTH & COMBAT**: Health bars, damage system, death states, fight-back mechanics
+   - **✅ AI STATE MACHINE**: Idle, grazing, moving, alert, fleeing, aggressive states
+   - **✅ DETAILED FEATURES**: Eyes, ears, antlers, tusks, spots, realistic proportions
 
 2. **Animal Management System (`AnimalSystem.js`)**:
-   - **Performance Optimization**: Spatial grid, material caching, update throttling
-   - **Intelligent Spawning**: Terrain-aware placement avoiding water/slopes
-   - **Population Management**: Automatic respawning, lifecycle management
-   - **GameController Integration**: Clean APIs for system integration
-   - **Multiple Animal Types**: Deer, wild boar, rabbits with unique characteristics
+   - **✅ SMART SPAWNING**: Terrain-aware placement avoiding water/slopes with group behavior
+   - **✅ PERFORMANCE OPTIMIZED**: Spatial grid, material caching, 30fps updates
+   - **✅ POPULATION MANAGEMENT**: Auto-respawning, lifecycle management, max 20 animals
+   - **✅ LINE-OF-SIGHT**: Advanced detection with terrain/vegetation blocking
+   - **✅ STEALTH MECHANICS**: Tiger crouching reduces animal detection radius
 
-3. **Advanced AI Behaviors**:
-   - **Fear Responses**: Animals flee from tiger within 15-25 unit radius
-   - **Herd Dynamics**: Cohesion, separation, alignment for realistic groups
-   - **Terrain Awareness**: Smart pathfinding around obstacles and water
-   - **State Transitions**: Smooth behavior changes based on environment
-   - **Performance Optimized**: 30fps updates with spatial indexing
+3. **Advanced Hunting & Combat System**:
+   - **✅ TIGER HUNTING**: Z key to hunt nearby animals with attack range calculation
+   - **✅ COMBAT MECHANICS**: Damage calculation, stealth bonuses, pouncing attacks
+   - **✅ ANIMAL FIGHTING**: ALL animals fight back when attacked (even prey)
+   - **✅ EXPERIENCE SYSTEM**: Successful hunts give XP and restore hunger
+   - **⚠️ HUNTING ISSUES**: Hunt functions exist but may not be working correctly
 
 #### 🌊 **Phase 5: Underwater System Completion ✅**
 **Goal**: Complete underwater terrain system with massive vegetation, performance optimization, and prepare for wildlife ecosystem
@@ -305,39 +307,43 @@ teleportToUnderwaterTerrain() {
 
 **Result**: Complete wildlife ecosystem with AI animals, realistic behaviors, and optimized performance! Phase 6 (Wildlife & Ecosystem) completed. ✅
 
-### 🚀 **NEXT SESSION PRIORITIES (GameController Integration & Hunting Mechanics)**
+### 🚀 **NEXT SESSION PRIORITIES (Hunting Bug Fixes & Model Improvements)**
 
-#### 🎯 **Phase 7: GameController Integration & Hunting Mechanics (IMMEDIATE - NEXT SESSION)**
-**Implementation Order**:
-1. **GameController Integration (`/src/systems/GameController.js`)**:
-   - Import and initialize AnimalSystem
-   - Add animal system to game update loop
-   - Handle animal spawning across terrain
-   - Integrate with existing dual-mode system
+#### 🐛 **Phase 7: Hunting System Bug Fixes (IMMEDIATE - NEXT SESSION)**
+**Critical Issues to Fix**:
+1. **Hunting Function Debugging**:
+   - **Z Key Hunting**: Verify Z key input is being captured correctly
+   - **Attack Range**: Check if `tiger.getAttackRange()` is working properly
+   - **Animal Detection**: Ensure `getHuntableAnimals()` finds nearby animals
+   - **Hunt Success**: Debug why `tiger.hunt(animal)` may be failing
 
-2. **Tiger-Animal Hunting Mechanics**:
-   - **Stealth System**: Crouching reduces detection radius
-   - **Pouncing Mechanics**: Special attack when close to animals
-   - **Catching System**: Success/failure based on animal speed and tiger stamina
-   - **Hunting Rewards**: Health/stamina restoration from successful hunts
+2. **Combat System Validation**:
+   - **Damage Application**: Verify `animal.takeDamage()` reduces health correctly
+   - **Death Detection**: Check if `animal.isAlive()` works after damage
+   - **Experience Rewards**: Ensure XP and hunger restoration occurs
+   - **Health Bar Updates**: Make sure health bars show damage
 
-3. **Enhanced Animal Interactions**:
-   - **Line-of-sight Detection**: Animals only detect tiger if they can see it
-   - **Escape Behaviors**: Different escape patterns for each animal type
-   - **Group Panic**: Herd animals alert nearby animals when fleeing
-   - **Terrain Utilization**: Animals use terrain features for escape
+3. **Input System Integration**:
+   - **Z Key Binding**: Verify hunting key is properly bound in Input.js
+   - **Hunt Trigger**: Debug GameController hunt logic execution
+   - **Console Logging**: Add detailed logging to trace hunt attempts
 
-4. **Performance & Polish**:
-   - **Spawn Distribution**: Animals spawn across entire terrain map
-   - **Population Balance**: Maintain ecosystem balance with respawning
-   - **Audio Integration**: Animal sounds, footsteps, hunting audio cues
-   - **Visual Effects**: Dust clouds, movement trails, impact effects
+#### 🎨 **Phase 8: Model & Visual Improvements (FOLLOWING SESSION)**
+**Enhancement Goals**:
+1. **Blockbench-Style Models**:
+   - **Enhanced Tiger Model**: More detailed cube-based tiger with better proportions
+   - **Improved Animal Models**: Better deer, boar, rabbit models with distinctive features
+   - **Visual Polish**: Better texturing, colors, and model details
 
-5. **Testing & Optimization**:
-   - **Unit Tests**: Create comprehensive AnimalSystem test suite
-   - **Performance Testing**: Ensure 60fps with multiple animals
-   - **Behavior Testing**: Verify AI state machine transitions
-   - **Integration Testing**: Test with existing systems (water, terrain, underwater)
+2. **Animation System**:
+   - **Walking Animations**: Basic leg movement for animals
+   - **Attack Animations**: Tiger pouncing and attacking motions
+   - **State Animations**: Different poses for idle, alert, fleeing states
+
+3. **Visual Effects**:
+   - **Combat Effects**: Blood particles, impact effects
+   - **Movement Trails**: Dust clouds when running
+   - **Environmental Integration**: Better model scaling and positioning
 
 #### 🌊 **Phase 8: Underwater Wildlife (FOLLOWING SESSION)**
 1. **Fish Schools**: Dynamic schooling behavior, predator avoidance
