@@ -10,6 +10,8 @@ import { WaterSystem } from './WaterSystem.js';
 import { UnderwaterSystem } from './UnderwaterSystem.js';
 import { AnimalSystem } from './AnimalSystem.js';
 import { UISystem } from './UISystem.js';
+import { GameSave } from './GameSave.js';
+import { MainMenu } from './MainMenu.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -28,10 +30,15 @@ export class GameController {
     this.isPointerLocked = false;
     this.isUnderwater = false;
     this.underwaterSystemReady = false;
+    this.gameInitialized = false;
+    this.totalPlayTime = 0;
 
-    // Initialize core systems
-    this.initializeSystems();
-    this.setupConnections();
+    // Initialize save system and main menu
+    this.gameSave = new GameSave();
+    this.mainMenu = new MainMenu();
+    
+    // Show main menu first
+    this.showMainMenu();
     
     // Expose debug API
     this.exposeDebugAPI();
@@ -71,6 +78,15 @@ export class GameController {
     // Create animal system AFTER vegetation system
     this.animalSystem = new AnimalSystem(this.scene, this.terrain, this.waterSystem, this.vegetationSystem);
     console.log('🦌 GameController: Animal system created');
+    
+    // Set up animal system callback for auto-save
+    this.animalSystem.onAnimalEaten = (animal) => {
+      console.log(`🍖 Tiger ate a ${animal.type}! Auto-saving...`);
+      const success = this.autosaveGame('prey_eaten');
+      if (success && this.uiSystem) {
+        this.uiSystem.showSaveStatus(`Game saved after eating ${animal.type}`);
+      }
+    };
 
     // Create UI system
     this.uiSystem = new UISystem();
@@ -121,7 +137,10 @@ export class GameController {
   }
 
   update(deltaTime) {
-    if (this.isPaused) return;
+    if (this.isPaused || !this.gameInitialized) return;
+    
+    // Track total play time
+    this.totalPlayTime += deltaTime;
 
     try {
       // Update systems in correct order
@@ -422,6 +441,12 @@ export class GameController {
       }
     }
 
+    // Handle menu toggle
+    if (this.input.keys.Escape && !this.mainMenu.isVisible) {
+      console.log('🎮 Escape pressed - showing menu');
+      this.showMainMenu();
+    }
+
     // Apply to movement system
     this.movementSystem.setMovementInput(movementInput);
 
@@ -604,6 +629,23 @@ export class GameController {
           this.tiger.level = this.tiger.alphaLevel;
           this.tiger.evolve();
           console.log(`🐅 Forced evolution to Alpha! Level: ${this.tiger.level}, Stage: ${this.tiger.evolutionStage}`);
+        },
+        testSave: () => {
+          console.log('🎮 Testing manual save...');
+          const success = this.autosaveGame('manual_test');
+          console.log(`🎮 Manual save result: ${success}`);
+          if (success) {
+            console.log('✅ Manual save successful!');
+          } else {
+            console.log('❌ Manual save failed!');
+          }
+        },
+        checkLocalStorage: () => {
+          const saved = localStorage.getItem('tiger-evolution-3d-save');
+          console.log('🎮 Current localStorage save:', saved);
+          if (saved) {
+            console.log('🎮 Parsed save data:', JSON.parse(saved));
+          }
         }
       };
       console.log('🔍 Debug API exposed: window.tigerGame');
@@ -620,6 +662,8 @@ export class GameController {
       console.log('  window.tigerGame.addExperience(amount) - Add XP to tiger');
       console.log('  window.tigerGame.evolveToAdult() - Force evolution to Adult (level 10)');
       console.log('  window.tigerGame.evolveToAlpha() - Force evolution to Alpha (level 30)');
+      console.log('  window.tigerGame.testSave() - Test manual save functionality');
+      console.log('  window.tigerGame.checkLocalStorage() - Check current save data');
     }
   }
 
@@ -671,6 +715,16 @@ export class GameController {
     if (this.tigerModel) {
       this.scene.remove(this.tigerModel.getMesh());
       this.tigerModel.dispose();
+    }
+
+    // Clean up save system and main menu
+    if (this.mainMenu) {
+      this.mainMenu.dispose();
+      this.mainMenu = null;
+    }
+    
+    if (this.gameSave) {
+      this.gameSave = null;
     }
 
     // Clean up references
@@ -887,5 +941,196 @@ export class GameController {
       // Reposition tiger on new terrain
       this.positionTigerOnTerrain();
     }
+  }
+
+  // Main Menu and Save/Load System
+  showMainMenu() {
+    console.log('🎮 Showing main menu...');
+    this.isPaused = true;
+    
+    // Get save info if available
+    const saveInfo = this.gameSave.getSaveInfo();
+    
+    // Set up menu callbacks
+    this.mainMenu.setOnNewGame(() => {
+      this.startNewGame();
+    });
+    
+    this.mainMenu.setOnContinueGame(() => {
+      this.continueGame();
+    });
+    
+    this.mainMenu.setOnSettings(() => {
+      console.log('🎮 Settings menu not implemented yet');
+    });
+    
+    // Show menu
+    this.mainMenu.show(saveInfo);
+  }
+
+  startNewGame() {
+    console.log('🎮 Starting new game...');
+    this.mainMenu.hide();
+    
+    // Initialize game systems if not already done
+    if (!this.gameInitialized) {
+      this.initializeSystems();
+      this.setupConnections();
+      this.gameInitialized = true;
+    } else {
+      // Reset existing game
+      this.reset();
+    }
+    
+    // Clear any existing save
+    this.gameSave.deleteSavedGame();
+    
+    // Reset play time
+    this.totalPlayTime = 0;
+    
+    // Unpause game
+    this.isPaused = false;
+    
+    console.log('🎮 New game started!');
+  }
+
+  continueGame() {
+    console.log('🎮 Continuing saved game...');
+    this.mainMenu.hide();
+    
+    // Initialize game systems if not already done
+    if (!this.gameInitialized) {
+      this.initializeSystems();
+      this.setupConnections();
+      this.gameInitialized = true;
+    }
+    
+    // Load saved game
+    const success = this.loadGame();
+    if (!success) {
+      console.error('❌ Failed to load saved game, starting new game instead');
+      this.startNewGame();
+      return;
+    }
+    
+    // Unpause game
+    this.isPaused = false;
+    
+    console.log('🎮 Saved game loaded!');
+  }
+
+  saveGame() {
+    if (!this.gameInitialized) return false;
+    
+    const gameState = {
+      tiger: this.tiger,
+      terrain: this.terrain,
+      isUnderwater: this.isUnderwater,
+      totalPlayTime: this.totalPlayTime
+    };
+    
+    return this.gameSave.saveGame(gameState);
+  }
+
+  loadGame() {
+    const saveData = this.gameSave.loadGame();
+    if (!saveData) return false;
+    
+    try {
+      // Restore tiger state
+      if (saveData.tiger) {
+        this.tiger.position.set(
+          saveData.tiger.position.x,
+          saveData.tiger.position.y,
+          saveData.tiger.position.z
+        );
+        
+        if (saveData.tiger.rotation) {
+          this.tiger.rotation = {
+            x: saveData.tiger.rotation.x,
+            y: saveData.tiger.rotation.y,
+            z: saveData.tiger.rotation.z
+          };
+        }
+        
+        this.tiger.health = saveData.tiger.health || 100;
+        this.tiger.stamina = saveData.tiger.stamina || 100;
+        this.tiger.hunger = saveData.tiger.hunger || 100;
+        this.tiger.thirst = saveData.tiger.thirst || 100;
+        this.tiger.level = saveData.tiger.level || 1;
+        this.tiger.experience = saveData.tiger.experience || 0;
+        this.tiger.evolutionStage = saveData.tiger.evolutionStage || 'Cub';
+        this.tiger.state = saveData.tiger.state || 'idle';
+        this.tiger.huntsSuccessful = saveData.tiger.huntsSuccessful || 0;
+        this.tiger.totalKills = saveData.tiger.totalKills || 0;
+        this.tiger.totalDistance = saveData.tiger.totalDistance || 0;
+        this.tiger.timeAlive = saveData.tiger.timeAlive || 0;
+      }
+      
+      // Restore terrain state
+      if (saveData.terrain) {
+        this.isUnderwater = saveData.terrain.isUnderwater || false;
+        
+        // Regenerate terrain with saved seed
+        if (saveData.terrain.seed) {
+          this.regenerateTerrain(saveData.terrain.seed);
+        }
+      }
+      
+      // Restore game stats
+      if (saveData.gameStats) {
+        this.totalPlayTime = saveData.gameStats.totalPlayTime || 0;
+      }
+      
+      // Sync tiger to model
+      this.syncTigerToModel();
+      
+      console.log('🎮 Game state restored successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error loading game:', error);
+      return false;
+    }
+  }
+
+  autosaveGame(reason = 'auto') {
+    if (!this.gameInitialized) return false;
+    
+    const gameState = {
+      tiger: this.tiger,
+      terrain: this.terrain,
+      isUnderwater: this.isUnderwater,
+      totalPlayTime: this.totalPlayTime
+    };
+    
+    return this.gameSave.autosave(gameState, reason);
+  }
+
+  showSaveNotification(message) {
+    // Create temporary notification
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      color: #4CAF50;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      z-index: 2000;
+      font-size: 14px;
+      pointer-events: none;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification);
+      }
+    }, 3000);
   }
 }

@@ -17,7 +17,8 @@ export class InputSystem {
       backward_underwater: false,
       left_underwater: false,
       right_underwater: false,
-      hunt: false
+      hunt: false,
+      Escape: false
     };
     
     // Track which keys are currently physically pressed
@@ -161,6 +162,10 @@ export class InputSystem {
         this.keys.hunt = true; // Z = hunt/attack
         console.log('🎯 Z key pressed - hunt = true');
         break;
+      case 'Escape':
+        this.keys.Escape = true; // Escape = menu
+        console.log('🎮 Escape key pressed - menu toggle');
+        break;
     }
     
     // Schedule key validation
@@ -226,6 +231,10 @@ export class InputSystem {
       case 'KeyZ':
         this.keys.hunt = false; // Z = hunt/attack
         console.log('🎯 Z key released - hunt = false');
+        break;
+      case 'Escape':
+        this.keys.Escape = false; // Escape = menu
+        console.log('🎮 Escape key released');
         break;
     }
     

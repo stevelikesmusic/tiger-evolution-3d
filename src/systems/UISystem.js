@@ -101,8 +101,10 @@ export class UISystem {
       <div>Shift: Run (pounce)</div>
       <div>Ctrl: Crouch (stealth)</div>
       <div>Z: Hunt nearby animals</div>
+      <div>E: Eat prey</div>
       <div>R: Dive underwater</div>
       <div>Space: Jump/Surface</div>
+      <div>Esc: Menu</div>
     `;
     
     uiContainer.appendChild(controlsPanel);
@@ -110,11 +112,33 @@ export class UISystem {
     // Add to page
     document.body.appendChild(uiContainer);
     
+    // Create save status indicator
+    const saveStatus = document.createElement('div');
+    saveStatus.id = 'save-status';
+    saveStatus.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #4CAF50;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1100;
+      pointer-events: none;
+    `;
+    saveStatus.textContent = 'Game Saved';
+    document.body.appendChild(saveStatus);
+    
     // Store references
     this.elements.container = uiContainer;
     this.elements.statsPanel = statsPanel;
     this.elements.levelDisplay = levelDisplay;
     this.elements.evolutionDisplay = evolutionDisplay;
+    this.elements.saveStatus = saveStatus;
   }
   
   createStatBar(label, color, id) {
@@ -245,9 +269,26 @@ export class UISystem {
     this.elements.container.style.display = 'none';
   }
   
+  showSaveStatus(message = 'Game Saved') {
+    if (this.elements.saveStatus) {
+      this.elements.saveStatus.textContent = message;
+      this.elements.saveStatus.style.opacity = '1';
+      
+      // Hide after 3 seconds
+      setTimeout(() => {
+        if (this.elements.saveStatus) {
+          this.elements.saveStatus.style.opacity = '0';
+        }
+      }, 3000);
+    }
+  }
+
   dispose() {
     if (this.elements.container && this.elements.container.parentNode) {
       this.elements.container.parentNode.removeChild(this.elements.container);
+    }
+    if (this.elements.saveStatus && this.elements.saveStatus.parentNode) {
+      this.elements.saveStatus.parentNode.removeChild(this.elements.saveStatus);
     }
     this.elements = {};
   }

@@ -8,6 +8,9 @@ export class AnimalSystem {
     this.waterSystem = waterSystem;
     this.vegetationSystem = vegetationSystem;
     
+    // Callback for game events
+    this.onAnimalEaten = null;
+    
     // Animal management
     this.animals = [];
     this.maxAnimals = 20;
@@ -478,23 +481,41 @@ export class AnimalSystem {
   }
   
   removeDeadAnimals() {
+    const currentTime = Date.now();
+    
     for (let i = this.animals.length - 1; i >= 0; i--) {
       const animal = this.animals[i];
       
       if (!animal.isAlive()) {
-        // Remove from scene
-        this.scene.remove(animal.getMesh());
+        // Set death time if not already set
+        if (!animal.deathTime) {
+          animal.deathTime = currentTime;
+          console.log(`🦌 AnimalSystem: ${animal.type} died, will be removed in 30 seconds`);
+          
+          // Change appearance to indicate it's dead (make it grayer)
+          const mesh = animal.getMesh();
+          if (mesh && mesh.material) {
+            mesh.material.color.multiplyScalar(0.7); // Make it darker
+          }
+        }
         
-        // Remove from spatial grid
-        this.removeFromSpatialGrid(animal);
-        
-        // Dispose resources
-        animal.dispose();
-        
-        // Remove from array
-        this.animals.splice(i, 1);
-        
-        console.log(`🦌 AnimalSystem: Removed dead ${animal.type} (remaining: ${this.animals.length})`);
+        // Remove after 30 seconds (30000ms) to give tiger time to eat
+        const timeSinceDeath = currentTime - animal.deathTime;
+        if (timeSinceDeath > 30000) {
+          // Remove from scene
+          this.scene.remove(animal.getMesh());
+          
+          // Remove from spatial grid
+          this.removeFromSpatialGrid(animal);
+          
+          // Dispose resources
+          animal.dispose();
+          
+          // Remove from array
+          this.animals.splice(i, 1);
+          
+          console.log(`🦌 AnimalSystem: Removed dead ${animal.type} after 30 seconds (remaining: ${this.animals.length})`);
+        }
       }
     }
   }
@@ -629,6 +650,11 @@ export class AnimalSystem {
     
     // Remove the eaten animal from the system
     this.removeAnimal(closestAnimal);
+    
+    // Trigger auto-save callback if set
+    if (this.onAnimalEaten) {
+      this.onAnimalEaten(closestAnimal);
+    }
     
     return true;
   }

@@ -1,6 +1,6 @@
 # Tiger Evolution 3D
 
-## Current Status (Latest Session - Wildlife & Ecosystem Implementation!)
+## Current Status (Latest Session - Save System & Game Persistence!)
 
 ### ✅ COMPLETED FEATURES
 
@@ -80,7 +80,7 @@
 - **Slope Handling**: Sliding on steep terrain for realistic physics
 - **Robust Input**: Anti-stuck key system with focus/blur handling
 
-#### 🦌 **NEW: Wildlife & Ecosystem System**
+#### 🦌 **ENHANCED: Wildlife & Ecosystem System**
 - **✅ ANIMAL ENTITY FRAMEWORK**: Complete Animal.js entity class with AI state machine
 - **✅ REALISTIC 3D MODELS**: Deer with antlers, wild boar with tusks, rabbits with long ears
 - **✅ ADVANCED AI BEHAVIORS**: Idle, grazing, moving, alert, fleeing, aggressive states
@@ -91,12 +91,34 @@
 - **✅ PERFORMANCE OPTIMIZED**: Spatial grid, material caching, 30fps update throttling
 - **✅ SMART PLACEMENT**: Terrain-aware spawning with slope/water/spacing constraints
 - **✅ SURVIVAL MECHANICS**: Health, stamina, hunger, thirst systems with realistic effects
+- **✅ DEATH PERSISTENCE**: Dead animals stay in scene for 30 seconds (darkened) to allow eating
+- **✅ HUNTING & EATING**: Z key hunts, E key eats dead animals, proper combat mechanics
+
+#### 🎮 **NEW: Complete Save System & Game Persistence**
+- **✅ MAIN MENU INTERFACE**: Professional jungle-themed menu with New Game vs Continue Game
+- **✅ SAVE GAME SYSTEM**: Complete GameSave.js with localStorage persistence
+- **✅ AUTO-SAVE ON EATING**: Game automatically saves every time tiger eats prey
+- **✅ SAVE GAME METADATA**: Tracks level, evolution, hunts, play time, last saved reason
+- **✅ CONTINUE GAME FUNCTIONALITY**: Load and restore complete game state from saves
+- **✅ VISUAL FEEDBACK**: Save notifications, menu save info display, proper UI integration
+- **✅ ROBUST STATE MANAGEMENT**: Proper game initialization, menu transitions, pause/unpause
+- **✅ EXPORT/IMPORT SAVES**: Save file export/import functionality for backup/sharing
+- **✅ GAME STATISTICS**: Track total play time, games played, hunt success rate
+- **✅ MENU NAVIGATION**: Keyboard/mouse navigation with proper disabled state handling
 
 ### 🎯 **HOW TO USE**
 ```bash
 npm run dev                    # Start development server
-# 1. Click canvas to enable mouse controls
-# 2. Move mouse to look around tiger
+# 1. ✅ MAIN MENU:
+#    - Arrow keys/WASD: Navigate menu options
+#    - Enter: Select menu option
+#    - New Game: Start fresh (clears any existing save)
+#    - Continue Game: Load saved progress (disabled if no save exists)
+#    - Escape: Exit settings/return to main menu
+# 2. ✅ GAME CONTROLS:
+#    - Click canvas to enable mouse controls
+#    - Move mouse to look around tiger
+#    - Mouse wheel to zoom in/out
 # 3. ✅ SURFACE CONTROLS (Tank-style):
 #    - W: Move forward in tiger's facing direction
 #    - S: Move backward in tiger's facing direction  
@@ -105,6 +127,9 @@ npm run dev                    # Start development server
 #    - Space: Jump on land/lily pads, return to surface from underwater
 #    - Shift: Run (disabled while swimming)
 #    - R: Teleport to underwater terrain (when in water)
+#    - Z: Hunt nearby animals (attack range)
+#    - E: Eat dead animals (triggers auto-save)
+#    - Escape: Show main menu
 # 4. ✅ UNDERWATER CONTROLS (Same as surface but different keys):
 #    - T: Swim forward (like W on surface)
 #    - G: Swim backward (like S on surface)
@@ -114,36 +139,42 @@ npm run dev                    # Start development server
 #    - E: Rotate right (like D on surface)
 #    - Space: Return to surface
 #    - Enhanced speed and maneuverability in log tunnels
-# 5. Mouse wheel to zoom in/out
-# 6. ✅ AQUATIC FEATURES:
+# 5. ✅ HUNTING & SURVIVAL:
+#    - Hunt animals with Z key when in range
+#    - Dead animals turn dark gray and stay for 30 seconds
+#    - Eat dead animals with E key to restore hunger
+#    - Game auto-saves every time you eat prey
+#    - Save notification appears on successful save
+# 6. ✅ SAVE SYSTEM:
+#    - Auto-saves on eating prey (no manual save needed)
+#    - Continue Game button shows save info (level, evolution, hunts)
+#    - Game tracks total play time, hunt success rate
+#    - Save data persists between browser sessions
+# 7. ✅ AQUATIC FEATURES:
 #    - Reflective water with realistic visuals
 #    - Lily pads with lotus flowers as jump platforms
 #    - Depth-aware swimming (shallow=jump, deep=swim)
 #    - Enhanced precision on lily pads
-# 7. ✅ UNDERWATER FEATURES:
+# 8. ✅ UNDERWATER FEATURES:
 #    - Complete underwater terrain with brown floors
 #    - Interactive bubbles that pop on contact
 #    - Swim through hollow log tunnels
 #    - Dense seaweed forests and seagrass patches
 #    - Scattered rocks and realistic underwater environment
-# 8. ✅ ECOSYSTEM FEATURES:
+# 9. ✅ ECOSYSTEM FEATURES:
 #    - Jungle mushrooms scattered around
 #    - Water-aware vegetation placement
 #    - Clean shorelines with natural buffers
-# 9. ✅ WILDLIFE FEATURES:
-#    - Realistic deer with antlers and herd behavior
-#    - Wild boar with tusks and aggressive tendencies
-#    - Rabbits with quick escape behaviors
-#    - AI animals that flee from tiger proximity
-#    - Terrain-aware animal spawning and movement
-#    - Z key hunting (may have bugs - needs debugging)
-#    - Health bars and combat system with fight-back mechanics
+#    - Realistic animal AI with fear responses
+#    - Combat system with health bars and fight-back mechanics
 ```
 
 ### 🏗️ **ARCHITECTURE OVERVIEW**
 
 #### Key Systems:
-- **`GameController.js`**: Main orchestrator with underwater teleportation, manages all systems
+- **`GameController.js`**: Main orchestrator with save system integration, manages all systems
+- **`GameSave.js`**: ✅ NEW - Complete save/load system with localStorage persistence
+- **`MainMenu.js`**: ✅ NEW - Professional main menu with New Game/Continue Game functionality
 - **`WaterSystem.js`**: ✅ ENHANCED - Professional Water class, lily pads with lotus flowers
 - **`UnderwaterSystem.js`**: ✅ NEW - Complete underwater terrain with interactive elements
 - **`VegetationSystem.js`**: ✅ ENHANCED - Water-aware placement, ecosystem integration
@@ -151,22 +182,29 @@ npm run dev                    # Start development server
 - **`MovementSystem.js`**: ✅ DUAL-MODE - Surface tank controls + underwater 3D movement
 - **`CameraSystem.js`**: Third-person camera with rotation following
 - **`Terrain.js`**: Heightmap generation and terrain queries
-- **`Input.js`**: ✅ ENHANCED - Surface + underwater control mappings (WASD+GB)
+- **`Input.js`**: ✅ ENHANCED - Surface + underwater control mappings + menu navigation
 - **`TigerModel.js`**: ✅ ENHANCED - 3D tiger with realistic four-leg anatomy
-- **`Animal.js`**: ✅ NEW - Complete animal entity with AI state machine and realistic 3D models
-- **`AnimalSystem.js`**: ✅ NEW - Animal management system with spawning, lifecycle, and optimization
+- **`Animal.js`**: ✅ ENHANCED - Complete animal entity with death persistence and combat
+- **`AnimalSystem.js`**: ✅ ENHANCED - Animal management with auto-save triggers and 30s death timer
+- **`UISystem.js`**: ✅ ENHANCED - Save status notifications and game controls display
 
 #### Data Flow:
-1. `Terrain` generates heightmap using Perlin noise
-2. `TerrainRenderer` creates 3D mesh with vertex colors and dual-mode color switching
-3. `WaterSystem` generates professional water bodies + lily pads with lotus flowers
-4. `UnderwaterSystem` pre-loads complete underwater terrain (floors, seaweed, rocks, logs, bubbles)
-5. `VegetationSystem` places flora based on terrain + water constraints (water-aware placement)
-6. `Input` provides dual-mode controls: surface tank controls + underwater 3D movement
-7. `MovementSystem` applies context-aware physics (surface/lily pad/underwater with log detection)
-8. `GameController` manages teleportation between surface/underwater modes and syncs systems
-9. `CameraSystem` follows tiger seamlessly across surface and underwater environments
-10. `AnimalSystem` spawns and manages wildlife with AI behaviors and tiger proximity detection
+1. `MainMenu` shows on startup with New Game/Continue Game options
+2. `GameSave` loads existing save data or prepares for new game
+3. `GameController` initializes all systems based on menu selection
+4. `Terrain` generates heightmap using Perlin noise (or restores from save)
+5. `TerrainRenderer` creates 3D mesh with vertex colors and dual-mode color switching
+6. `WaterSystem` generates professional water bodies + lily pads with lotus flowers
+7. `UnderwaterSystem` pre-loads complete underwater terrain (floors, seaweed, rocks, logs, bubbles)
+8. `VegetationSystem` places flora based on terrain + water constraints (water-aware placement)
+9. `AnimalSystem` spawns wildlife with AI behaviors and manages 30-second death timers
+10. `Input` provides dual-mode controls: surface tank controls + underwater 3D movement + menu navigation
+11. `MovementSystem` applies context-aware physics (surface/lily pad/underwater with log detection)
+12. `GameController` manages teleportation between surface/underwater modes and syncs systems
+13. `CameraSystem` follows tiger seamlessly across surface and underwater environments
+14. `AnimalSystem` triggers auto-save callback when tiger eats prey
+15. `GameSave` persists game state to localStorage with metadata
+16. `UISystem` displays save notifications and updates game progress
 
 ### 🧪 **TEST COVERAGE**
 - ✅ 30/30 VegetationSystem tests pass
@@ -174,40 +212,49 @@ npm run dev                    # Start development server
 - ✅ 11/11 WaterSystem tests pass
 - ✅ 9/9 SwimmingMechanics tests pass
 - ✅ UnderwaterSystem manually tested and verified working
+- ✅ Save system manually tested and verified working
+- ✅ Main menu navigation and save/load functionality verified
+- ✅ Auto-save on eating prey verified working
+- ✅ Dead animal persistence (30-second timer) verified working
 - ⚠️ Camera tests need updating for dual-mode integration
 - ⚠️ Movement tests need updating for underwater 3D controls
 - ⚠️ Need UnderwaterSystem unit tests for bubble/log collision detection
+- ⚠️ Need GameSave unit tests for save/load functionality
+- ⚠️ Need MainMenu unit tests for navigation and state management
+- ⚠️ Need AnimalSystem unit tests for AI behaviors and collision detection
 - ✅ All core systems functional and tested
 - ✅ Complete underwater terrain system manually tested and verified working
 - ✅ AnimalSystem and Animal entities manually tested and verified working
-- ⚠️ Need AnimalSystem unit tests for AI behaviors and collision detection
+- ✅ Complete save system manually tested and verified working
 
-### 🔧 **RECENT IMPLEMENTATION (Latest Session - Wildlife & Ecosystem Implementation)**
+### 🔧 **RECENT IMPLEMENTATION (Latest Session - Save System & Game Persistence)**
 
-#### 🦌 **Phase 6: Wildlife & Ecosystem Implementation ✅**
-**Goal**: Implement realistic wildlife with AI behaviors, hunting mechanics, and ecosystem interactions
+#### 🎮 **Phase 7: Complete Save System & Game Persistence ✅**
+**Goal**: Implement complete save/load system with main menu, auto-save functionality, and game state persistence
 
 **Major Accomplishments**:
-1. **Complete Animal Entity Framework (`Animal.js`)**:
-   - **✅ BLOCKBENCH-STYLE MODELS**: Cube-based 3D models with realistic animal features
-   - **✅ ANIMAL VARIETY**: Deer (brown with antlers), wild boar (grey with tusks), rabbits (multicolor), leopards (golden with spots)
-   - **✅ HEALTH & COMBAT**: Health bars, damage system, death states, fight-back mechanics
-   - **✅ AI STATE MACHINE**: Idle, grazing, moving, alert, fleeing, aggressive states
-   - **✅ DETAILED FEATURES**: Eyes, ears, antlers, tusks, spots, realistic proportions
+1. **Professional Main Menu System (`MainMenu.js`)**:
+   - **✅ JUNGLE-THEMED INTERFACE**: Professional gradient background with tiger colors
+   - **✅ NEW GAME VS CONTINUE**: Clear menu options with save game info display
+   - **✅ KEYBOARD NAVIGATION**: Arrow keys, WASD, Enter for menu navigation
+   - **✅ SAVE INFO DISPLAY**: Shows level, evolution, experience, hunts, play time
+   - **✅ DISABLED STATE HANDLING**: Continue button properly disabled when no save exists
+   - **✅ VISUAL FEEDBACK**: Proper button states, hover effects, selection highlighting
 
-2. **Animal Management System (`AnimalSystem.js`)**:
-   - **✅ SMART SPAWNING**: Terrain-aware placement avoiding water/slopes with group behavior
-   - **✅ PERFORMANCE OPTIMIZED**: Spatial grid, material caching, 30fps updates
-   - **✅ POPULATION MANAGEMENT**: Auto-respawning, lifecycle management, max 20 animals
-   - **✅ LINE-OF-SIGHT**: Advanced detection with terrain/vegetation blocking
-   - **✅ STEALTH MECHANICS**: Tiger crouching reduces animal detection radius
+2. **Complete Save System (`GameSave.js`)**:
+   - **✅ LOCALSTORAGE PERSISTENCE**: Robust save/load with error handling
+   - **✅ GAME STATE TRACKING**: Tiger stats, position, terrain, underwater state
+   - **✅ METADATA STORAGE**: Play time, games played, save timestamps, save reasons
+   - **✅ AUTO-SAVE FUNCTIONALITY**: Triggered automatically when tiger eats prey
+   - **✅ EXPORT/IMPORT**: Save file backup and sharing functionality
+   - **✅ VERSION MANAGEMENT**: Save format versioning for future compatibility
 
-3. **Advanced Hunting & Combat System**:
-   - **✅ TIGER HUNTING**: Z key to hunt nearby animals with attack range calculation
-   - **✅ COMBAT MECHANICS**: Damage calculation, stealth bonuses, pouncing attacks
-   - **✅ ANIMAL FIGHTING**: ALL animals fight back when attacked (even prey)
-   - **✅ EXPERIENCE SYSTEM**: Successful hunts give XP and restore hunger
-   - **⚠️ HUNTING ISSUES**: Hunt functions exist but may not be working correctly
+3. **Critical Bug Fix - Dead Animal Persistence**:
+   - **✅ PROBLEM IDENTIFIED**: Dead animals disappeared instantly, preventing eating/saving
+   - **✅ 30-SECOND PERSISTENCE**: Dead animals now stay in scene for 30 seconds
+   - **✅ VISUAL FEEDBACK**: Dead animals turn darker to indicate death state
+   - **✅ AUTO-SAVE TRIGGER**: Eating dead animals now properly triggers save system
+   - **✅ CLEANUP SYSTEM**: Dead animals removed after 30 seconds if not eaten
 
 #### 🌊 **Phase 5: Underwater System Completion ✅**
 **Goal**: Complete underwater terrain system with massive vegetation, performance optimization, and prepare for wildlife ecosystem
@@ -305,30 +352,72 @@ teleportToUnderwaterTerrain() {
 }
 ```
 
-**Result**: Complete wildlife ecosystem with AI animals, realistic behaviors, and optimized performance! Phase 6 (Wildlife & Ecosystem) completed. ✅
+4. **Game State Management Integration**:
+   - **✅ MENU-DRIVEN INITIALIZATION**: Game systems only initialize after menu selection
+   - **✅ PROPER STATE TRANSITIONS**: Clean transitions between menu, new game, continue game
+   - **✅ ENGINE INTEGRATION**: Fixed camera initialization issues with temporary camera
+   - **✅ ESCAPE KEY MENU**: Added Escape key to show menu during gameplay
+   - **✅ UI NOTIFICATIONS**: Save status display in bottom-right corner with fade effects
 
-### 🚀 **NEXT SESSION PRIORITIES (Hunting Bug Fixes & Model Improvements)**
+**Technical Implementation**:
+```javascript
+// Auto-save trigger in AnimalSystem.js
+this.animalSystem.onAnimalEaten = (animal) => {
+  const success = this.autosaveGame('prey_eaten');
+  if (success && this.uiSystem) {
+    this.uiSystem.showSaveStatus(`Game saved after eating ${animal.type}`);
+  }
+};
 
-#### 🐛 **Phase 7: Hunting System Bug Fixes (IMMEDIATE - NEXT SESSION)**
-**Critical Issues to Fix**:
-1. **Hunting Function Debugging**:
-   - **Z Key Hunting**: Verify Z key input is being captured correctly
-   - **Attack Range**: Check if `tiger.getAttackRange()` is working properly
-   - **Animal Detection**: Ensure `getHuntableAnimals()` finds nearby animals
-   - **Hunt Success**: Debug why `tiger.hunt(animal)` may be failing
+// Dead animal persistence in AnimalSystem.js
+if (!animal.deathTime) {
+  animal.deathTime = currentTime;
+  // Make dead animals darker
+  mesh.material.color.multiplyScalar(0.7);
+}
+// Remove after 30 seconds
+if (currentTime - animal.deathTime > 30000) {
+  this.removeAnimal(animal);
+}
 
-2. **Combat System Validation**:
-   - **Damage Application**: Verify `animal.takeDamage()` reduces health correctly
-   - **Death Detection**: Check if `animal.isAlive()` works after damage
-   - **Experience Rewards**: Ensure XP and hunger restoration occurs
-   - **Health Bar Updates**: Make sure health bars show damage
+// Save game state in GameSave.js
+const saveData = {
+  version: '1.0',
+  timestamp: Date.now(),
+  tiger: { position, rotation, health, level, experience, evolutionStage },
+  terrain: { seed, isUnderwater },
+  gameStats: { totalPlayTime, gamesPlayed, lastSaveReason }
+};
+localStorage.setItem(this.storageKey, JSON.stringify(saveData));
+```
 
-3. **Input System Integration**:
-   - **Z Key Binding**: Verify hunting key is properly bound in Input.js
-   - **Hunt Trigger**: Debug GameController hunt logic execution
-   - **Console Logging**: Add detailed logging to trace hunt attempts
+**Result**: Complete save system with main menu, auto-save functionality, and persistent game state! Phase 7 (Save System & Game Persistence) completed. ✅
 
-#### 🎨 **Phase 8: Model & Visual Improvements (FOLLOWING SESSION)**
+### 🚀 **NEXT SESSION PRIORITIES (Enhanced Features & Advanced Systems)**
+
+#### 🎨 **Phase 8: Scent Trail System (IMMEDIATE - NEXT SESSION)**
+**Goal**: Implement scent trail visualization system for enhanced hunting gameplay
+
+**Planned Features**:
+1. **M Key Scent Trail**:
+   - **Purple Line Trail**: Press M to create a purple line trail from tiger to nearest animal
+   - **Visual Guidance**: Help players locate animals more easily
+   - **Dynamic Updates**: Trail updates to closest animal when pressed
+   - **Fade Animation**: Trail fades out after 10-15 seconds
+
+2. **Enhanced Hunting Mechanics**:
+   - **Scent Detection**: Visual representation of tiger's natural hunting instincts
+   - **Range Indicator**: Show effective hunting range with visual cues
+   - **Stealth Integration**: Crouching affects scent trail visibility/accuracy
+   - **Wind Effects**: Environmental factors affecting scent trail direction
+
+3. **UI/UX Improvements**:
+   - **Trail Visualization**: Smooth curved line following terrain contours
+   - **Color Coding**: Different colors for different animal types
+   - **Distance Indicators**: Show approximate distance to target
+   - **Fade-out Animation**: Smooth disappearance of old trails
+
+#### 🎨 **Phase 9: Model & Visual Improvements (FOLLOWING SESSION)**
 **Enhancement Goals**:
 1. **Blockbench-Style Models**:
    - **Enhanced Tiger Model**: More detailed cube-based tiger with better proportions
@@ -345,30 +434,30 @@ teleportToUnderwaterTerrain() {
    - **Movement Trails**: Dust clouds when running
    - **Environmental Integration**: Better model scaling and positioning
 
-#### 🌊 **Phase 8: Underwater Wildlife (FOLLOWING SESSION)**
+#### 🌊 **Phase 10: Underwater Wildlife (FOLLOWING SESSION)**
 1. **Fish Schools**: Dynamic schooling behavior, predator avoidance
 2. **Aquatic Prey**: Tiger fishing mechanics, underwater hunting
 3. **Water-Based Predators**: Crocodiles, underwater threats
 
-#### 🌍 **Phase 9: Environmental Enhancement (FUTURE)**
+#### 🌍 **Phase 11: Environmental Enhancement (FUTURE)**
 1. **Weather System**: Rain, fog, dynamic weather affecting visibility
 2. **Day/Night Cycle**: Dynamic lighting, different animal behaviors by time
 3. **Audio Integration**: Ambient jungle sounds, animal calls, footsteps
 4. **Enhanced Terrain**: Biome variation (dense forest, riverbanks, rocky outcrops)
 5. **Particle Effects**: Water splashes, dust clouds, environmental atmosphere
 
-#### 🎮 **Phase 10: Advanced Systems (LONG-TERM)**
+#### 🎮 **Phase 12: Advanced Systems (LONG-TERM)**
 1. **Tiger Evolution**: Growth stages (cub → adult → alpha), stat progression
 2. **Territory System**: Marking, defending, expanding territory
-3. **Survival Elements**: Hunger, thirst, stamina management, oxygen levels underwater
+3. **Survival Elements**: Enhanced hunger, thirst, stamina management, oxygen levels underwater
 4. **Enhanced Lighting**: Filtered sunlight through canopy, dynamic shadows, underwater caustics
 5. **Multiplayer**: Other players as tigers in shared jungle environment
 
 #### 🔧 **Technical Debt & Polish (ONGOING)**
-1. **Test Suite Updates**: Add UnderwaterSystem tests, fix camera/movement tests for dual-mode
+1. **Test Suite Updates**: Add GameSave tests, MainMenu tests, fix camera/movement tests for dual-mode
 2. **Performance Optimization**: LOD system, chunk loading for larger worlds, underwater rendering optimization
-3. **UI System**: Health/stamina bars, minimap, interaction prompts, underwater HUD
-4. **Save/Load System**: Game state persistence including underwater progress
+3. **UI System**: Enhanced health/stamina bars, minimap, interaction prompts, underwater HUD
+4. **Save/Load System**: ✅ COMPLETED - Game state persistence with auto-save functionality
 
 ---
 

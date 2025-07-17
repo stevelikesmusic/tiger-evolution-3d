@@ -94,8 +94,15 @@ export class Engine {
         // Initialize game controller with scene and canvas
         this.gameController = new GameController(this.scene, this.canvas);
         
-        // Use the game controller's camera instead of creating our own
-        this.camera = this.gameController.getCamera();
+        // Create a temporary camera until the game initializes
+        this.camera = new THREE.PerspectiveCamera(
+            75,
+            this.canvas.width / this.canvas.height,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 10, 20);
+        this.camera.lookAt(0, 0, 0);
     }
     
     initClock() {
@@ -141,6 +148,14 @@ export class Engine {
         // Update game controller and all systems
         if (this.gameController) {
             this.gameController.update(deltaTime);
+            
+            // Switch to game controller's camera when game is initialized
+            if (this.gameController.gameInitialized && this.gameController.getCamera) {
+                const gameCamera = this.gameController.getCamera();
+                if (gameCamera && gameCamera !== this.camera) {
+                    this.camera = gameCamera;
+                }
+            }
         }
     }
     
@@ -152,10 +167,10 @@ export class Engine {
         this.renderer.setSize(width, height);
         
         // Notify game controller of resize (which will update camera)
-        if (this.gameController) {
+        if (this.gameController && this.gameController.gameInitialized) {
             this.gameController.resize(width, height);
         } else {
-            // Fallback for when game controller isn't initialized yet
+            // Update temporary camera while game is not initialized
             this.camera.aspect = width / height;
             this.camera.updateProjectionMatrix();
         }
