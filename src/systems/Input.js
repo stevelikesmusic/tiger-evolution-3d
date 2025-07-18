@@ -18,7 +18,8 @@ export class InputSystem {
       left_underwater: false,
       right_underwater: false,
       hunt: false,
-      Escape: false
+      Escape: false,
+      scentTrail: false
     };
     
     // Track which keys are currently physically pressed
@@ -162,6 +163,10 @@ export class InputSystem {
         this.keys.hunt = true; // Z = hunt/attack
         console.log('🎯 Z key pressed - hunt = true');
         break;
+      case 'KeyM':
+        this.keys.scentTrail = true; // M = scent trail
+        console.log('🟣 M key pressed - scent trail = true');
+        break;
       case 'Escape':
         this.keys.Escape = true; // Escape = menu
         console.log('🎮 Escape key pressed - menu toggle');
@@ -231,6 +236,10 @@ export class InputSystem {
       case 'KeyZ':
         this.keys.hunt = false; // Z = hunt/attack
         console.log('🎯 Z key released - hunt = false');
+        break;
+      case 'KeyM':
+        this.keys.scentTrail = false; // M = scent trail
+        console.log('🟣 M key released - scent trail = false');
         break;
       case 'Escape':
         this.keys.Escape = false; // Escape = menu
@@ -471,7 +480,8 @@ export class InputSystem {
       dive: this.physicalKeys.has('KeyR'),
       forward_underwater: this.physicalKeys.has('KeyG'),
       backward_underwater: this.physicalKeys.has('KeyB'),
-      hunt: this.physicalKeys.has('KeyZ')
+      hunt: this.physicalKeys.has('KeyZ'),
+      scentTrail: this.physicalKeys.has('KeyM')
     };
     
     let hasStuckKeys = false;

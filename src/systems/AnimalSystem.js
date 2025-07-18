@@ -281,10 +281,21 @@ export class AnimalSystem {
     const stealthModifier = Math.max(0.3, 1.0 - (stealthEffectiveness / 100));
     const effectiveDetectionRadius = baseDetectionRadius * stealthModifier;
     
-    // Check line-of-sight before detection
+    // Check if tiger is approaching from behind (stealth bonus)
+    const isApproachingFromBehind = this.isApproachingFromBehind(animal, tigerPosition, tiger);
+    
+    // Check line-of-sight and directional awareness before detection
     let canSee = false;
     if (distance <= effectiveDetectionRadius) {
       canSee = this.hasLineOfSight(animal, tigerPosition);
+      
+      // Reduce detection chance when approaching from behind
+      if (isApproachingFromBehind) {
+        // 70% chance to miss detection when sneaking from behind
+        if (Math.random() < 0.7) {
+          canSee = false;
+        }
+      }
     }
     
     // Detection and fear responses (only if can see)
@@ -312,6 +323,37 @@ export class AnimalSystem {
       effectiveDetectionRadius: effectiveDetectionRadius,
       lineOfSight: canSee
     };
+  }
+
+  isApproachingFromBehind(animal, tigerPosition, tiger) {
+    // Calculate the direction the animal is facing
+    const animalForward = {
+      x: Math.sin(animal.rotation.y),
+      z: Math.cos(animal.rotation.y)
+    };
+    
+    // Calculate the direction from animal to tiger
+    const toTiger = {
+      x: tigerPosition.x - animal.position.x,
+      z: tigerPosition.z - animal.position.z
+    };
+    
+    // Normalize the direction vector
+    const length = Math.sqrt(toTiger.x * toTiger.x + toTiger.z * toTiger.z);
+    if (length > 0) {
+      toTiger.x /= length;
+      toTiger.z /= length;
+    }
+    
+    // Calculate dot product to determine angle
+    const dotProduct = animalForward.x * toTiger.x + animalForward.z * toTiger.z;
+    
+    // If dot product is negative, tiger is behind the animal
+    // Also check if tiger is crouching for extra stealth
+    const isFromBehind = dotProduct < -0.3; // 30-degree cone behind
+    const isCrouching = tiger.state === 'crouching';
+    
+    return isFromBehind && (isCrouching || Math.random() < 0.8); // 80% chance when from behind
   }
 
   hasLineOfSight(animal, targetPosition) {

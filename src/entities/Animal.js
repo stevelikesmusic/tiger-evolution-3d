@@ -47,30 +47,30 @@ export class Animal {
   getDefaultStats(type) {
     const animalStats = {
       deer: {
-        health: 50,
+        health: 150, // Increased from 50
         speed: 10,
-        power: 20, // deer damage 20
+        power: 30, // deer damage 30
         stamina: 100,
         behaviorType: 'prey'
       },
       rabbit: {
-        health: 25,
+        health: 75, // Increased from 25
         speed: 15,
         power: 5, // rabbit damage 5
         stamina: 80,
         behaviorType: 'prey'
       },
       boar: {
-        health: 80,
+        health: 200, // Increased from 80
         speed: 8,
-        power: 30, // boar damage 30
+        power: 20, // boar damage 20
         stamina: 120,
         behaviorType: 'neutral'
       },
       leopard: {
-        health: 100,
+        health: 250, // Increased from 100
         speed: 12,
-        power: 50, // leopard damage 50
+        power: 40, // leopard damage 40
         stamina: 150,
         behaviorType: 'predator'
       }
@@ -94,13 +94,13 @@ export class Animal {
   getGeometry() {
     switch (this.type) {
       case 'deer':
-        return new THREE.BoxGeometry(1.5, 1.2, 3); // Larger body
+        return new THREE.BoxGeometry(1.6, 1.4, 3.2); // Tall, elegant body
       case 'rabbit':
-        return new THREE.BoxGeometry(0.8, 0.6, 1.2); // Small body
+        return new THREE.BoxGeometry(0.9, 0.7, 1.4); // Compact, rounded body
       case 'boar':
-        return new THREE.BoxGeometry(1.8, 1.0, 2.5); // Stocky body
+        return new THREE.BoxGeometry(2.0, 1.2, 2.8); // Wide, muscular body
       case 'leopard':
-        return new THREE.BoxGeometry(1.2, 0.8, 2.8); // Sleek body
+        return new THREE.BoxGeometry(1.4, 0.9, 3.0); // Lean, athletic body
       default:
         return new THREE.BoxGeometry(1.5, 1.2, 3);
     }
@@ -110,13 +110,19 @@ export class Animal {
     switch (this.type) {
       case 'deer':
         return new THREE.MeshLambertMaterial({ 
-          color: 0x8B4513, // Brown
+          color: 0xCD853F, // Sandy brown - more natural deer color
           transparent: false,
           opacity: 1.0
         }); 
       case 'rabbit':
-        // Random rabbit colors: white, black, or brown
-        const rabbitColors = [0xFFFFFF, 0x000000, 0x8B4513]; // White, black, brown
+        // Enhanced rabbit colors with more variety
+        const rabbitColors = [
+          0xF5F5DC, // Beige
+          0xFFFFFF, // White
+          0x696969, // Dim gray
+          0x8B4513, // Saddle brown
+          0x2F4F4F  // Dark slate gray
+        ];
         const randomColor = rabbitColors[Math.floor(Math.random() * rabbitColors.length)];
         return new THREE.MeshLambertMaterial({ 
           color: randomColor,
@@ -125,13 +131,13 @@ export class Animal {
         });
       case 'boar':
         return new THREE.MeshLambertMaterial({ 
-          color: 0x808080, // Grey
+          color: 0x555555, // Darker gray - more realistic boar color
           transparent: false,
           opacity: 1.0
         });
       case 'leopard':
         return new THREE.MeshLambertMaterial({ 
-          color: 0xFFD700, // Golden yellow
+          color: 0xDAA520, // Goldenrod - more realistic leopard base
           transparent: false,
           opacity: 1.0
         });
@@ -143,6 +149,36 @@ export class Animal {
         });
     }
   }
+
+  getHeadGeometry() {
+    switch (this.type) {
+      case 'deer':
+        return new THREE.BoxGeometry(0.8, 0.8, 1.0); // Elongated head
+      case 'rabbit':
+        return new THREE.BoxGeometry(0.6, 0.6, 0.7); // Rounded head
+      case 'boar':
+        return new THREE.BoxGeometry(0.9, 0.7, 1.2); // Wide snout
+      case 'leopard':
+        return new THREE.BoxGeometry(0.7, 0.6, 0.9); // Sleek feline head
+      default:
+        return new THREE.BoxGeometry(0.6, 0.6, 0.8);
+    }
+  }
+
+  getHeadPosition() {
+    switch (this.type) {
+      case 'deer':
+        return { x: 0, y: 0.4, z: 1.8 }; // Higher position for elegant neck
+      case 'rabbit':
+        return { x: 0, y: 0.2, z: 1.0 }; // Compact positioning
+      case 'boar':
+        return { x: 0, y: 0.1, z: 1.6 }; // Lower, forward position
+      case 'leopard':
+        return { x: 0, y: 0.3, z: 1.7 }; // Predator positioning
+      default:
+        return { x: 0, y: 0.3, z: 1.5 };
+    }
+  }
   
   addBodyParts() {
     if (!this.mesh) return;
@@ -150,10 +186,11 @@ export class Animal {
     // Get shared material
     const sharedMaterial = this.getMaterial();
     
-    // Add head
-    const headGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.8);
+    // Add head with animal-specific proportions
+    const headGeometry = this.getHeadGeometry();
     const head = new THREE.Mesh(headGeometry, sharedMaterial);
-    head.position.set(0, 0.3, 1.5);
+    const headPosition = this.getHeadPosition();
+    head.position.set(headPosition.x, headPosition.y, headPosition.z);
     this.mesh.add(head);
     
     // Add ears for specific animals
@@ -173,6 +210,11 @@ export class Animal {
       this.addDeerSpots();
     } else if (this.type === 'leopard') {
       this.addLeopardSpots();
+    }
+    
+    // Add muscle definition for boar
+    if (this.type === 'boar') {
+      this.addBoarMuscles();
     }
     
     // Add legs
@@ -227,15 +269,11 @@ export class Animal {
   }
   
   addLegs() {
-    const legGeometry = new THREE.BoxGeometry(0.2, 0.8, 0.2);
+    const legDimensions = this.getLegDimensions();
+    const legGeometry = new THREE.BoxGeometry(legDimensions.width, legDimensions.height, legDimensions.depth);
     const legMaterial = this.mesh.material; // Use same material as body
     
-    const positions = [
-      [-0.5, -0.8, 1.0],   // Front left
-      [0.5, -0.8, 1.0],    // Front right
-      [-0.5, -0.8, -1.0],  // Back left
-      [0.5, -0.8, -1.0]    // Back right
-    ];
+    const positions = this.getLegPositions();
     
     positions.forEach(pos => {
       const leg = new THREE.Mesh(legGeometry, legMaterial);
@@ -243,51 +281,221 @@ export class Animal {
       this.mesh.add(leg);
     });
   }
+
+  getLegDimensions() {
+    switch (this.type) {
+      case 'deer':
+        return { width: 0.18, height: 1.0, depth: 0.18 }; // Thin, tall legs
+      case 'rabbit':
+        return { width: 0.15, height: 0.6, depth: 0.15 }; // Short, compact legs
+      case 'boar':
+        return { width: 0.25, height: 0.8, depth: 0.25 }; // Thick, sturdy legs
+      case 'leopard':
+        return { width: 0.20, height: 0.9, depth: 0.20 }; // Athletic legs
+      default:
+        return { width: 0.2, height: 0.8, depth: 0.2 };
+    }
+  }
+
+  getLegPositions() {
+    switch (this.type) {
+      case 'deer':
+        return [
+          [-0.6, -0.9, 1.2],   // Front left
+          [0.6, -0.9, 1.2],    // Front right
+          [-0.6, -0.9, -1.2],  // Back left
+          [0.6, -0.9, -1.2]    // Back right
+        ];
+      case 'rabbit':
+        return [
+          [-0.35, -0.5, 0.5],   // Front left
+          [0.35, -0.5, 0.5],    // Front right
+          [-0.35, -0.5, -0.5],  // Back left
+          [0.35, -0.5, -0.5]    // Back right
+        ];
+      case 'boar':
+        return [
+          [-0.7, -0.8, 1.0],   // Front left
+          [0.7, -0.8, 1.0],    // Front right
+          [-0.7, -0.8, -1.0],  // Back left
+          [0.7, -0.8, -1.0]    // Back right
+        ];
+      case 'leopard':
+        return [
+          [-0.5, -0.8, 1.1],   // Front left
+          [0.5, -0.8, 1.1],    // Front right
+          [-0.5, -0.8, -1.1],  // Back left
+          [0.5, -0.8, -1.1]    // Back right
+        ];
+      default:
+        return [
+          [-0.5, -0.8, 1.0],   // Front left
+          [0.5, -0.8, 1.0],    // Front right
+          [-0.5, -0.8, -1.0],  // Back left
+          [0.5, -0.8, -1.0]    // Back right
+        ];
+    }
+  }
   
   addTail() {
-    const tailGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.6);
+    const tailDimensions = this.getTailDimensions();
+    const tailGeometry = new THREE.BoxGeometry(tailDimensions.width, tailDimensions.height, tailDimensions.length);
     const tailMaterial = this.mesh.material; // Use same material as body
     const tail = new THREE.Mesh(tailGeometry, tailMaterial);
-    tail.position.set(0, 0.2, -1.8);
+    
+    const tailPosition = this.getTailPosition();
+    tail.position.set(tailPosition.x, tailPosition.y, tailPosition.z);
+    
+    // Add slight rotation for more natural look
+    const tailRotation = this.getTailRotation();
+    tail.rotation.set(tailRotation.x, tailRotation.y, tailRotation.z);
+    
     this.mesh.add(tail);
   }
 
+  getTailDimensions() {
+    switch (this.type) {
+      case 'deer':
+        return { width: 0.08, height: 0.08, length: 0.4 }; // Small, short tail
+      case 'rabbit':
+        return { width: 0.12, height: 0.12, length: 0.2 }; // Fluffy, short tail
+      case 'boar':
+        return { width: 0.06, height: 0.06, length: 0.3 }; // Thin, curly tail
+      case 'leopard':
+        return { width: 0.12, height: 0.12, length: 1.2 }; // Long, thick tail
+      default:
+        return { width: 0.1, height: 0.1, length: 0.6 };
+    }
+  }
+
+  getTailPosition() {
+    switch (this.type) {
+      case 'deer':
+        return { x: 0, y: 0.3, z: -1.8 }; // Higher position
+      case 'rabbit':
+        return { x: 0, y: 0.2, z: -0.9 }; // Compact positioning
+      case 'boar':
+        return { x: 0, y: 0.4, z: -1.6 }; // Slightly raised
+      case 'leopard':
+        return { x: 0, y: 0.2, z: -1.8 }; // Long tail positioning
+      default:
+        return { x: 0, y: 0.2, z: -1.8 };
+    }
+  }
+
+  getTailRotation() {
+    switch (this.type) {
+      case 'deer':
+        return { x: 0.2, y: 0, z: 0 }; // Slight upward tilt
+      case 'rabbit':
+        return { x: 0.5, y: 0, z: 0 }; // Upward bunny tail
+      case 'boar':
+        return { x: 0.3, y: 0.2, z: 0 }; // Slightly curled
+      case 'leopard':
+        return { x: -0.1, y: 0, z: 0 }; // Slight downward curve
+      default:
+        return { x: 0, y: 0, z: 0 };
+    }
+  }
+
   addEyes(head) {
-    const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+    const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8); // Slightly larger eyes
     
     // Determine eye color based on animal type
     let eyeColor = 0x000000; // Default black
     if (this.type === 'rabbit') {
       // Random eye color for rabbits: black or red
       eyeColor = Math.random() < 0.5 ? 0x000000 : 0xFF0000;
+    } else if (this.type === 'deer') {
+      eyeColor = 0x4B0000; // Dark brown for deer
+    } else if (this.type === 'boar') {
+      eyeColor = 0x8B0000; // Dark red for boar
+    } else if (this.type === 'leopard') {
+      eyeColor = 0xFFD700; // Golden eyes for leopard
     }
     
     const eyeMaterial = new THREE.MeshLambertMaterial({ color: eyeColor });
     
+    // Animal-specific eye positioning
+    const eyePositions = this.getEyePositions();
+    
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.15, 0.1, 0.35);
+    leftEye.position.set(eyePositions.left.x, eyePositions.left.y, eyePositions.left.z);
     head.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.15, 0.1, 0.35);
+    rightEye.position.set(eyePositions.right.x, eyePositions.right.y, eyePositions.right.z);
     head.add(rightEye);
   }
 
+  getEyePositions() {
+    switch (this.type) {
+      case 'deer':
+        return {
+          left: { x: -0.2, y: 0.15, z: 0.45 },
+          right: { x: 0.2, y: 0.15, z: 0.45 }
+        };
+      case 'rabbit':
+        return {
+          left: { x: -0.15, y: 0.1, z: 0.3 },
+          right: { x: 0.15, y: 0.1, z: 0.3 }
+        };
+      case 'boar':
+        return {
+          left: { x: -0.2, y: 0.05, z: 0.5 },
+          right: { x: 0.2, y: 0.05, z: 0.5 }
+        };
+      case 'leopard':
+        return {
+          left: { x: -0.18, y: 0.12, z: 0.4 },
+          right: { x: 0.18, y: 0.12, z: 0.4 }
+        };
+      default:
+        return {
+          left: { x: -0.15, y: 0.1, z: 0.35 },
+          right: { x: 0.15, y: 0.1, z: 0.35 }
+        };
+    }
+  }
+
   addDeerSpots() {
-    // Add white spots to deer body
-    const spotGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    // Add white spots to deer body with more realistic distribution
+    const spotGeometry = new THREE.SphereGeometry(0.08, 8, 8);
     const spotMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     
-    // Add several spots across the body
+    // Dense spotted pattern covering the entire deer body
     const spotPositions = [
-      [0.3, 0.2, 0.5],   // Right side front
-      [-0.3, 0.2, 0.5],  // Left side front
-      [0.4, 0.1, -0.2],  // Right side back
-      [-0.4, 0.1, -0.2], // Left side back
-      [0.2, 0.3, 0.0],   // Right side middle
-      [-0.2, 0.3, 0.0],  // Left side middle
-      [0.0, 0.4, 0.3],   // Top front
-      [0.0, 0.4, -0.3]   // Top back
+      // Front section spots
+      [0.4, 0.3, 0.8],   [0.6, 0.1, 0.4],   [0.3, 0.5, 0.0],   [0.2, 0.2, 1.0],
+      [-0.4, 0.3, 0.8],  [-0.6, 0.1, 0.4],  [-0.3, 0.5, 0.0],  [-0.2, 0.2, 1.0],
+      [0.5, 0.6, 0.6],   [0.1, 0.4, 0.9],   [0.7, 0.0, 0.7],   [0.0, 0.3, 1.3],
+      [-0.5, 0.6, 0.6],  [-0.1, 0.4, 0.9],  [-0.7, 0.0, 0.7],  [0.4, 0.5, 1.1],
+      
+      // Middle section spots
+      [0.5, 0.2, -0.3],  [0.2, 0.4, -0.8],  [0.7, 0.0, -0.5],  [0.3, 0.6, 0.2],
+      [-0.5, 0.2, -0.3], [-0.2, 0.4, -0.8], [-0.7, 0.0, -0.5], [-0.3, 0.6, 0.2],
+      [0.1, 0.6, 0.6],   [0.8, 0.3, 0.1],   [0.0, 0.2, 1.2],   [0.6, 0.4, 0.3],
+      [-0.1, 0.6, 0.6],  [-0.8, 0.3, 0.1],  [0.4, 0.1, -1.0],  [-0.6, 0.4, 0.3],
+      
+      // Back section spots
+      [0.2, 0.0, 0.2],   [0.6, 0.4, -0.6],  [0.3, 0.7, -0.2],  [0.1, 0.1, -0.9],
+      [-0.2, 0.0, 0.2],  [-0.6, 0.4, -0.6], [-0.3, 0.7, -0.2], [-0.1, 0.1, -0.9],
+      [0.4, 0.2, -1.1],  [0.2, 0.5, -0.4],  [0.7, 0.1, -0.8],  [0.0, 0.3, -1.3],
+      [-0.4, 0.2, -1.1], [-0.2, 0.5, -0.4], [-0.7, 0.1, -0.8], [0.5, 0.0, -1.2],
+      
+      // Additional dense spots for realistic pattern
+      [0.3, 0.1, 0.5],   [0.5, 0.4, 0.1],   [0.2, 0.6, 0.8],   [0.6, 0.2, 0.9],
+      [-0.3, 0.1, 0.5],  [-0.5, 0.4, 0.1],  [-0.2, 0.6, 0.8],  [-0.6, 0.2, 0.9],
+      [0.1, 0.5, 0.4],   [0.8, 0.1, 0.2],   [0.4, 0.3, -0.1],  [0.2, 0.7, 0.5],
+      [-0.1, 0.5, 0.4],  [-0.8, 0.1, 0.2],  [-0.4, 0.3, -0.1], [-0.2, 0.7, 0.5],
+      
+      // Top spine spots
+      [0.0, 0.7, 0.9],   [0.0, 0.8, 0.3],   [0.0, 0.6, -0.2],  [0.0, 0.5, -0.7],
+      [0.0, 0.4, -1.1],  [0.0, 0.7, 0.6],   [0.0, 0.8, 0.0],   [0.0, 0.6, -0.5],
+      
+      // Side accent spots
+      [0.7, 0.3, 0.5],   [0.8, 0.2, -0.2],  [0.6, 0.5, -0.9],  [0.5, 0.1, 0.8],
+      [-0.7, 0.3, 0.5],  [-0.8, 0.2, -0.2], [-0.6, 0.5, -0.9], [-0.5, 0.1, 0.8]
     ];
     
     spotPositions.forEach(pos => {
@@ -298,26 +506,74 @@ export class Animal {
   }
 
   addLeopardSpots() {
-    // Add black spots to leopard body
-    const spotGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+    // Add black rosette spots to leopard body for more realistic leopard pattern
+    const spotGeometry = new THREE.SphereGeometry(0.06, 8, 8);
     const spotMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    // Add many spots for leopard pattern
+    // Leopard rosette pattern - dense spots covering body
     const spotPositions = [
-      [0.2, 0.3, 0.8],   [0.4, 0.1, 0.6],   [0.3, 0.4, 0.3],
-      [-0.2, 0.3, 0.8],  [-0.4, 0.1, 0.6],  [-0.3, 0.4, 0.3],
-      [0.5, 0.2, 0.0],   [0.3, 0.5, -0.2],  [0.2, 0.1, -0.5],
-      [-0.5, 0.2, 0.0],  [-0.3, 0.5, -0.2], [-0.2, 0.1, -0.5],
-      [0.1, 0.2, 1.0],   [0.6, 0.3, -0.8],  [0.0, 0.5, 0.1],
-      [-0.1, 0.2, 1.0],  [-0.6, 0.3, -0.8], [0.4, 0.0, -1.0],
-      [0.2, 0.6, 0.5],   [0.5, 0.4, -0.3],  [0.3, 0.2, -0.7],
-      [-0.2, 0.6, 0.5],  [-0.5, 0.4, -0.3], [-0.3, 0.2, -0.7]
+      // Main body spots
+      [0.3, 0.4, 0.9],   [0.5, 0.2, 0.7],   [0.2, 0.5, 0.5],   [0.6, 0.3, 0.3],
+      [-0.3, 0.4, 0.9],  [-0.5, 0.2, 0.7],  [-0.2, 0.5, 0.5],  [-0.6, 0.3, 0.3],
+      [0.4, 0.1, 0.1],   [0.1, 0.6, 0.2],   [0.7, 0.0, 0.0],   [0.3, 0.2, -0.2],
+      [-0.4, 0.1, 0.1],  [-0.1, 0.6, 0.2],  [-0.7, 0.0, 0.0],  [-0.3, 0.2, -0.2],
+      // Back section spots
+      [0.5, 0.3, -0.4],  [0.2, 0.4, -0.6],  [0.6, 0.1, -0.8],  [0.1, 0.2, -1.0],
+      [-0.5, 0.3, -0.4], [-0.2, 0.4, -0.6], [-0.6, 0.1, -0.8], [-0.1, 0.2, -1.0],
+      [0.4, 0.5, -0.3],  [0.3, 0.0, -0.5],  [0.8, 0.2, -0.2],  [0.0, 0.3, -0.9],
+      [-0.4, 0.5, -0.3], [-0.3, 0.0, -0.5], [-0.8, 0.2, -0.2], [0.2, 0.6, -0.7],
+      // Additional smaller spots for density
+      [0.1, 0.3, 0.8],   [0.4, 0.4, 0.6],   [0.6, 0.5, 0.4],   [0.2, 0.1, 0.2],
+      [-0.1, 0.3, 0.8],  [-0.4, 0.4, 0.6],  [-0.6, 0.5, 0.4],  [-0.2, 0.1, 0.2],
+      [0.3, 0.6, -0.1],  [0.5, 0.0, -0.6],  [0.1, 0.4, -0.4],  [0.7, 0.2, -0.9],
+      [-0.3, 0.6, -0.1], [-0.5, 0.0, -0.6], [-0.1, 0.4, -0.4], [-0.7, 0.2, -0.9]
     ];
     
     spotPositions.forEach(pos => {
       const spot = new THREE.Mesh(spotGeometry, spotMaterial);
       spot.position.set(pos[0], pos[1], pos[2]);
       this.mesh.add(spot);
+    });
+  }
+
+  addBoarMuscles() {
+    // Add muscle definition to boar body with darker shading
+    const muscleGeometry = new THREE.BoxGeometry(0.3, 0.2, 0.4);
+    const muscleMaterial = new THREE.MeshLambertMaterial({ 
+      color: 0x333333, // Darker gray for muscle definition
+      transparent: true,
+      opacity: 0.8
+    });
+    
+    // Shoulder muscles
+    const shoulderMuscles = [
+      { pos: [0.6, 0.3, 0.8], scale: [1.0, 1.2, 1.0] },  // Right shoulder
+      { pos: [-0.6, 0.3, 0.8], scale: [1.0, 1.2, 1.0] }, // Left shoulder
+      { pos: [0.7, 0.1, 0.5], scale: [0.8, 1.0, 0.8] },  // Right upper arm
+      { pos: [-0.7, 0.1, 0.5], scale: [0.8, 1.0, 0.8] }  // Left upper arm
+    ];
+    
+    shoulderMuscles.forEach(muscle => {
+      const muscleMesh = new THREE.Mesh(muscleGeometry, muscleMaterial);
+      muscleMesh.position.set(muscle.pos[0], muscle.pos[1], muscle.pos[2]);
+      muscleMesh.scale.set(muscle.scale[0], muscle.scale[1], muscle.scale[2]);
+      this.mesh.add(muscleMesh);
+    });
+    
+    // Back muscles
+    const backMuscleGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.6);
+    const backMuscles = [
+      { pos: [0.5, 0.4, 0.0], scale: [1.0, 1.0, 1.0] },  // Right back
+      { pos: [-0.5, 0.4, 0.0], scale: [1.0, 1.0, 1.0] }, // Left back
+      { pos: [0.3, 0.5, -0.5], scale: [0.8, 0.8, 1.0] }, // Right rear
+      { pos: [-0.3, 0.5, -0.5], scale: [0.8, 0.8, 1.0] } // Left rear
+    ];
+    
+    backMuscles.forEach(muscle => {
+      const muscleMesh = new THREE.Mesh(backMuscleGeometry, muscleMaterial);
+      muscleMesh.position.set(muscle.pos[0], muscle.pos[1], muscle.pos[2]);
+      muscleMesh.scale.set(muscle.scale[0], muscle.scale[1], muscle.scale[2]);
+      this.mesh.add(muscleMesh);
     });
   }
   
@@ -473,6 +729,11 @@ export class Animal {
   }
   
   canAttack(target) {
+    // All animals can attack when in aggressive state (fighting back)
+    if (this.aiState === 'aggressive') {
+      return this.distanceTo(target) <= this.attackRange;
+    }
+    // Otherwise, only predators and boars can initiate attacks
     return (this.behaviorType === 'predator' || this.type === 'boar') && this.distanceTo(target) <= this.attackRange;
   }
   

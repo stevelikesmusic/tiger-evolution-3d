@@ -1,6 +1,6 @@
 # Tiger Evolution 3D 🐅
 
-**Status**: 🟢 **FULL HUNTING ECOSYSTEM** *(Phase 6 - 90% Complete)*
+**Status**: 🟢 **ENHANCED HUNTING & SCENT TRAIL SYSTEM** *(Phase 8 - 95% Complete)*
 
 A realistic 3D tiger evolution and survival game built with Three.js and modern web technologies. Control a tiger through its evolution from Young to Alpha while hunting wildlife, surviving, and exploring a dynamic 3D jungle ecosystem with underwater terrain.
 
@@ -14,13 +14,14 @@ A realistic 3D tiger evolution and survival game built with Three.js and modern 
 - **Evolution System**: Tiger evolves from Young → Adult → Alpha with stat bonuses
 - **Complete 3D Jungle**: Procedural terrain with vegetation, water systems, and wildlife
 
-### ✅ **Hunting & Wildlife System**
-- **Realistic Animals**: Deer with antlers, boars with tusks, rabbits with ears, leopards with spots
-- **Simple Combat**: Press Z near animals to attack (Young tiger deals 10 damage)
-- **Visual Health Bars**: Red/green health bars appear above animals when attacked
-- **Animal Fight-Back**: ALL animals become aggressive and counter-attack when attacked
-- **Balanced Damage**: Rabbit=5, Deer=20, Boar=30, Leopard=50 damage
-- **AI Behaviors**: Animals graze, move, flee, and fight with realistic group behavior
+### ✅ **Enhanced Hunting & Wildlife System**
+- **Realistic Animals**: Enhanced deer with 72 spots, boars with muscles, rabbits with varied colors, leopards with rosettes
+- **Enhanced Visuals**: Animal-specific eye colors, detailed body parts, realistic proportions
+- **Combat System**: Press Z near animals to attack - ALL animals fight back when attacked
+- **Balanced Damage**: Rabbit=5, Boar=20, Deer=30, Leopard=40 damage values
+- **Stealth Mechanics**: Sneak up behind animals to avoid detection (70% chance)
+- **Scent Trail System**: Press M to create purple trails leading to nearest animals
+- **Smart AI**: Animals have directional awareness and realistic group behavior
 
 ### ✅ **Advanced World Systems**
 - **Professional Water**: Reflective lakes, rivers, lily pad platforms with lotus flowers
@@ -68,7 +69,9 @@ npm run build
   - `E` - Rotate right
 
 ### 🦌 **Hunting & Combat**
-- `Z` - Attack nearby animals (Young tiger deals 10 damage)
+- `Z` - Attack nearby animals when in range
+- `M` - Create purple scent trail to nearest animal (find animals easily)
+- `Ctrl` - Crouch for stealth (animals can't detect you from behind)
 - Get close to animals and press Z to hunt
 - Animals will fight back with their own damage values
 - Health bars appear above animals when attacked
@@ -133,27 +136,29 @@ src/
 
 ## 🎯 **Development Roadmap**
 
-### ✅ **Phase 1-6 Complete**: Full Hunting Ecosystem
+### ✅ **Phase 1-8 Complete**: Enhanced Hunting & Scent Trail System
 - **Phase 1**: Core foundation (Three.js, camera, input, tiger character)
 - **Phase 2**: Basic water system and swimming mechanics
 - **Phase 3**: Professional water with reflections and lily pads
 - **Phase 4**: Complete underwater terrain with seaweed and interactive elements
 - **Phase 5**: Wildlife system with realistic animals and AI behaviors
 - **Phase 6**: Simplified hunting system with immediate combat mechanics
+- **Phase 7**: Save system with main menu and game persistence
+- **Phase 8**: Enhanced animal visuals, stealth AI, and scent trail system
 
-### 🚧 **Phase 7 Next**: Environmental Enhancement
-- Enhanced terrain biomes (dense forest, riverbanks, rocky outcrops)
-- Weather system (rain, fog) affecting visibility and animal behavior
-- Day/night cycle with dynamic lighting and different animal activity patterns
-- Audio integration (ambient jungle sounds, water sounds, footsteps, animal calls)
-
-### 📋 **Phase 8 Planned**: Advanced Evolution & Systems
+### 🚧 **Phase 9 Next**: Advanced Tiger Evolution & Abilities
 - Tiger evolution system (cub → adult → alpha) with enhanced stats and abilities
 - Advanced hunting: stealth system, kill animations, prey tracking, combo attacks
 - Territory management: marking, defending, expanding controlled areas
 - Survival elements: hunger, thirst, stamina management with consequences
 
-### 🎨 **Phase 9 Future**: Multiplayer & Advanced Features
+### 📋 **Phase 10 Planned**: Environmental Enhancement
+- Enhanced terrain biomes (dense forest, riverbanks, rocky outcrops)
+- Weather system (rain, fog) affecting visibility and animal behavior
+- Day/night cycle with dynamic lighting and different animal activity patterns
+- Audio integration (ambient jungle sounds, water sounds, footsteps, animal calls)
+
+### 🎨 **Phase 11 Future**: Multiplayer & Advanced Features
 - Other player tigers in shared jungle environment
 - Cooperative hunting mechanics and territory disputes
 - Advanced AI predators (crocodiles, other apex predators)
@@ -194,12 +199,13 @@ MIT License - See LICENSE file for details.
 ## 🎮 **Gameplay Tips**
 
 ### 🦌 **Hunting Strategy**
-- **Find Animals**: Look for deer, boars, rabbits, and leopards roaming the jungle
+- **Find Animals**: Press M to create purple scent trails leading to nearest animals
+- **Stealth Approach**: Crouch (Ctrl) and approach from behind to avoid detection
 - **Get Close**: Walk up to animals until you're within attack range  
-- **Press Z**: Attack with Z key (Young tiger deals 10 damage)
-- **Health Bars**: Watch the red/green health bar above animals
-- **Fight Back**: Be ready! All animals will counter-attack when hit
-- **Gain XP**: Successfully kill animals to gain experience and evolve
+- **Press Z**: Attack with Z key - all animals fight back with balanced damage
+- **Health Bars**: Watch the red/green health bar above animals during combat
+- **Balanced Combat**: Rabbit=5, Boar=20, Deer=30, Leopard=40 damage
+- **Visual Enhancements**: Animals have realistic features (deer spots, boar muscles, leopard rosettes)
 
 ### 🏊 **Exploration**
 - **Water Areas**: Jump on lily pads to cross water safely

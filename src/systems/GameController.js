@@ -12,6 +12,7 @@ import { AnimalSystem } from './AnimalSystem.js';
 import { UISystem } from './UISystem.js';
 import { GameSave } from './GameSave.js';
 import { MainMenu } from './MainMenu.js';
+import { ScentTrailSystem } from './ScentTrailSystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -91,6 +92,10 @@ export class GameController {
     // Create UI system
     this.uiSystem = new UISystem();
     console.log('🎮 GameController: UI system created');
+
+    // Create scent trail system
+    console.log('🎮 GameController: Creating scent trail system...');
+    this.scentTrailSystem = new ScentTrailSystem(this.scene);
 
     // Create underwater system
     console.log('🎮 GameController: Creating underwater system...');
@@ -179,6 +184,11 @@ export class GameController {
       // Update UI system (for stats display)
       if (this.uiSystem) {
         this.uiSystem.updateStats(this.tiger);
+      }
+      
+      // Update scent trail system (for trail fading)
+      if (this.scentTrailSystem) {
+        this.scentTrailSystem.update(deltaTime);
       }
       
       // Update underwater system (for seaweed animation)
@@ -441,6 +451,19 @@ export class GameController {
       }
     }
 
+    // Handle scent trail
+    if (this.input.keys.scentTrail && this.scentTrailSystem && this.animalSystem && !this.isUnderwater) {
+      // M key: Create scent trail to nearest animal
+      console.log('🟣 Scent trail key pressed! Creating trail...');
+      const nearestAnimal = this.scentTrailSystem.findNearestAnimal(this.tiger.position, this.animalSystem);
+      if (nearestAnimal) {
+        this.scentTrailSystem.createTrail(this.tiger.position, nearestAnimal);
+        console.log(`🟣 Scent trail created to ${nearestAnimal.type}`);
+      } else {
+        console.log('🟣 No animals found for scent trail');
+      }
+    }
+
     // Handle menu toggle
     if (this.input.keys.Escape && !this.mainMenu.isVisible) {
       console.log('🎮 Escape pressed - showing menu');
@@ -686,6 +709,11 @@ export class GameController {
       this.animalSystem.dispose();
     }
 
+    // Clean up scent trail system
+    if (this.scentTrailSystem) {
+      this.scentTrailSystem.dispose();
+    }
+
     // Clean up UI system
     if (this.uiSystem) {
       this.uiSystem.dispose();
@@ -734,6 +762,7 @@ export class GameController {
     this.terrainRenderer = null;
     this.vegetationSystem = null;
     this.animalSystem = null;
+    this.scentTrailSystem = null;
     this.uiSystem = null;
     this.waterSystem = null;
     this.underwaterSystem = null;

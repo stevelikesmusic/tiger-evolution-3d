@@ -102,6 +102,7 @@ export class UISystem {
       <div>Ctrl: Crouch (stealth)</div>
       <div>Z: Hunt nearby animals</div>
       <div>E: Eat prey</div>
+      <div>M: Scent trail (find animals)</div>
       <div>R: Dive underwater</div>
       <div>Space: Jump/Surface</div>
       <div>Esc: Menu</div>
