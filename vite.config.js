@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/tiger-evolution-3d/',
+  
   // Development server configuration
   server: {
     port: 3000,
