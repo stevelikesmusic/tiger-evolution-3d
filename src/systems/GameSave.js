@@ -20,6 +20,7 @@ export class GameSave {
             y: gameState.tiger.rotation.y,
             z: gameState.tiger.rotation.z
           } : { x: 0, y: 0, z: 0 },
+          gender: gameState.tiger.gender || 'male',
           health: gameState.tiger.health,
           stamina: gameState.tiger.stamina,
           hunger: gameState.tiger.hunger,
@@ -96,6 +97,7 @@ export class GameSave {
         version: saveData.version,
         timestamp: saveData.timestamp,
         lastSaved: new Date(saveData.timestamp).toLocaleString(),
+        tigerGender: saveData.tiger.gender || 'male',
         tigerLevel: saveData.tiger.level,
         evolutionStage: saveData.tiger.evolutionStage,
         experience: saveData.tiger.experience,

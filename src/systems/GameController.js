@@ -13,6 +13,7 @@ import { UISystem } from './UISystem.js';
 import { GameSave } from './GameSave.js';
 import { MainMenu } from './MainMenu.js';
 import { ScentTrailSystem } from './ScentTrailSystem.js';
+import { TigerTraceSystem } from './TigerTraceSystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -54,9 +55,10 @@ export class GameController {
     this.terrainRenderer = new TerrainRenderer(this.terrain);
     this.scene.add(this.terrainRenderer.getMesh());
 
-    // Create tiger entity and model
-    this.tiger = new Tiger();
-    this.tigerModel = new TigerModel();
+    // Create tiger entity and model with selected gender
+    const gender = this.selectedGender || 'male';
+    this.tiger = new Tiger(gender);
+    this.tigerModel = new TigerModel(gender);
 
     // Create camera system
     this.camera = new CameraSystem(this.canvas.width, this.canvas.height);
@@ -96,6 +98,10 @@ export class GameController {
     // Create scent trail system
     console.log('🎮 GameController: Creating scent trail system...');
     this.scentTrailSystem = new ScentTrailSystem(this.scene);
+    
+    // Create tiger trace system
+    console.log('🎮 GameController: Creating tiger trace system...');
+    this.tigerTraceSystem = new TigerTraceSystem(this.scene);
 
     // Create underwater system
     console.log('🎮 GameController: Creating underwater system...');
@@ -189,6 +195,11 @@ export class GameController {
       // Update scent trail system (for trail fading)
       if (this.scentTrailSystem) {
         this.scentTrailSystem.update(deltaTime);
+      }
+      
+      // Update tiger trace system (for trace fading and updates)
+      if (this.tigerTraceSystem) {
+        this.tigerTraceSystem.update(deltaTime);
       }
       
       // Update underwater system (for seaweed animation)
@@ -343,6 +354,75 @@ export class GameController {
       this.movementSystem.setUnderwaterMode(false);
     }
   }
+  
+  processInput() {
+    // Handle tiger trace (R key)
+    if (this.input.isUsingTigerTrace()) {
+      if (this.tigerTraceSystem && this.animalSystem) {
+        // Create red trace to nearest tiger
+        const traceCreated = this.tigerTraceSystem.createTrace(this.tiger.position, this.animalSystem);
+        if (traceCreated) {
+          console.log('🔴 Red tiger trace created!');
+        }
+      }
+    }
+    
+    // Handle scent trail (M key) 
+    if (this.input.keys.scentTrail) {
+      if (this.scentTrailSystem && this.animalSystem) {
+        // Create scent trail to nearest animal
+        const trailCreated = this.scentTrailSystem.createTrail(this.tiger.position, this.animalSystem);
+        if (trailCreated) {
+          console.log('🟣 Scent trail created!');
+        }
+      }
+    }
+    
+    // Handle hunting (Z key)
+    if (this.input.isHunting()) {
+      if (this.animalSystem) {
+        const huntResult = this.animalSystem.attemptHunt(this.tiger);
+        if (huntResult) {
+          console.log('🎯 Hunt successful!');
+        }
+      }
+    }
+    
+    // Handle laser breath (L key) - Alpha only
+    if (this.input.isUsingLaserBreath()) {
+      if (this.tiger.hasLaserBreath() && this.animalSystem) {
+        const laserResult = this.tiger.useLaserBreath(this.animalSystem.animals, this.tigerModel);
+        if (laserResult) {
+          console.log('🔴 Laser breath fired!');
+        }
+      }
+    }
+    
+    // Handle eating (E key)
+    if (this.input.isInteracting()) {
+      if (this.animalSystem) {
+        const eatResult = this.animalSystem.attemptEat(this.tiger);
+        if (eatResult) {
+          console.log('🍖 Tiger is eating!');
+        }
+      }
+    }
+    
+    // Handle underwater teleportation (Space key when in water)
+    if (this.input.isJumping() && this.isInWater() && !this.isUnderwater) {
+      this.teleportToUnderwaterTerrain();
+    }
+    
+    // Handle surface return (Space key when underwater)
+    if (this.input.isJumping() && this.isUnderwater) {
+      this.teleportToSurface();
+    }
+    
+    // Handle menu toggle (Escape key)
+    if (this.input.keys.Escape) {
+      this.showMainMenu();
+    }
+  }
 
   logPositionSync() {
     this.positionLogCounter = (this.positionLogCounter || 0) + 1;
@@ -384,6 +464,7 @@ export class GameController {
       isDiving: this.input.isDiving(), // R key for diving in water
       isHunting: this.input.isHunting(), // Z key for hunting
       isInteracting: this.input.isInteracting(), // E key for eating
+      isUsingLaserBreath: this.input.isUsingLaserBreath(), // L key for laser breath (Alpha only)
       isUnderwaterMode: this.isUnderwater
     };
 
@@ -428,6 +509,7 @@ export class GameController {
       // Z key: Attempt to hunt nearby animals (only on surface)
       console.log('🎯 Hunt key pressed! Attempting to hunt...');
       console.log(`🎯 Tiger position: (${this.tiger.position.x.toFixed(1)}, ${this.tiger.position.y.toFixed(1)}, ${this.tiger.position.z.toFixed(1)})`);
+      console.log(`🎯 Tiger evolution stage: ${this.tiger.evolutionStage}`);
       console.log(`🎯 Tiger attack range: ${this.tiger.getAttackRange()}`);
       console.log(`🎯 Total animals in system: ${this.animalSystem.getAnimalCount()}`);
       
@@ -436,6 +518,23 @@ export class GameController {
         console.log('🎯 Hunt successful!');
       } else {
         console.log('🎯 Hunt failed - no animals in range');
+      }
+    } else if (movementInput.isHunting && this.isUnderwater) {
+      console.log('🎯 Hunt key pressed but tiger is underwater - hunting disabled');
+    } else if (movementInput.isHunting && !this.animalSystem) {
+      console.log('🎯 Hunt key pressed but animal system not available');
+    }
+
+    // Handle laser breath
+    if (movementInput.isUsingLaserBreath && this.animalSystem && !this.isUnderwater) {
+      // L key: Use laser breath (Alpha tigers only, only on surface)
+      console.log('🔴 Laser breath key pressed! Attempting laser attack...');
+      const animals = this.animalSystem.getAnimals();
+      const laserSuccess = this.tiger.useLaserBreath(animals, this.tigerModel);
+      if (laserSuccess) {
+        console.log('🔴 Laser breath successful!');
+      } else {
+        console.log('🔴 Laser breath failed - no targets hit or tiger not Alpha');
       }
     }
 
@@ -513,13 +612,22 @@ export class GameController {
 
     // Handle evolution changes
     if (this.tiger.evolutionStage !== this.tigerModel.evolutionStage) {
-      switch (this.tiger.evolutionStage) {
-        case 'Adult':
-          this.tigerModel.evolveToAdult();
-          break;
-        case 'Alpha':
-          this.tigerModel.evolveToAlpha();
-          break;
+      try {
+        console.log(`🔄 Evolution detected: ${this.tigerModel.evolutionStage} -> ${this.tiger.evolutionStage}`);
+        switch (this.tiger.evolutionStage) {
+          case 'Adult':
+            this.tigerModel.evolveToAdult();
+            console.log('🟤 Adult evolution completed');
+            break;
+          case 'Alpha':
+            this.tigerModel.evolveToAlpha();
+            console.log('🔴 Alpha evolution completed');
+            break;
+        }
+      } catch (error) {
+        console.error('❌ Error during evolution:', error);
+        // Reset to prevent infinite loop
+        this.tigerModel.evolutionStage = this.tiger.evolutionStage;
       }
     }
   }
@@ -981,8 +1089,8 @@ export class GameController {
     const saveInfo = this.gameSave.getSaveInfo();
     
     // Set up menu callbacks
-    this.mainMenu.setOnNewGame(() => {
-      this.startNewGame();
+    this.mainMenu.setOnNewGame((gender) => {
+      this.startNewGame(gender);
     });
     
     this.mainMenu.setOnContinueGame(() => {
@@ -997,9 +1105,12 @@ export class GameController {
     this.mainMenu.show(saveInfo);
   }
 
-  startNewGame() {
-    console.log('🎮 Starting new game...');
+  startNewGame(gender = 'male') {
+    console.log(`🎮 Starting new game with ${gender} tiger...`);
     this.mainMenu.hide();
+    
+    // Store selected gender for tiger creation
+    this.selectedGender = gender;
     
     // Initialize game systems if not already done
     if (!this.gameInitialized) {
@@ -1027,6 +1138,18 @@ export class GameController {
     console.log('🎮 Continuing saved game...');
     this.mainMenu.hide();
     
+    // Load saved game data first to get the gender
+    const saveData = this.gameSave.loadGame();
+    if (!saveData) {
+      console.error('❌ Failed to load saved game, starting new game instead');
+      this.startNewGame();
+      return;
+    }
+    
+    // Set the selected gender from save data before initializing systems
+    this.selectedGender = saveData.tiger?.gender || 'male';
+    console.log(`🎮 Loading saved game with ${this.selectedGender} tiger`);
+    
     // Initialize game systems if not already done
     if (!this.gameInitialized) {
       this.initializeSystems();
@@ -1034,10 +1157,10 @@ export class GameController {
       this.gameInitialized = true;
     }
     
-    // Load saved game
-    const success = this.loadGame();
+    // Apply saved game state to the tiger
+    const success = this.applySaveData(saveData);
     if (!success) {
-      console.error('❌ Failed to load saved game, starting new game instead');
+      console.error('❌ Failed to apply saved game data, starting new game instead');
       this.startNewGame();
       return;
     }
@@ -1061,8 +1184,7 @@ export class GameController {
     return this.gameSave.saveGame(gameState);
   }
 
-  loadGame() {
-    const saveData = this.gameSave.loadGame();
+  applySaveData(saveData) {
     if (!saveData) return false;
     
     try {
@@ -1080,6 +1202,11 @@ export class GameController {
             y: saveData.tiger.rotation.y,
             z: saveData.tiger.rotation.z
           };
+        }
+        
+        // Gender is already set during tiger creation, verify it matches
+        if (saveData.tiger.gender && saveData.tiger.gender !== this.tiger.gender) {
+          console.warn(`⚠️ Gender mismatch in save data: expected ${this.tiger.gender}, got ${saveData.tiger.gender}`);
         }
         
         this.tiger.health = saveData.tiger.health || 100;
@@ -1161,5 +1288,38 @@ export class GameController {
         document.body.removeChild(notification);
       }
     }, 3000);
+  }
+  
+  dispose() {
+    // Dispose all systems
+    if (this.tigerTraceSystem) {
+      this.tigerTraceSystem.dispose();
+    }
+    
+    if (this.scentTrailSystem) {
+      this.scentTrailSystem.dispose();
+    }
+    
+    if (this.animalSystem) {
+      this.animalSystem.dispose();
+    }
+    
+    if (this.underwaterSystem) {
+      this.underwaterSystem.dispose();
+    }
+    
+    if (this.waterSystem) {
+      this.waterSystem.dispose();
+    }
+    
+    if (this.vegetationSystem) {
+      this.vegetationSystem.dispose();
+    }
+    
+    if (this.input) {
+      this.input.dispose();
+    }
+    
+    console.log('🎮 GameController disposed');
   }
 }

@@ -1,14 +1,34 @@
 import * as THREE from 'three';
 
 export class Tiger {
-  constructor() {
-    // Starting stats (realistic tiger attributes)
-    this.health = 100;
-    this.maxHealth = 100;
+  constructor(gender = 'male') {
+    // Gender selection
+    this.gender = gender; // 'male' or 'female'
+    
+    // Base stats (before gender modifiers)
+    const baseHealth = 100;
+    const basePower = 80;
+    const baseStamina = 300;
+    
+    // Apply gender stat differences
+    if (this.gender === 'female') {
+      // Females: +20% stamina, -10% strength
+      this.stamina = Math.floor(baseStamina * 1.2); // +20% stamina
+      this.maxStamina = Math.floor(baseStamina * 1.2);
+      this.power = Math.floor(basePower * 0.9); // -10% strength
+      console.log('🐅♀️ Female tiger created: +20% stamina, -10% strength');
+    } else {
+      // Males: +15% strength, -10% stamina
+      this.power = Math.floor(basePower * 1.15); // +15% strength
+      this.stamina = Math.floor(baseStamina * 0.9); // -10% stamina
+      this.maxStamina = Math.floor(baseStamina * 0.9);
+      console.log('🐅♂️ Male tiger created: +15% strength, -10% stamina');
+    }
+    
+    // Starting stats (after gender modifiers)
+    this.health = baseHealth;
+    this.maxHealth = baseHealth;
     this.speed = 12; // units/second
-    this.power = 80; // attack damage
-    this.stamina = 300;
-    this.maxStamina = 300;
     this.stealth = 60; // affects detection radius
     this.hunger = 100;
     this.maxHunger = 100;
@@ -30,6 +50,8 @@ export class Tiger {
     this.experienceToNextLevel = 100;
     this.adultLevel = 10;
     this.alphaLevel = 30;
+    
+    console.log(`🐅 ${this.gender} tiger stats: Health ${this.health}, Power ${this.power}, Stamina ${this.stamina}/${this.maxStamina}`);
   }
 
   // Health management
@@ -76,6 +98,21 @@ export class Tiger {
 
   levelUp() {
     this.level++;
+    
+    // Apply stat bonuses for each level up
+    this.maxHealth += 10;
+    this.health = Math.min(this.maxHealth, this.health + 10); // Gain 10 health but don't exceed max
+    this.maxHunger += 10;
+    this.hunger = Math.min(this.maxHunger, this.hunger + 10); // Gain 10 hunger but don't exceed max
+    this.power += 10; // Increase damage by 10
+    this.maxStamina -= 5; // Decrease max stamina by 5 every level
+    this.stamina = Math.max(0, this.stamina - 5); // Lose 5 current stamina every level-up
+    
+    // Ensure current stamina doesn't exceed new max
+    this.stamina = Math.min(this.stamina, this.maxStamina);
+    
+    console.log(`🐅 Tiger leveled up to ${this.level}! Stats: +10 health (${this.health}/${this.maxHealth}), +10 hunger (${this.hunger}/${this.maxHunger}), +10 damage (${this.power}), -5 max stamina (${this.maxStamina}), -5 stamina (${this.stamina})`);
+    
     this.evolve();
   }
 
@@ -92,28 +129,28 @@ export class Tiger {
   }
 
   evolveToAdult() {
-    // Enhanced stats: +10 health, +10 hunger, +10 stamina
+    // Evolution bonuses (separate from level-up bonuses)
     this.maxHealth += 10;
     this.health = this.maxHealth; // Full heal on evolution
     this.maxHunger += 10;
     this.hunger = this.maxHunger; // Full hunger on evolution
-    this.maxStamina += 10;
-    this.stamina = this.maxStamina - 100; // +10 stamina but lose 100 as penalty
+    this.maxStamina += 15; // +15 to compensate for the -5 from level-up, net +10
+    this.stamina = this.maxStamina - 5; // Full stamina but lose 5 for evolution
     
     // Ensure stamina doesn't go below 0
     this.stamina = Math.max(0, this.stamina);
     
-    console.log(`🐅 Tiger evolved to Adult! Stats: Health +10, Hunger +10, Stamina +10 (but -100 penalty)`);
+    console.log(`🐅 Tiger evolved to Adult! Evolution bonuses: Health +10, Hunger +10, Max Stamina +15, -5 evolution penalty`);
   }
 
   evolveToAlpha() {
-    // Alpha Tiger: Enhanced stats: +10 health, +10 hunger, +10 stamina
+    // Evolution bonuses (separate from level-up bonuses)
     this.maxHealth += 10;
     this.health = this.maxHealth; // Full heal on evolution
     this.maxHunger += 10;
     this.hunger = this.maxHunger; // Full hunger on evolution
-    this.maxStamina += 10;
-    this.stamina = this.maxStamina - 100; // +10 stamina but lose 100 as penalty
+    this.maxStamina += 15; // +15 to compensate for the -5 from level-up, net +10
+    this.stamina = this.maxStamina - 5; // Full stamina but lose 5 for evolution
     
     // Ensure stamina doesn't go below 0
     this.stamina = Math.max(0, this.stamina);
@@ -122,7 +159,7 @@ export class Tiger {
     this.power *= 2; // Double damage from current power
     this.stealth += 20; // Enhanced stealth
     
-    console.log(`🐅 Tiger evolved to Alpha! Stats: Health +10, Hunger +10, Stamina +10 (but -100 penalty), Power doubled!`);
+    console.log(`🐅 Tiger evolved to Alpha! Evolution bonuses: Health +10, Hunger +10, Max Stamina +15, -5 evolution penalty, Power doubled!`);
   }
 
   // Position and movement
@@ -138,9 +175,127 @@ export class Tiger {
     this.state = newState;
   }
 
+  // Gender utilities
+  getGenderDisplay() {
+    return this.gender === 'female' ? '♀️ Female' : '♂️ Male';
+  }
+
+  getGenderStats() {
+    if (this.gender === 'female') {
+      return {
+        bonuses: ['+20% Stamina'],
+        penalties: ['-10% Strength']
+      };
+    } else {
+      return {
+        bonuses: ['+15% Strength'],
+        penalties: ['-10% Stamina']
+      };
+    }
+  }
+
   // Special abilities
   hasLaserBreath() {
     return this.evolutionStage === 'Alpha';
+  }
+
+  useLaserBreath(animals, tigerModel = null) {
+    if (!this.hasLaserBreath()) {
+      console.log(`🔴 Laser breath failed - tiger is not Alpha (current: ${this.evolutionStage})`);
+      return false;
+    }
+
+    console.log(`🔴 Alpha tiger using laser breath!`);
+    
+    // Find animals in front of the tiger within laser range
+    const laserRange = 20.0; // Laser can hit targets up to 20 units away
+    const laserAngle = Math.PI / 6; // 30 degree cone
+    let hitTargets = [];
+    let closestTarget = null;
+    let closestDistance = Infinity;
+
+    for (const animal of animals) {
+      if (!animal.isAlive()) continue;
+
+      // Calculate distance to animal
+      const distance = this.distanceTo(animal.position);
+      if (distance > laserRange) continue;
+
+      // Calculate angle between tiger's facing direction and animal
+      const tigerForwardX = Math.sin(this.rotation.y);
+      const tigerForwardZ = Math.cos(this.rotation.y);
+      
+      const toAnimalX = animal.position.x - this.position.x;
+      const toAnimalZ = animal.position.z - this.position.z;
+      const toAnimalLength = Math.sqrt(toAnimalX * toAnimalX + toAnimalZ * toAnimalZ);
+      
+      if (toAnimalLength === 0) continue;
+      
+      const toAnimalNormX = toAnimalX / toAnimalLength;
+      const toAnimalNormZ = toAnimalZ / toAnimalLength;
+      
+      // Dot product to get angle
+      const dotProduct = tigerForwardX * toAnimalNormX + tigerForwardZ * toAnimalNormZ;
+      const angle = Math.acos(Math.max(-1, Math.min(1, dotProduct)));
+
+      // Check if animal is within laser cone
+      if (angle <= laserAngle) {
+        hitTargets.push(animal);
+        
+        // Track closest target for visual beam
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestTarget = animal;
+        }
+      }
+    }
+
+    // Create visual laser beam 
+    if (tigerModel) {
+      let targetPos;
+      
+      if (closestTarget) {
+        // Aim at closest target
+        targetPos = new THREE.Vector3(
+          closestTarget.position.x,
+          closestTarget.position.y + 1, // Aim slightly higher
+          closestTarget.position.z
+        );
+      } else {
+        // Fire forward if no targets (like Godzilla)
+        const tigerForwardX = Math.sin(this.rotation.y);
+        const tigerForwardZ = Math.cos(this.rotation.y);
+        const beamDistance = 15; // Fire 15 units forward
+        
+        targetPos = new THREE.Vector3(
+          this.position.x + (tigerForwardX * beamDistance),
+          this.position.y + 2, // Fire slightly upward
+          this.position.z + (tigerForwardZ * beamDistance)
+        );
+      }
+      
+      tigerModel.fireLaser(targetPos, 1.5); // 1.5 second beam duration
+    }
+
+    // Deal 400 damage to all targets hit by laser
+    let successfulHits = 0;
+    for (const target of hitTargets) {
+      console.log(`🔴 Laser hitting ${target.type} for 400 damage (health: ${target.health})`);
+      target.takeDamage(400, this);
+      successfulHits++;
+      
+      if (!target.isAlive()) {
+        console.log(`🔴 Laser killed ${target.type}!`);
+      }
+    }
+
+    if (successfulHits > 0) {
+      console.log(`🔴 Laser breath hit ${successfulHits} targets with 400 damage each!`);
+      return true;
+    } else {
+      console.log(`🔴 Laser breath fired but hit no targets`);
+      return false;
+    }
   }
 
   getDetectionRadius() {

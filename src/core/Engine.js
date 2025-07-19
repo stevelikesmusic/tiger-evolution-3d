@@ -160,7 +160,25 @@ export class Engine {
     }
     
     render() {
-        this.renderer.render(this.scene, this.camera);
+        // Safety check to prevent render errors
+        if (!this.camera || !this.scene || !this.renderer) {
+            console.warn('⚠️ Engine render called with missing components:', {
+                camera: !!this.camera,
+                scene: !!this.scene,
+                renderer: !!this.renderer
+            });
+            return;
+        }
+        
+        try {
+            this.renderer.render(this.scene, this.camera);
+        } catch (error) {
+            console.error('❌ WebGL render error caught:', error);
+            // Try to continue without crashing the game loop
+            if (error.message.includes('uniform') || error.message.includes('value')) {
+                console.warn('⚠️ Material uniform error detected, attempting to continue...');
+            }
+        }
     }
     
     resize(width, height) {

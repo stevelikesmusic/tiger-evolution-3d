@@ -12,14 +12,15 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      dive: false,
+      tigerTrace: false,
       forward_underwater: false,
       backward_underwater: false,
       left_underwater: false,
       right_underwater: false,
       hunt: false,
       Escape: false,
-      scentTrail: false
+      scentTrail: false,
+      laserBreath: false
     };
     
     // Track which keys are currently physically pressed
@@ -139,7 +140,7 @@ export class InputSystem {
         this.keys.interact = true;
         break;
       case 'KeyR':
-        this.keys.dive = true;
+        this.keys.tigerTrace = true;
         break;
       case 'KeyT':
         this.keys.forward_underwater = true;
@@ -170,6 +171,10 @@ export class InputSystem {
       case 'Escape':
         this.keys.Escape = true; // Escape = menu
         console.log('🎮 Escape key pressed - menu toggle');
+        break;
+      case 'KeyL':
+        this.keys.laserBreath = true; // L = laser breath (Alpha only)
+        console.log('🔴 L key pressed - laser breath = true');
         break;
     }
     
@@ -213,7 +218,7 @@ export class InputSystem {
         this.keys.interact = false;
         break;
       case 'KeyR':
-        this.keys.dive = false;
+        this.keys.tigerTrace = false;
         break;
       case 'KeyT':
         this.keys.forward_underwater = false;
@@ -244,6 +249,10 @@ export class InputSystem {
       case 'Escape':
         this.keys.Escape = false; // Escape = menu
         console.log('🎮 Escape key released');
+        break;
+      case 'KeyL':
+        this.keys.laserBreath = false; // L = laser breath (Alpha only)
+        console.log('🔴 L key released - laser breath = false');
         break;
     }
     
@@ -362,6 +371,10 @@ export class InputSystem {
     return this.keys.hunt;
   }
 
+  isUsingLaserBreath() {
+    return this.keys.laserBreath;
+  }
+
   isPointerLocked() {
     return document.pointerLockElement === this.canvas;
   }
@@ -440,10 +453,12 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      dive: false,
+      tigerTrace: false,
       forward_underwater: false,
       backward_underwater: false,
-      hunt: false
+      hunt: false,
+      laserBreath: false,
+      scentTrail: false
     };
     this.physicalKeys.clear();
     this.resetVirtualMovement();
@@ -477,11 +492,12 @@ export class InputSystem {
       run: this.physicalKeys.has('ShiftLeft') || this.physicalKeys.has('ShiftRight'),
       crouch: this.physicalKeys.has('ControlLeft') || this.physicalKeys.has('ControlRight'),
       interact: this.physicalKeys.has('KeyE'),
-      dive: this.physicalKeys.has('KeyR'),
+      tigerTrace: this.physicalKeys.has('KeyR'),
       forward_underwater: this.physicalKeys.has('KeyG'),
       backward_underwater: this.physicalKeys.has('KeyB'),
       hunt: this.physicalKeys.has('KeyZ'),
-      scentTrail: this.physicalKeys.has('KeyM')
+      scentTrail: this.physicalKeys.has('KeyM'),
+      laserBreath: this.physicalKeys.has('KeyL')
     };
     
     let hasStuckKeys = false;
@@ -531,8 +547,8 @@ export class InputSystem {
     return this.keys.jump;
   }
 
-  isDiving() {
-    return this.keys.dive;
+  isUsingTigerTrace() {
+    return this.keys.tigerTrace;
   }
 
   // Get underwater movement direction (T/G/F/H keys, same movement method as surface)

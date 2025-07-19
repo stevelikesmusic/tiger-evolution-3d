@@ -1,6 +1,6 @@
 # Tiger Evolution 3D
 
-## Current Status (Latest Session - Save System & Game Persistence!)
+## Current Status (Latest Session - Gender System & Tiger Interactions!)
 
 ### ✅ COMPLETED FEATURES
 
@@ -106,6 +106,23 @@
 - **✅ GAME STATISTICS**: Track total play time, games played, hunt success rate
 - **✅ MENU NAVIGATION**: Keyboard/mouse navigation with proper disabled state handling
 
+#### 🐅 **NEW: Complete Gender Selection & Tiger Interaction System**
+- **✅ GENDER SELECTION MENU**: Professional UI for choosing male/female tiger with stat preview
+- **✅ STAT DIFFERENCES**: Females 15% smaller, +20% stamina, -10% strength; Males +15% strength, -10% stamina
+- **✅ WILD TIGER SPAWNING**: Both male and female tigers spawn in the world with visual differences
+- **✅ MATING SYSTEM**: 50% chance for opposite gender tigers to mate, providing health/stamina/XP bonuses
+- **✅ TERRITORIAL FIGHTING**: Same gender tigers always fight, power-based combat with XP rewards
+- **✅ RED TIGER TRACE**: R key creates red glowing trail leading to nearest wild tiger
+- **✅ VISUAL DISTINCTIONS**: Males larger with darker orange, females smaller with lighter orange
+- **✅ SAVE INTEGRATION**: Gender choice saved and restored, displayed in menu save info
+
+#### 🔴 **NEW: Red Tiger Trace System**
+- **✅ R KEY ACTIVATION**: Press R to create a red glowing trace to the nearest wild tiger
+- **✅ CURVED PATH VISUALIZATION**: Beautiful arcing red line that follows terrain contours
+- **✅ DYNAMIC TARGET TRACKING**: Trace updates if target tiger moves significantly
+- **✅ FADE ANIMATION**: 10-second duration with pulsing red glow effect
+- **✅ STRATEGIC GUIDANCE**: Help players locate and approach wild tigers for interactions
+
 ### 🎯 **HOW TO USE**
 ```bash
 npm run dev                    # Start development server
@@ -126,7 +143,7 @@ npm run dev                    # Start development server
 #    - D: Rotate tiger right (clockwise)
 #    - Space: Jump on land/lily pads, return to surface from underwater
 #    - Shift: Run (disabled while swimming)
-#    - R: Teleport to underwater terrain (when in water)
+#    - R: Create red trace to nearest wild tiger
 #    - Z: Hunt nearby animals (attack range)
 #    - E: Eat dead animals (triggers auto-save)
 #    - Escape: Show main menu
@@ -167,6 +184,19 @@ npm run dev                    # Start development server
 #    - Clean shorelines with natural buffers
 #    - Realistic animal AI with fear responses
 #    - Combat system with health bars and fight-back mechanics
+# 10. ✅ GENDER SYSTEM FEATURES:
+#    - Choose male or female tiger at game start
+#    - Different sizes: females 15% smaller than males
+#    - Stat differences: females +stamina, males +strength
+#    - Wild tigers spawn with both genders
+#    - Mating with opposite gender (50% chance, bonuses)
+#    - Territorial fighting with same gender (always, XP rewards)
+# 11. ✅ TIGER TRACE FEATURES:
+#    - Press R key to create red glowing trace to nearest tiger
+#    - Beautiful curved red line with pulsing glow effect
+#    - 10-second duration with fade animation
+#    - Dynamic tracking if target tiger moves
+#    - Strategic tool for finding and approaching wild tigers
 ```
 
 ### 🏗️ **ARCHITECTURE OVERVIEW**
@@ -187,11 +217,14 @@ npm run dev                    # Start development server
 - **`Animal.js`**: ✅ ENHANCED - Complete animal entity with death persistence and combat
 - **`AnimalSystem.js`**: ✅ ENHANCED - Animal management with auto-save triggers and 30s death timer
 - **`UISystem.js`**: ✅ ENHANCED - Save status notifications and game controls display
+- **`TigerTraceSystem.js`**: ✅ NEW - Red trace system for finding wild tigers
+- **`ScentTrailSystem.js`**: Purple scent trail system for finding prey animals
 
 #### Data Flow:
 1. `MainMenu` shows on startup with New Game/Continue Game options
-2. `GameSave` loads existing save data or prepares for new game
-3. `GameController` initializes all systems based on menu selection
+2. **Gender Selection**: For new games, player chooses male/female tiger with stat preview
+3. `GameSave` loads existing save data or prepares for new game with selected gender
+4. `GameController` initializes all systems and creates tiger with chosen gender
 4. `Terrain` generates heightmap using Perlin noise (or restores from save)
 5. `TerrainRenderer` creates 3D mesh with vertex colors and dual-mode color switching
 6. `WaterSystem` generates professional water bodies + lily pads with lotus flowers
@@ -227,7 +260,40 @@ npm run dev                    # Start development server
 - ✅ AnimalSystem and Animal entities manually tested and verified working
 - ✅ Complete save system manually tested and verified working
 
-### 🔧 **RECENT IMPLEMENTATION (Latest Session - Save System & Game Persistence)**
+### 🔧 **RECENT IMPLEMENTATION (Latest Session - Gender System & Tiger Interactions)**
+
+#### 🐅 **Phase 8: Complete Gender Selection & Tiger Interaction System ✅**
+**Goal**: Implement comprehensive gender system with male/female tigers, visual differences, mating mechanics, territorial fighting, and red tiger trace
+
+**Major Accomplishments**:
+1. **Complete Gender Selection System (`MainMenu.js`, `Tiger.js`, `TigerModel.js`)**:
+   - **✅ PROFESSIONAL GENDER MENU**: Beautiful jungle-themed UI for selecting male/female tiger
+   - **✅ STAT PREVIEW**: Clear display of gender differences (+/- bonuses/penalties)
+   - **✅ SIZE DIFFERENCES**: Females 15% smaller scale, males larger and more powerful
+   - **✅ STAT MODIFIERS**: Females +20% stamina/-10% strength, Males +15% strength/-10% stamina
+   - **✅ SAVE INTEGRATION**: Gender tracked in save data, restored on continue, displayed in menu
+
+2. **Wild Tiger Spawning & Interaction System (`Animal.js`, `AnimalSystem.js`)**:
+   - **✅ WILD TIGER TYPES**: Both male_tiger and female_tiger spawn with 7.5% weight each
+   - **✅ VISUAL DISTINCTIONS**: Males larger/darker orange, females smaller/lighter orange
+   - **✅ REALISTIC PROPORTIONS**: Gender-appropriate body sizes, leg dimensions, head sizes
+   - **✅ TIGER STRIPES**: Both genders have proper black stripe patterns
+   - **✅ TERRITORIAL BEHAVIOR**: New 'territorial' behavior type for tiger interactions
+
+3. **Mating & Fighting Mechanics (`Animal.js`, `AnimalSystem.js`)**:
+   - **✅ MATING SYSTEM**: 50% chance for opposite gender tigers to mate
+   - **✅ MATING BONUSES**: +20 health, +30 stamina, +50 XP for both tigers
+   - **✅ TERRITORIAL FIGHTING**: Same gender tigers always fight (territorial behavior)
+   - **✅ POWER-BASED COMBAT**: Fight outcomes based on player vs wild tiger power
+   - **✅ VICTORY REWARDS**: Decisive wins = tiger dies + 100XP, close wins = retreat + 50XP
+   - **✅ DEFEAT CONSEQUENCES**: Player takes damage, wild tiger becomes dominant
+
+4. **Red Tiger Trace System (`TigerTraceSystem.js`)**:
+   - **✅ R KEY ACTIVATION**: Press R to create red glowing trace to nearest wild tiger
+   - **✅ CURVED PATH VISUALIZATION**: Beautiful arcing red line following terrain contours
+   - **✅ DYNAMIC TARGET TRACKING**: Trace updates if target tiger moves significantly
+   - **✅ PULSING GLOW EFFECT**: Red color pulses with fade animation over 10 seconds
+   - **✅ STRATEGIC GUIDANCE**: Perfect tool for locating and approaching wild tigers
 
 #### 🎮 **Phase 7: Complete Save System & Game Persistence ✅**
 **Goal**: Implement complete save/load system with main menu, auto-save functionality, and game state persistence
@@ -395,21 +461,27 @@ localStorage.setItem(this.storageKey, JSON.stringify(saveData));
 
 ### 🚀 **NEXT SESSION PRIORITIES (Enhanced Features & Advanced Systems)**
 
-#### 🎨 **Phase 8: Scent Trail System (IMMEDIATE - NEXT SESSION)**
-**Goal**: Implement scent trail visualization system for enhanced hunting gameplay
+#### 🎨 **Phase 9: Enhanced Tiger Models & Animation System (IMMEDIATE - NEXT SESSION)**
+**Goal**: Upgrade tiger and animal models with better visuals, animations, and Blockbench-style designs
 
 **Planned Features**:
-1. **M Key Scent Trail**:
-   - **Purple Line Trail**: Press M to create a purple line trail from tiger to nearest animal
-   - **Visual Guidance**: Help players locate animals more easily
-   - **Dynamic Updates**: Trail updates to closest animal when pressed
-   - **Fade Animation**: Trail fades out after 10-15 seconds
+1. **Enhanced Tiger Models**:
+   - **Blockbench-Style Design**: More detailed cube-based tiger models with better proportions
+   - **Improved Wild Tigers**: Better male/female distinctions, more realistic features
+   - **Enhanced Texturing**: Better fur patterns, more detailed stripes, facial features
+   - **Proper Scaling**: More realistic size differences between genders
 
-2. **Enhanced Hunting Mechanics**:
-   - **Scent Detection**: Visual representation of tiger's natural hunting instincts
-   - **Range Indicator**: Show effective hunting range with visual cues
-   - **Stealth Integration**: Crouching affects scent trail visibility/accuracy
-   - **Wind Effects**: Environmental factors affecting scent trail direction
+2. **Basic Animation System**:
+   - **Walking Animations**: Simple leg movement for tigers when moving
+   - **Idle Animations**: Subtle breathing, tail movement for static tigers
+   - **Combat Animations**: Attack poses, defensive stances during fights
+   - **Mating Animations**: Special animations for mating interactions
+
+3. **Visual Polish**:
+   - **Better Animal Models**: Improved deer, boar, rabbit models with Blockbench style
+   - **Enhanced Lighting**: Better shadows and lighting for models
+   - **Particle Effects**: Dust clouds when running, hearts during mating
+   - **Combat Effects**: Visual feedback for successful attacks/blocks
 
 3. **UI/UX Improvements**:
    - **Trail Visualization**: Smooth curved line following terrain contours

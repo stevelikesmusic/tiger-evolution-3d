@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
 export class TigerModel {
-  constructor() {
+  constructor(gender = 'male') {
+    this.gender = gender;
     this.evolutionStage = 'Young';
     this.currentAnimation = 'idle';
     this.isChargingLaser = false;
@@ -14,7 +15,11 @@ export class TigerModel {
     // Create a group to hold all tiger parts
     this.mesh = new THREE.Group();
     this.mesh.position.set(0, 1.5, 0); // Raised higher so paws touch ground properly
-    this.mesh.scale.set(1, 1, 1); // Young tiger scale
+    
+    // Set scale based on gender - females are smaller
+    const baseScale = this.gender === 'female' ? 0.85 : 1.0; // Females 15% smaller
+    this.mesh.scale.set(baseScale, baseScale, baseScale);
+    console.log(`🐅 Creating ${this.gender} tiger model with scale ${baseScale}`);
 
     // Main body (orange box)
     const bodyGeometry = new THREE.BoxGeometry(1.5, 0.8, 2.5);
@@ -316,39 +321,160 @@ export class TigerModel {
 
   evolveToAlpha() {
     this.evolutionStage = 'Alpha';
-    // Jet black fur with glowing blue stripes
-    this.mesh.scale.set(1.4, 1.4, 1.4);
+    console.log('🔴 Starting Alpha evolution...');
     
-    // Change material to black with blue glow
-    this.mesh.material.color.setRGB(0.1, 0.1, 0.1); // Dark color
-    this.mesh.material.emissive = new THREE.Color(0x0066ff); // Blue glow
-    this.mesh.material.emissiveIntensity = 0.3;
-    
-    // Add particle effects for glowing stripes
-    this.addGlowEffects();
+    try {
+      // Jet black fur with glowing blue stripes
+      this.mesh.scale.set(1.4, 1.4, 1.4);
+      
+      // Change all orange materials to black
+      this.changeToBlackFur();
+      console.log('🖤 Changed fur to black');
+      
+      // Change all black stripes to blue
+      this.changeToBlueStripes();
+      console.log('🔵 Changed stripes to blue');
+      
+      // Add particle effects for glowing stripes
+      this.addGlowEffects();
+      console.log('✨ Added glow effects');
+      
+      console.log('🔴 Alpha evolution completed successfully!');
+    } catch (error) {
+      console.error('❌ Error during Alpha evolution:', error);
+    }
+  }
+
+  changeToBlackFur() {
+    try {
+      // Create new black material to avoid corrupting existing uniforms
+      const blackMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x0d0d0d // Very dark black
+      });
+      
+      // Change body to deep black
+      if (this.body && this.body.material) {
+        if (this.body.material.dispose) this.body.material.dispose();
+        this.body.material = blackMaterial.clone();
+      }
+      
+      // Change head to deep black
+      if (this.head && this.head.material) {
+        if (this.head.material.dispose) this.head.material.dispose();
+        this.head.material = blackMaterial.clone();
+      }
+      
+      // Change ears to deep black
+      if (this.leftEar && this.leftEar.material) {
+        if (this.leftEar.material.dispose) this.leftEar.material.dispose();
+        this.leftEar.material = blackMaterial.clone();
+      }
+      if (this.rightEar && this.rightEar.material) {
+        if (this.rightEar.material.dispose) this.rightEar.material.dispose();
+        this.rightEar.material = blackMaterial.clone();
+      }
+      
+      // Change tail to deep black
+      if (this.tail && this.tail.material) {
+        if (this.tail.material.dispose) this.tail.material.dispose();
+        this.tail.material = blackMaterial.clone();
+      }
+      
+      // Change leg materials to deep black
+      const legNames = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
+      legNames.forEach(legName => {
+        const leg = this[legName];
+        if (leg) {
+          leg.traverse(child => {
+            if (child.material && child.material.color) {
+              // Change orange leg materials to deep black, keep paws darker
+              if (child.material.color.r > 0.5) { // If it's orange-ish
+                if (child.material.dispose) child.material.dispose();
+                child.material = blackMaterial.clone();
+              }
+            }
+          });
+        }
+      });
+      
+      console.log('🖤 Successfully changed fur to black with new materials');
+    } catch (error) {
+      console.error('❌ Error changing fur to black:', error);
+    }
+  }
+
+  changeToBlueStripes() {
+    try {
+      // Create new blue stripe material to avoid corrupting existing uniforms
+      const blueStripeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x3399ff, // Bright blue
+        emissive: 0x0066ff, // Blue glow
+        emissiveIntensity: 0.3
+      });
+      
+      // Specifically target stripe objects by checking their position/geometry
+      // Avoid head parts (eyes, nose, ears)
+      this.mesh.traverse(child => {
+        if (child.material && child.material.color && child.geometry) {
+          // Skip head parts to prevent blue head
+          if (child === this.head || child === this.leftEye || child === this.rightEye || 
+              child === this.nose || child === this.leftEar || child === this.rightEar) {
+            return; // Don't change head parts
+          }
+          
+          // If it's a very small black object (likely a stripe)
+          const isStripe = child.material.color.r === 0 && child.material.color.g === 0 && child.material.color.b === 0;
+          const isVeryDark = child.material.color.r < 0.15 && child.material.color.g < 0.15 && child.material.color.b < 0.15;
+          
+          if ((isStripe || isVeryDark)) {
+            const boundingBox = new THREE.Box3().setFromObject(child);
+            const size = boundingBox.getSize(new THREE.Vector3());
+            const volume = size.x * size.y * size.z;
+            
+            // Only change very small objects (stripes) and avoid larger body parts
+            if (volume < 0.5) { // Even smaller threshold to avoid head parts
+              if (child.material.dispose) child.material.dispose();
+              child.material = blueStripeMaterial.clone();
+              console.log('🔵 Changed stripe to blue:', volume.toFixed(3));
+            }
+          }
+        }
+      });
+      
+      console.log('🔵 Successfully changed stripes to blue with new materials');
+    } catch (error) {
+      console.error('❌ Error changing stripes to blue:', error);
+    }
   }
 
   addGlowEffects() {
-    // Add particle system for glowing blue stripes
-    const particleGeometry = new THREE.BufferGeometry();
-    const particleCount = 50;
-    const positions = new Float32Array(particleCount * 3);
-    
-    for (let i = 0; i < particleCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 4; // Random positions around tiger
+    try {
+      // Add particle system for glowing blue stripes
+      const particleGeometry = new THREE.BufferGeometry();
+      const particleCount = 30; // Reduced count to avoid performance issues
+      const positions = new Float32Array(particleCount * 3);
+      
+      for (let i = 0; i < particleCount * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 3; // Random positions around tiger
+      }
+      
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const particleMaterial = new THREE.PointsMaterial({
+        color: 0x0066ff,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.6,
+        sizeAttenuation: false // Avoid size attenuation uniform issues
+      });
+      
+      this.glowParticles = new THREE.Points(particleGeometry, particleMaterial);
+      this.mesh.add(this.glowParticles);
+      
+      console.log('✨ Successfully added glow effects');
+    } catch (error) {
+      console.error('❌ Error adding glow effects:', error);
     }
-    
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
-    const particleMaterial = new THREE.PointsMaterial({
-      color: 0x0066ff,
-      size: 0.1,
-      transparent: true,
-      opacity: 0.8
-    });
-    
-    this.glowParticles = new THREE.Points(particleGeometry, particleMaterial);
-    this.mesh.add(this.glowParticles);
   }
 
   // Animation system
@@ -406,13 +532,115 @@ export class TigerModel {
     }
   }
 
-  fireLaser() {
-    if (this.evolutionStage === 'Alpha' && this.isChargingLaser) {
-      this.isChargingLaser = false;
-      // Laser beam effects and damage calculation would be here
+  fireLaser(targetPosition, duration = 1.0) {
+    if (this.evolutionStage === 'Alpha') {
+      console.log('🔴 Firing laser beam to target!');
+      
+      // Create laser beam from tiger's mouth to target
+      this.createLaserBeam(targetPosition, duration);
       return true;
     }
     return false;
+  }
+
+  createLaserBeam(targetPosition, duration) {
+    try {
+      // Calculate beam start position (tiger's mouth/nose area)
+      const startPosition = this.nose.position.clone();
+      startPosition.add(this.mesh.position); // Add tiger's world position
+      startPosition.y += 0.2; // Slightly above nose
+      
+      // Calculate beam direction and length
+      const direction = new THREE.Vector3().subVectors(targetPosition, startPosition);
+      const distance = direction.length();
+      direction.normalize();
+      
+      // Create laser beam geometry (cylinder from mouth to target)
+      const beamGeometry = new THREE.CylinderGeometry(0.1, 0.05, distance, 8);
+      const beamMaterial = new THREE.MeshBasicMaterial({
+        color: 0x0066ff, // Blue laser
+        emissive: 0x4444ff, // Blue glow
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.9
+      });
+      
+      this.laserBeam = new THREE.Mesh(beamGeometry, beamMaterial);
+      
+      // Position beam between tiger and target
+      const midPoint = new THREE.Vector3().addVectors(startPosition, targetPosition).multiplyScalar(0.5);
+      this.laserBeam.position.copy(midPoint);
+      
+      // Rotate beam to point from tiger to target
+      this.laserBeam.lookAt(targetPosition);
+      this.laserBeam.rotateX(Math.PI / 2); // Align with cylinder geometry
+      
+      // Add beam to scene
+      this.mesh.parent.add(this.laserBeam);
+      
+      // Create glow effect around beam
+      this.createLaserGlow(startPosition, targetPosition, distance);
+      
+      // Remove beam after duration
+      setTimeout(() => {
+        this.removeLaserBeam();
+      }, duration * 1000);
+      
+      console.log('🔴 Laser beam created successfully!');
+    } catch (error) {
+      console.error('❌ Error creating laser beam:', error);
+    }
+  }
+
+  createLaserGlow(startPosition, targetPosition, distance) {
+    try {
+      // Create outer glow effect
+      const glowGeometry = new THREE.CylinderGeometry(0.25, 0.15, distance, 8);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x6666ff, // Lighter blue
+        emissive: 0x2222ff, // Blue glow
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0.3
+      });
+      
+      this.laserGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+      
+      // Position glow same as beam
+      const midPoint = new THREE.Vector3().addVectors(startPosition, targetPosition).multiplyScalar(0.5);
+      this.laserGlow.position.copy(midPoint);
+      this.laserGlow.lookAt(targetPosition);
+      this.laserGlow.rotateX(Math.PI / 2);
+      
+      // Add glow to scene
+      this.mesh.parent.add(this.laserGlow);
+      
+      console.log('✨ Laser glow effect created!');
+    } catch (error) {
+      console.error('❌ Error creating laser glow:', error);
+    }
+  }
+
+  removeLaserBeam() {
+    try {
+      if (this.laserBeam) {
+        this.mesh.parent.remove(this.laserBeam);
+        if (this.laserBeam.geometry) this.laserBeam.geometry.dispose();
+        if (this.laserBeam.material) this.laserBeam.material.dispose();
+        this.laserBeam = null;
+        console.log('🔴 Laser beam removed');
+      }
+      
+      if (this.laserGlow) {
+        this.mesh.parent.remove(this.laserGlow);
+        if (this.laserGlow.geometry) this.laserGlow.geometry.dispose();
+        if (this.laserGlow.material) this.laserGlow.material.dispose();
+        this.laserGlow = null;
+        console.log('✨ Laser glow removed');
+      }
+    } catch (error) {
+      console.error('❌ Error removing laser beam:', error);
+    }
   }
 
   // Update method for game loop

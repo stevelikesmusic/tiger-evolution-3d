@@ -4,6 +4,15 @@ export class Animal {
   constructor(type, stats = {}) {
     this.type = type;
     
+    // Set gender for tigers
+    if (type === 'male_tiger' || type === 'female_tiger') {
+      this.gender = type === 'male_tiger' ? 'male' : 'female';
+      this.species = 'tiger';
+    } else {
+      this.gender = Math.random() < 0.5 ? 'male' : 'female'; // Random gender for other animals
+      this.species = type;
+    }
+    
     // Default stats based on animal type
     const defaultStats = this.getDefaultStats(type);
     
@@ -73,6 +82,20 @@ export class Animal {
         power: 40, // leopard damage 40
         stamina: 150,
         behaviorType: 'predator'
+      },
+      'male_tiger': {
+        health: 300, // Strong and robust
+        speed: 14,
+        power: 60, // Very powerful
+        stamina: 200,
+        behaviorType: 'territorial'
+      },
+      'female_tiger': {
+        health: 250, // Slightly less health but faster
+        speed: 16,
+        power: 45, // Less power than males
+        stamina: 240, // More stamina
+        behaviorType: 'territorial'
       }
     };
     
@@ -101,6 +124,10 @@ export class Animal {
         return new THREE.BoxGeometry(2.0, 1.2, 2.8); // Wide, muscular body
       case 'leopard':
         return new THREE.BoxGeometry(1.4, 0.9, 3.0); // Lean, athletic body
+      case 'male_tiger':
+        return new THREE.BoxGeometry(1.8, 1.0, 3.5); // Large, powerful body
+      case 'female_tiger':
+        return new THREE.BoxGeometry(1.5, 0.85, 3.0); // Smaller, more agile body
       default:
         return new THREE.BoxGeometry(1.5, 1.2, 3);
     }
@@ -141,6 +168,18 @@ export class Animal {
           transparent: false,
           opacity: 1.0
         });
+      case 'male_tiger':
+        return new THREE.MeshLambertMaterial({ 
+          color: 0xff6600, // Orange tiger color - same as player
+          transparent: false,
+          opacity: 1.0
+        });
+      case 'female_tiger':
+        return new THREE.MeshLambertMaterial({ 
+          color: 0xff8833, // Slightly lighter orange for females
+          transparent: false,
+          opacity: 1.0
+        });
       default:
         return new THREE.MeshLambertMaterial({ 
           color: 0x8B4513,
@@ -160,6 +199,10 @@ export class Animal {
         return new THREE.BoxGeometry(0.9, 0.7, 1.2); // Wide snout
       case 'leopard':
         return new THREE.BoxGeometry(0.7, 0.6, 0.9); // Sleek feline head
+      case 'male_tiger':
+        return new THREE.BoxGeometry(1.0, 0.8, 1.1); // Large, powerful head
+      case 'female_tiger':
+        return new THREE.BoxGeometry(0.85, 0.7, 0.95); // Smaller, more refined head
       default:
         return new THREE.BoxGeometry(0.6, 0.6, 0.8);
     }
@@ -175,6 +218,10 @@ export class Animal {
         return { x: 0, y: 0.1, z: 1.6 }; // Lower, forward position
       case 'leopard':
         return { x: 0, y: 0.3, z: 1.7 }; // Predator positioning
+      case 'male_tiger':
+        return { x: 0, y: 0.4, z: 2.0 }; // Large tiger head position
+      case 'female_tiger':
+        return { x: 0, y: 0.35, z: 1.7 }; // Smaller tiger head position
       default:
         return { x: 0, y: 0.3, z: 1.5 };
     }
@@ -215,6 +262,11 @@ export class Animal {
     // Add muscle definition for boar
     if (this.type === 'boar') {
       this.addBoarMuscles();
+    }
+    
+    // Add tiger stripes
+    if (this.type === 'male_tiger' || this.type === 'female_tiger') {
+      this.addTigerStripes();
     }
     
     // Add legs
@@ -268,6 +320,46 @@ export class Animal {
     head.add(rightTusk);
   }
   
+  addTigerStripes() {
+    // Add black stripes to tiger body for realistic tiger pattern
+    const stripeGeometry = new THREE.BoxGeometry(0.05, 0.6, 0.12);
+    const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    
+    // Tiger stripe pattern - vertical stripes across body
+    const stripePositions = [
+      // Body stripes (vertical stripes across the sides)
+      [0.77, 0, -1 + (0 * 0.4)], [0.77, 0, -1 + (1 * 0.4)], [0.77, 0, -1 + (2 * 0.4)],
+      [0.77, 0, -1 + (3 * 0.4)], [0.77, 0, -1 + (4 * 0.4)], [0.77, 0, -1 + (5 * 0.4)],
+      [-0.77, 0, -1 + (0 * 0.4)], [-0.77, 0, -1 + (1 * 0.4)], [-0.77, 0, -1 + (2 * 0.4)],
+      [-0.77, 0, -1 + (3 * 0.4)], [-0.77, 0, -1 + (4 * 0.4)], [-0.77, 0, -1 + (5 * 0.4)]
+    ];
+    
+    // Back stripes (horizontal stripes across the back)
+    const backStripeGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.15);
+    const backStripePositions = [
+      [0, 0.42, -1 + (0 * 0.5)], [0, 0.42, -1 + (1 * 0.5)], [0, 0.42, -1 + (2 * 0.5)],
+      [0, 0.42, -1 + (3 * 0.5)], [0, 0.42, -1 + (4 * 0.5)]
+    ];
+    
+    // Add body stripes
+    stripePositions.forEach(pos => {
+      const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+      stripe.position.set(pos[0], pos[1], pos[2]);
+      stripe.renderOrder = 1;
+      this.mesh.add(stripe);
+    });
+    
+    // Add back stripes
+    backStripePositions.forEach(pos => {
+      const backStripe = new THREE.Mesh(backStripeGeometry, stripeMaterial);
+      backStripe.position.set(pos[0], pos[1], pos[2]);
+      backStripe.renderOrder = 1;
+      this.mesh.add(backStripe);
+    });
+    
+    console.log(`🐅 Added tiger stripes to ${this.type}`);
+  }
+  
   addLegs() {
     const legDimensions = this.getLegDimensions();
     const legGeometry = new THREE.BoxGeometry(legDimensions.width, legDimensions.height, legDimensions.depth);
@@ -292,6 +384,10 @@ export class Animal {
         return { width: 0.25, height: 0.8, depth: 0.25 }; // Thick, sturdy legs
       case 'leopard':
         return { width: 0.20, height: 0.9, depth: 0.20 }; // Athletic legs
+      case 'male_tiger':
+        return { width: 0.25, height: 1.0, depth: 0.25 }; // Strong, powerful legs
+      case 'female_tiger':
+        return { width: 0.22, height: 0.9, depth: 0.22 }; // Slightly smaller legs
       default:
         return { width: 0.2, height: 0.8, depth: 0.2 };
     }
@@ -326,6 +422,20 @@ export class Animal {
           [0.5, -0.8, 1.1],    // Front right
           [-0.5, -0.8, -1.1],  // Back left
           [0.5, -0.8, -1.1]    // Back right
+        ];
+      case 'male_tiger':
+        return [
+          [-0.6, -0.9, 1.3],   // Front left
+          [0.6, -0.9, 1.3],    // Front right
+          [-0.6, -0.9, -1.3],  // Back left
+          [0.6, -0.9, -1.3]    // Back right
+        ];
+      case 'female_tiger':
+        return [
+          [-0.5, -0.85, 1.1],   // Front left
+          [0.5, -0.85, 1.1],    // Front right
+          [-0.5, -0.85, -1.1],  // Back left
+          [0.5, -0.85, -1.1]    // Back right
         ];
       default:
         return [
@@ -887,5 +997,90 @@ export class Animal {
   // Get mesh for adding to scene
   getMesh() {
     return this.mesh;
+  }
+  
+  // Tiger interaction methods
+  canInteractWithTiger(playerTiger) {
+    if (this.species !== 'tiger') return false;
+    
+    const distance = this.distanceTo(playerTiger.position);
+    const interactionRange = 5.0; // Interaction range for tigers
+    
+    return distance <= interactionRange;
+  }
+  
+  shouldMateWith(playerTiger) {
+    // Only mate with opposite gender
+    if (this.gender === playerTiger.gender) return false;
+    
+    // 50% chance to be interested in mating
+    return Math.random() < 0.5;
+  }
+  
+  shouldFightWith(playerTiger) {
+    // Only fight with same gender (territorial behavior)
+    if (this.gender !== playerTiger.gender) return false;
+    
+    // Always territorial with same gender
+    return true;
+  }
+  
+  attemptMating(playerTiger) {
+    console.log(`💕 ${this.gender} tiger attempting to mate with ${playerTiger.gender} player tiger`);
+    
+    // Mating success provides benefits to both tigers
+    const matingBonus = {
+      health: 20,
+      stamina: 30,
+      experience: 50
+    };
+    
+    // Apply bonuses to both tigers
+    this.health = Math.min(this.maxHealth, this.health + matingBonus.health);
+    this.stamina = Math.min(this.maxStamina, this.stamina + matingBonus.stamina);
+    
+    // Set state to content/resting after mating
+    this.setAIState('content');
+    this.stateTimer = 0;
+    
+    return {
+      success: true,
+      bonus: matingBonus,
+      message: `Successfully mated with ${this.gender} tiger! Both tigers gained health and stamina.`
+    };
+  }
+  
+  initiateFight(playerTiger) {
+    console.log(`⚔️ ${this.gender} tiger challenging ${playerTiger.gender} player tiger to territorial fight`);
+    
+    // Set to aggressive state
+    this.setAIState('aggressive');
+    this.setTarget(playerTiger);
+    this.stateTimer = 0;
+    
+    // Calculate fight outcome based on stats
+    const playerPower = playerTiger.power + (playerTiger.level * 5);
+    const wildPower = this.power + Math.random() * 20; // Add some randomness
+    
+    const fightResult = {
+      playerWins: playerPower > wildPower,
+      powerDifference: Math.abs(playerPower - wildPower),
+      wildTigerPower: wildPower,
+      playerPower: playerPower
+    };
+    
+    return fightResult;
+  }
+  
+  getInteractionType(playerTiger) {
+    if (!this.canInteractWithTiger(playerTiger)) return null;
+    
+    if (this.gender !== playerTiger.gender) {
+      // Opposite gender - potential mating
+      return this.shouldMateWith(playerTiger) ? 'mate' : 'neutral';
+    } else {
+      // Same gender - territorial fighting
+      return 'fight';
+    }
   }
 }

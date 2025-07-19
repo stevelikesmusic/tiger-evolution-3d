@@ -3,6 +3,9 @@ export class MainMenu {
     this.isVisible = false;
     this.selectedOption = 'newgame';
     this.menuContainer = null;
+    this.genderSelectionContainer = null;
+    this.selectedGender = 'male'; // Default to male
+    this.showingGenderSelection = false;
     this.onNewGame = null;
     this.onContinueGame = null;
     this.onSettings = null;
@@ -117,8 +120,219 @@ export class MainMenu {
     // Add to document
     document.body.appendChild(this.menuContainer);
     
+    // Create gender selection screen
+    this.initializeGenderSelection();
+    
     // Initially hidden
     this.hide();
+  }
+
+  initializeGenderSelection() {
+    // Create gender selection container
+    this.genderSelectionContainer = document.createElement('div');
+    this.genderSelectionContainer.id = 'gender-selection';
+    this.genderSelectionContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a4f3a 0%, #2d5a2d 50%, #0d2818 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      font-family: 'Courier New', monospace;
+      color: #e6f3e6;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    `;
+
+    // Create title
+    const genderTitle = document.createElement('h1');
+    genderTitle.textContent = 'Choose Your Tiger';
+    genderTitle.style.cssText = `
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #ff6b35;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+      letter-spacing: 2px;
+    `;
+
+    // Create subtitle
+    const genderSubtitle = document.createElement('h2');
+    genderSubtitle.textContent = 'Select your tiger\'s gender for stat bonuses';
+    genderSubtitle.style.cssText = `
+      font-size: 1.2rem;
+      margin-bottom: 3rem;
+      color: #b8d4b8;
+      font-weight: normal;
+      letter-spacing: 1px;
+    `;
+
+    // Create gender options container
+    const genderOptions = document.createElement('div');
+    genderOptions.style.cssText = `
+      display: flex;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    `;
+
+    // Create Male option
+    this.maleOption = this.createGenderOption('Male', 'male', '♂️', '+15% Strength', '-10% Stamina');
+    
+    // Create Female option
+    this.femaleOption = this.createGenderOption('Female', 'female', '♀️', '+20% Stamina', '-10% Strength');
+
+    // Create continue button
+    const continueButton = document.createElement('div');
+    continueButton.textContent = 'Start Game';
+    continueButton.style.cssText = `
+      padding: 1rem 2rem;
+      font-size: 1.3rem;
+      background: rgba(255,107,53,0.8);
+      border: 2px solid #ff6b35;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      user-select: none;
+      color: #ffffff;
+      margin-top: 2rem;
+    `;
+
+    continueButton.addEventListener('click', () => {
+      this.confirmGenderSelection();
+    });
+
+    continueButton.addEventListener('mouseenter', () => {
+      continueButton.style.transform = 'scale(1.05)';
+      continueButton.style.background = 'rgba(255,107,53,1)';
+    });
+
+    continueButton.addEventListener('mouseleave', () => {
+      continueButton.style.transform = 'scale(1)';
+      continueButton.style.background = 'rgba(255,107,53,0.8)';
+    });
+
+    // Create back button
+    const backButton = document.createElement('div');
+    backButton.textContent = 'Back to Menu';
+    backButton.style.cssText = `
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      user-select: none;
+      color: #e6f3e6;
+      margin-top: 1rem;
+    `;
+
+    backButton.addEventListener('click', () => {
+      this.hideGenderSelection();
+    });
+
+    // Add controls info
+    const genderControlsInfo = document.createElement('div');
+    genderControlsInfo.innerHTML = `
+      <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #a0c4a0;">
+        Use <strong>←→</strong> or <strong>AD</strong> keys to select, <strong>Enter</strong> to confirm, <strong>Escape</strong> to go back
+      </p>
+    `;
+    genderControlsInfo.style.cssText = `
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #8fbc8f;
+    `;
+
+    // Assemble gender selection screen
+    genderOptions.appendChild(this.maleOption);
+    genderOptions.appendChild(this.femaleOption);
+    
+    this.genderSelectionContainer.appendChild(genderTitle);
+    this.genderSelectionContainer.appendChild(genderSubtitle);
+    this.genderSelectionContainer.appendChild(genderOptions);
+    this.genderSelectionContainer.appendChild(continueButton);
+    this.genderSelectionContainer.appendChild(backButton);
+    this.genderSelectionContainer.appendChild(genderControlsInfo);
+    
+    // Add to document
+    document.body.appendChild(this.genderSelectionContainer);
+    
+    // Initially hidden
+    this.genderSelectionContainer.style.display = 'none';
+  }
+
+  createGenderOption(title, value, symbol, bonus, penalty) {
+    const option = document.createElement('div');
+    option.dataset.gender = value;
+    option.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      background: rgba(255,255,255,0.1);
+      border: 3px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 250px;
+      text-align: center;
+      user-select: none;
+    `;
+
+    const symbolElement = document.createElement('div');
+    symbolElement.textContent = symbol;
+    symbolElement.style.cssText = `
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      color: #ff6b35;
+    `;
+
+    const titleElement = document.createElement('h3');
+    titleElement.textContent = title;
+    titleElement.style.cssText = `
+      font-size: 1.8rem;
+      margin: 0 0 1rem 0;
+      color: #e6f3e6;
+    `;
+
+    const bonusElement = document.createElement('p');
+    bonusElement.textContent = `✓ ${bonus}`;
+    bonusElement.style.cssText = `
+      margin: 0.5rem 0;
+      color: #90EE90;
+      font-weight: bold;
+    `;
+
+    const penaltyElement = document.createElement('p');
+    penaltyElement.textContent = `✗ ${penalty}`;
+    penaltyElement.style.cssText = `
+      margin: 0.5rem 0;
+      color: #FFB6C1;
+      font-weight: bold;
+    `;
+
+    option.appendChild(symbolElement);
+    option.appendChild(titleElement);
+    option.appendChild(bonusElement);
+    option.appendChild(penaltyElement);
+
+    option.addEventListener('click', () => {
+      this.selectGender(value);
+    });
+
+    option.addEventListener('mouseenter', () => {
+      if (this.selectedGender !== value) {
+        this.selectGender(value);
+      }
+    });
+
+    return option;
   }
 
   createMenuButton(text, value) {
@@ -158,29 +372,56 @@ export class MainMenu {
       
       this.keys[e.key] = true;
       
-      switch(e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          e.preventDefault();
-          this.navigateUp();
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          e.preventDefault();
-          this.navigateDown();
-          break;
-        case 'Enter':
-          e.preventDefault();
-          this.confirmSelection();
-          break;
-        case 'Escape':
-          e.preventDefault();
-          if (this.selectedOption === 'settings') {
-            this.selectOption('newgame');
-          }
-          break;
+      if (this.showingGenderSelection) {
+        // Gender selection navigation
+        switch(e.key) {
+          case 'ArrowLeft':
+          case 'a':
+          case 'A':
+            e.preventDefault();
+            this.selectGender('male');
+            break;
+          case 'ArrowRight':
+          case 'd':
+          case 'D':
+            e.preventDefault();
+            this.selectGender('female');
+            break;
+          case 'Enter':
+            e.preventDefault();
+            this.confirmGenderSelection();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            this.hideGenderSelection();
+            break;
+        }
+      } else {
+        // Main menu navigation
+        switch(e.key) {
+          case 'ArrowUp':
+          case 'w':
+          case 'W':
+            e.preventDefault();
+            this.navigateUp();
+            break;
+          case 'ArrowDown':
+          case 's':
+          case 'S':
+            e.preventDefault();
+            this.navigateDown();
+            break;
+          case 'Enter':
+            e.preventDefault();
+            this.confirmSelection();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            if (this.selectedOption === 'settings') {
+              this.selectOption('newgame');
+            }
+            break;
+        }
       }
     });
 
@@ -253,6 +494,7 @@ export class MainMenu {
     if (this.selectedOption === 'continue' && this.saveInfo) {
       this.saveInfoDisplay.innerHTML = `
         <h3 style="margin: 0 0 1rem 0; color: #ff6b35;">Save Game Info</h3>
+        <p><strong>Gender:</strong> ${this.saveInfo.tigerGender ? this.saveInfo.tigerGender === 'female' ? '♀️ Female' : '♂️ Male' : '♂️ Male'}</p>
         <p><strong>Level:</strong> ${this.saveInfo.tigerLevel}</p>
         <p><strong>Evolution:</strong> ${this.saveInfo.evolutionStage}</p>
         <p><strong>Experience:</strong> ${this.saveInfo.experience}</p>
@@ -314,9 +556,8 @@ export class MainMenu {
   confirmSelection() {
     switch(this.selectedOption) {
       case 'newgame':
-        if (this.onNewGame) {
-          this.onNewGame();
-        }
+        // Show gender selection screen instead of starting immediately
+        this.showGenderSelection();
         break;
       case 'continue':
         if (this.saveInfo && this.onContinueGame) {
@@ -384,5 +625,70 @@ export class MainMenu {
 
   setOnSettings(callback) {
     this.onSettings = callback;
+  }
+
+  // Gender selection methods
+  selectGender(gender) {
+    this.selectedGender = gender;
+    this.updateGenderVisuals();
+    console.log(`🐅 Selected tiger gender: ${gender}`);
+  }
+
+  updateGenderVisuals() {
+    // Update male option
+    if (this.selectedGender === 'male') {
+      this.maleOption.style.background = 'rgba(255,107,53,0.8)';
+      this.maleOption.style.borderColor = '#ff6b35';
+      this.maleOption.style.transform = 'scale(1.05)';
+    } else {
+      this.maleOption.style.background = 'rgba(255,255,255,0.1)';
+      this.maleOption.style.borderColor = 'rgba(255,255,255,0.2)';
+      this.maleOption.style.transform = 'scale(1)';
+    }
+
+    // Update female option
+    if (this.selectedGender === 'female') {
+      this.femaleOption.style.background = 'rgba(255,107,53,0.8)';
+      this.femaleOption.style.borderColor = '#ff6b35';
+      this.femaleOption.style.transform = 'scale(1.05)';
+    } else {
+      this.femaleOption.style.background = 'rgba(255,255,255,0.1)';
+      this.femaleOption.style.borderColor = 'rgba(255,255,255,0.2)';
+      this.femaleOption.style.transform = 'scale(1)';
+    }
+  }
+
+  showGenderSelection() {
+    console.log('🎮 Showing gender selection screen');
+    this.showingGenderSelection = true;
+    this.menuContainer.style.display = 'none';
+    this.genderSelectionContainer.style.display = 'flex';
+    
+    // Reset to default male selection
+    this.selectGender('male');
+  }
+
+  hideGenderSelection() {
+    console.log('🎮 Hiding gender selection screen');
+    this.showingGenderSelection = false;
+    this.genderSelectionContainer.style.display = 'none';
+    this.menuContainer.style.display = 'flex';
+  }
+
+  confirmGenderSelection() {
+    console.log(`🎮 Starting new game with ${this.selectedGender} tiger`);
+    
+    // Hide gender selection
+    this.hideGenderSelection();
+    this.hide();
+    
+    // Start game with selected gender
+    if (this.onNewGame) {
+      this.onNewGame(this.selectedGender);
+    }
+  }
+
+  getSelectedGender() {
+    return this.selectedGender;
   }
 }

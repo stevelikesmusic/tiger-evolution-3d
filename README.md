@@ -1,6 +1,6 @@
 # Tiger Evolution 3D 🐅
 
-**Status**: 🟢 **ENHANCED HUNTING & SCENT TRAIL SYSTEM** *(Phase 8 - 95% Complete)*
+**Status**: 🟢 **GENDER SYSTEM & TIGER INTERACTIONS** *(Phase 8 - 100% Complete)*
 
 A realistic 3D tiger evolution and survival game built with Three.js and modern web technologies. Control a tiger through its evolution from Young to Alpha while hunting wildlife, surviving, and exploring a dynamic 3D jungle ecosystem with underwater terrain.
 
@@ -21,6 +21,7 @@ A realistic 3D tiger evolution and survival game built with Three.js and modern 
 - **Balanced Damage**: Rabbit=5, Boar=20, Deer=30, Leopard=40 damage values
 - **Stealth Mechanics**: Sneak up behind animals to avoid detection (70% chance)
 - **Scent Trail System**: Press M to create purple trails leading to nearest animals
+- **Tiger Trace System**: Press R to create red traces leading to wild tigers for mating/fighting
 - **Smart AI**: Animals have directional awareness and realistic group behavior
 
 ### ✅ **Advanced World Systems**
@@ -58,7 +59,7 @@ npm run build
 - `Spacebar` - Jump on land/lily pads
 
 ### 🌊 **Water & Underwater**
-- `R` - Teleport to underwater terrain (when in water)
+- `R` - Create red trace to nearest wild tiger (find tigers easily)
 - `Spacebar` - Return to surface (when underwater)
 - **Underwater Controls:**
   - `T` - Swim forward
@@ -71,6 +72,7 @@ npm run build
 ### 🦌 **Hunting & Combat**
 - `Z` - Attack nearby animals when in range
 - `M` - Create purple scent trail to nearest animal (find animals easily)
+- `R` - Create red trace to nearest wild tiger (for mating/fighting)
 - `Ctrl` - Crouch for stealth (animals can't detect you from behind)
 - Get close to animals and press Z to hunt
 - Animals will fight back with their own damage values
@@ -136,7 +138,7 @@ src/
 
 ## 🎯 **Development Roadmap**
 
-### ✅ **Phase 1-8 Complete**: Enhanced Hunting & Scent Trail System
+### ✅ **Phase 1-8 Complete**: Gender System & Tiger Interactions
 - **Phase 1**: Core foundation (Three.js, camera, input, tiger character)
 - **Phase 2**: Basic water system and swimming mechanics
 - **Phase 3**: Professional water with reflections and lily pads
@@ -144,7 +146,7 @@ src/
 - **Phase 5**: Wildlife system with realistic animals and AI behaviors
 - **Phase 6**: Simplified hunting system with immediate combat mechanics
 - **Phase 7**: Save system with main menu and game persistence
-- **Phase 8**: Enhanced animal visuals, stealth AI, and scent trail system
+- **Phase 8**: Complete gender system with male/female tigers, mating, fighting, and red tiger traces
 
 ### 🚧 **Phase 9 Next**: Advanced Tiger Evolution & Abilities
 - Tiger evolution system (cub → adult → alpha) with enhanced stats and abilities
@@ -200,12 +202,21 @@ MIT License - See LICENSE file for details.
 
 ### 🦌 **Hunting Strategy**
 - **Find Animals**: Press M to create purple scent trails leading to nearest animals
+- **Find Tigers**: Press R to create red traces leading to wild tigers for interactions
 - **Stealth Approach**: Crouch (Ctrl) and approach from behind to avoid detection
 - **Get Close**: Walk up to animals until you're within attack range  
 - **Press Z**: Attack with Z key - all animals fight back with balanced damage
 - **Health Bars**: Watch the red/green health bar above animals during combat
 - **Balanced Combat**: Rabbit=5, Boar=20, Deer=30, Leopard=40 damage
 - **Visual Enhancements**: Animals have realistic features (deer spots, boar muscles, leopard rosettes)
+
+### 🐅 **Tiger Interactions**
+- **Gender System**: Choose male or female tiger at game start (different stats)
+- **Wild Tigers**: Both male and female tigers spawn naturally in the world
+- **Mating**: Approach opposite gender tigers - 50% chance they'll mate (health/stamina/XP bonuses)
+- **Fighting**: Same gender tigers will always fight you (territorial behavior, XP rewards)
+- **Size Differences**: Female tigers are 15% smaller than males
+- **Stat Differences**: Females have +20% stamina/-10% strength, Males have +15% strength/-10% stamina
 
 ### 🏊 **Exploration**
 - **Water Areas**: Jump on lily pads to cross water safely

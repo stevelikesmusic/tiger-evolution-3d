@@ -97,28 +97,65 @@ describe('Tiger', () => {
     });
 
     it('should level up when reaching experience threshold', () => {
+      const initialHealth = tiger.health;
+      const initialMaxHealth = tiger.maxHealth;
+      const initialHunger = tiger.hunger;
+      const initialMaxHunger = tiger.maxHunger;
+      const initialPower = tiger.power;
+      const initialStamina = tiger.stamina;
+      const initialMaxStamina = tiger.maxStamina;
+      
       tiger.gainExperience(100); // Level 1 -> 2 at 100 XP
       expect(tiger.level).toBe(2);
       expect(tiger.experience).toBe(0); // Reset after level up
+      
+      // Check stat bonuses: +10 health, +10 hunger, +10 damage, -5 max stamina, -5 stamina
+      expect(tiger.maxHealth).toBe(initialMaxHealth + 10);
+      expect(tiger.health).toBe(initialHealth + 10);
+      expect(tiger.maxHunger).toBe(initialMaxHunger + 10);
+      expect(tiger.hunger).toBe(initialHunger + 10);
+      expect(tiger.power).toBe(initialPower + 10);
+      expect(tiger.maxStamina).toBe(initialMaxStamina - 5); // Lose 5 max stamina
+      expect(tiger.stamina).toBe(initialStamina - 5); // Lose 5 current stamina
     });
 
-    it('should evolve to Adult Tiger at level 11', () => {
-      // Set level to 11 to trigger Adult evolution
-      tiger.level = 10;
+    it('should evolve to Adult Tiger at level 10', () => {
+      // Set level to 9 and gain experience to trigger level 10 evolution
+      tiger.level = 9;
+      const baseHealth = 100 + (9 * 10); // Base + 9 level-ups of +10 health = 190
+      const basePower = 80 + (9 * 10); // Base + 9 level-ups of +10 damage = 170
+      const baseMaxStamina = 300 - (9 * 5); // Base - 9 level-ups of -5 max stamina = 255
+      tiger.maxHealth = baseHealth;
+      tiger.health = baseHealth;
+      tiger.power = basePower;
+      tiger.maxStamina = baseMaxStamina;
+      
       tiger.gainExperience(100);
-      expect(tiger.level).toBe(11);
+      expect(tiger.level).toBe(10);
       expect(tiger.evolutionStage).toBe('Adult');
-      expect(tiger.maxHealth).toBe(125); // +25 HP
-      expect(tiger.speed).toBe(15); // +3 speed
-      expect(tiger.power).toBe(95); // +15 power
+      // Level-up: +10 health, +10 power, -5 max stamina
+      // Evolution: +10 health, +15 max stamina (net +10 after level-up penalty)
+      expect(tiger.maxHealth).toBe(baseHealth + 20); // +10 level + 10 evolution
+      expect(tiger.power).toBe(basePower + 10); // +10 level only (evolution doesn't affect power for Adult)
+      expect(tiger.maxStamina).toBe(baseMaxStamina + 10); // -5 level + 15 evolution = +10 net
     });
 
-    it('should evolve to Alpha Tiger at level 26', () => {
-      tiger.level = 25;
+    it('should evolve to Alpha Tiger at level 30', () => {
+      // Set level to 29 and gain experience to trigger level 30 evolution
+      tiger.level = 29;
+      const basePower = 80 + (29 * 10); // Base + 29 level-ups of +10 damage = 370
+      const baseMaxStamina = 300 - (29 * 5); // Base - 29 level-ups of -5 max stamina = 155
+      tiger.power = basePower;
+      tiger.maxStamina = baseMaxStamina;
+      tiger.evolutionStage = 'Adult'; // Must be Adult to evolve to Alpha
+      
       tiger.gainExperience(100);
-      expect(tiger.level).toBe(26);
+      expect(tiger.level).toBe(30);
       expect(tiger.evolutionStage).toBe('Alpha');
-      expect(tiger.power).toBe(160); // Double damage from Adult
+      // Level-up gives +10 power, then Alpha evolution doubles it = (basePower + 10) * 2
+      expect(tiger.power).toBe((basePower + 10) * 2);
+      // Max stamina: -5 from level + 15 from evolution = +10 net
+      expect(tiger.maxStamina).toBe(baseMaxStamina + 10);
     });
   });
 
@@ -148,7 +185,7 @@ describe('Tiger', () => {
     });
 
     it('should have laser breath at Alpha stage', () => {
-      tiger.level = 26;
+      tiger.level = 30;
       tiger.evolve();
       expect(tiger.hasLaserBreath()).toBe(true);
     });

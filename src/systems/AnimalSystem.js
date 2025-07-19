@@ -28,10 +28,12 @@ export class AnimalSystem {
     
     // Animal type configuration
     this.animalTypes = [
-      { type: 'deer', weight: 0.4, groupSize: [2, 5] },
-      { type: 'rabbit', weight: 0.3, groupSize: [1, 3] },
+      { type: 'deer', weight: 0.3, groupSize: [2, 5] },
+      { type: 'rabbit', weight: 0.25, groupSize: [1, 3] },
       { type: 'boar', weight: 0.2, groupSize: [1, 2] },
-      { type: 'leopard', weight: 0.1, groupSize: [1, 1] }
+      { type: 'leopard', weight: 0.1, groupSize: [1, 1] },
+      { type: 'male_tiger', weight: 0.075, groupSize: [1, 1] },
+      { type: 'female_tiger', weight: 0.075, groupSize: [1, 1] }
     ];
     
     // Initialize system
@@ -301,7 +303,11 @@ export class AnimalSystem {
     // Detection and fear responses (only if can see)
     if (canSee) {
       // console.log(`🦌 ${animal.type} detected tiger at distance ${distance.toFixed(1)}`);
-      if (animal.behaviorType === 'prey') {
+      
+      // Special handling for wild tigers
+      if (animal.behaviorType === 'territorial') {
+        this.handleTigerInteraction(animal, tiger, distance);
+      } else if (animal.behaviorType === 'prey') {
         animal.setAIState('alert');
         
         if (distance <= animal.fleeDistance) {
@@ -738,6 +744,79 @@ export class AnimalSystem {
     }
     
     return stats;
+  }
+  
+  handleTigerInteraction(wildTiger, playerTiger, distance) {
+    const interactionType = wildTiger.getInteractionType(playerTiger);
+    
+    if (!interactionType || interactionType === 'neutral') return;
+    
+    console.log(`🐅 Tiger interaction: ${wildTiger.gender} ${wildTiger.type} ${interactionType} with ${playerTiger.gender} player tiger`);
+    
+    if (interactionType === 'mate') {
+      // Mating interaction
+      if (distance <= 3.0) { // Close enough to mate
+        const matingResult = wildTiger.attemptMating(playerTiger);
+        
+        if (matingResult.success) {
+          // Apply bonuses to player tiger
+          playerTiger.heal(matingResult.bonus.health);
+          playerTiger.restoreStamina(matingResult.bonus.stamina);
+          playerTiger.gainExperience(matingResult.bonus.experience);
+          
+          console.log(`💕 ${matingResult.message}`);
+          
+          // Wild tiger becomes friendly and follows for a while
+          wildTiger.setAIState('friendly');
+          wildTiger.setTarget(playerTiger);
+        }
+      } else {
+        // Approach for mating
+        wildTiger.setAIState('approaching');
+        wildTiger.setTarget(playerTiger);
+      }
+      
+    } else if (interactionType === 'fight') {
+      // Territorial fighting
+      if (distance <= 4.0) { // Close enough to fight
+        const fightResult = wildTiger.initiateFight(playerTiger);
+        
+        console.log(`⚔️ Territorial fight! Player power: ${fightResult.playerPower}, Wild tiger power: ${fightResult.wildTigerPower}`);
+        
+        if (fightResult.playerWins) {
+          // Player wins - wild tiger retreats or dies
+          if (fightResult.powerDifference > 50) {
+            // Decisive victory - wild tiger dies
+            wildTiger.health = 0;
+            console.log(`⚔️ Player tiger defeated ${wildTiger.gender} tiger decisively!`);
+            
+            // Player gains experience and territory bonus
+            playerTiger.gainExperience(100);
+          } else {
+            // Close fight - wild tiger retreats
+            wildTiger.setAIState('retreating');
+            wildTiger.setTarget(null);
+            wildTiger.health = Math.max(1, wildTiger.health - 30);
+            console.log(`⚔️ Player tiger won! ${wildTiger.gender} tiger retreats.`);
+            
+            // Player gains some experience
+            playerTiger.gainExperience(50);
+          }
+        } else {
+          // Player loses - takes damage
+          const damage = Math.min(50, fightResult.powerDifference);
+          playerTiger.takeDamage(damage, wildTiger);
+          console.log(`⚔️ Player tiger lost fight! Taking ${damage} damage.`);
+          
+          // Wild tiger becomes dominant
+          wildTiger.setAIState('dominant');
+        }
+      } else {
+        // Approach for fighting
+        wildTiger.setAIState('approaching');
+        wildTiger.setTarget(playerTiger);
+      }
+    }
   }
   
   // Cleanup
