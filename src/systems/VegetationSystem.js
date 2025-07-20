@@ -84,6 +84,13 @@ export class VegetationSystem {
       roughness: 0.8
     }));
     
+    // Vine material (more visible)
+    this.materials.set('vine', new THREE.MeshLambertMaterial({
+      color: 0x4d7c2a,
+      transparent: false,
+      roughness: 0.7
+    }));
+    
     // Tree leaves material with multiple variants
     const leafColors = [0x2d5016, 0x1a4b08, 0x3d6b1f, 0x4d7c2a];
     leafColors.forEach((color, index) => {
@@ -122,13 +129,16 @@ export class VegetationSystem {
    * Initialize vegetation geometries
    */
   initGeometries() {
-    // Tree trunk geometry
-    this.geometries.set('treeTrunk', new THREE.CylinderGeometry(0.3, 0.5, 6, 8));
+    // Tree trunk geometry (very very big)
+    this.geometries.set('treeTrunk', new THREE.CylinderGeometry(1.0, 1.5, 20, 8));
     
-    // Tree leaves geometries (different shapes)
-    this.geometries.set('treeLeaves0', new THREE.SphereGeometry(3, 8, 6));
-    this.geometries.set('treeLeaves1', new THREE.ConeGeometry(2.5, 5, 8));
-    this.geometries.set('treeLeaves2', new THREE.OctahedronGeometry(2.8, 1));
+    // Vine geometry (thicker and more visible)
+    this.geometries.set('vine', new THREE.CylinderGeometry(0.15, 0.15, 1, 8));
+    
+    // Tree leaves geometries (very very big shapes)
+    this.geometries.set('treeLeaves0', new THREE.SphereGeometry(10, 8, 6));
+    this.geometries.set('treeLeaves1', new THREE.ConeGeometry(8, 15, 8));
+    this.geometries.set('treeLeaves2', new THREE.OctahedronGeometry(9, 1));
     
     // Bush geometry
     this.geometries.set('bush', new THREE.SphereGeometry(1.5, 6, 4));
@@ -290,10 +300,10 @@ export class VegetationSystem {
     const trunkMaterial = this.materials.get('treeTrunk');
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
     
-    // Vary trunk height and thickness
-    const trunkHeight = 5 + rng() * 4;
-    const trunkScale = 0.8 + rng() * 0.4;
-    trunk.scale.set(trunkScale, trunkHeight / 6, trunkScale);
+    // Vary trunk height and thickness (very very big trees with tall trunks)
+    const trunkHeight = 40 + rng() * 20; // 40-60 units tall (towering trees!)
+    const trunkScale = 2.0 + rng() * 1.0; // 2.0x to 3.0x scale (enormous trunks)
+    trunk.scale.set(trunkScale, trunkHeight / 20, trunkScale); // Updated height divisor for new geometry
     trunk.position.y = trunkHeight / 2;
     trunk.castShadow = true;
     
@@ -307,11 +317,14 @@ export class VegetationSystem {
     
     // Position leaves at top of trunk
     leaves.position.y = trunkHeight * 0.8;
-    leaves.scale.setScalar(0.8 + rng() * 0.4);
+    leaves.scale.setScalar(1.5 + rng() * 1.0); // Very very big leaves
     leaves.castShadow = true;
     leaves.receiveShadow = true;
     
     treeGroup.add(leaves);
+    
+    // Add vines hanging from the tree
+    this.createVines(treeGroup, trunkHeight, rng);
     
     // Position tree on terrain (height is already the ground level)
     treeGroup.position.set(x, height, z);
@@ -321,6 +334,63 @@ export class VegetationSystem {
     
     this.treeGroup.add(treeGroup);
     this.trees.push(treeGroup);
+  }
+  
+  /**
+   * Create vines hanging from a tree
+   */
+  createVines(treeGroup, trunkHeight, rng) {
+    const vineGeometry = this.geometries.get('vine');
+    const vineMaterial = this.materials.get('vine');
+    
+    // Create 6-12 vines per tree (more vines for big trees)
+    const vineCount = 6 + Math.floor(rng() * 7);
+    
+    for (let i = 0; i < vineCount; i++) {
+      // Create vine group for multiple segments
+      const vineGroup = new THREE.Group();
+      
+      // Position vines around the tree trunk (adjusted for bigger trees)
+      const angle = (i / vineCount) * Math.PI * 2 + rng() * 0.5;
+      const radius = 2.0 + rng() * 1.5; // Distance from trunk center (bigger radius for big trees)
+      const vineX = Math.cos(angle) * radius;
+      const vineZ = Math.sin(angle) * radius;
+      
+      // Vine hanging height (from middle to lower trunk)
+      const startHeight = trunkHeight * (0.4 + rng() * 0.3); // Start 40-70% up the trunk
+      const vineLength = 8 + rng() * 12; // 8-20 units long (much longer vines)
+      const segments = Math.floor(vineLength * 1.5); // More segments for longer vines
+      
+      // Create vine segments with slight curve
+      for (let j = 0; j < segments; j++) {
+        const vine = new THREE.Mesh(vineGeometry, vineMaterial);
+        
+        // Position segments with slight curve and randomness
+        const segmentHeight = startHeight - (j * vineLength / segments);
+        const curve = Math.sin(j * 0.3) * 0.2; // Slight swaying curve
+        
+        vine.position.set(
+          vineX + curve + (rng() - 0.5) * 0.1,
+          segmentHeight,
+          vineZ + curve + (rng() - 0.5) * 0.1
+        );
+        
+        // Scale vine segments (thicker and more visible)
+        vine.scale.set(
+          1.5 + rng() * 0.5, // Much thicker width
+          vineLength / segments, // Height of each segment
+          1.5 + rng() * 0.5 // Much thicker depth
+        );
+        
+        // Add slight rotation for natural look
+        vine.rotation.x = (rng() - 0.5) * 0.3;
+        vine.rotation.z = (rng() - 0.5) * 0.3;
+        
+        vineGroup.add(vine);
+      }
+      
+      treeGroup.add(vineGroup);
+    }
   }
   
   /**

@@ -64,12 +64,12 @@ export class Engine {
     }
     
     initLighting() {
-        // Ambient light for general illumination
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        // Ambient light for general illumination (increased from 0.4 to 0.6)
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
         this.scene.add(ambientLight);
         
-        // Directional light for sun
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        // Directional light for sun (increased from 0.8 to 1.2)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight.position.set(50, 50, 50);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 1024;

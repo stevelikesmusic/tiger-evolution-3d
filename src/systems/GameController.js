@@ -262,7 +262,7 @@ export class GameController {
       // Change terrain color to brown underwater
       const terrainMesh = this.terrainRenderer.getMesh();
       if (terrainMesh && terrainMesh.material) {
-        terrainMesh.material.color.setHex(0x8B4513); // Brown underwater ground
+        terrainMesh.material.color.setHex(0xb8691a); // Brighter brown underwater ground
       }
       
       // Find the nearest water body center for teleportation
@@ -338,7 +338,7 @@ export class GameController {
       // Restore terrain color to normal
       const terrainMesh = this.terrainRenderer.getMesh();
       if (terrainMesh && terrainMesh.material) {
-        terrainMesh.material.color.setHex(0x3a5f3a); // Original green terrain color
+        terrainMesh.material.color.setHex(0x4d7c2a); // Brighter green terrain color
       }
       
       // Reset velocity first to prevent conflicts

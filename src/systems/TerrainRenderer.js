@@ -75,11 +75,11 @@ export class TerrainRenderer {
     const segments = this.terrain.segments;
     const colors = [];
     
-    // Colors for different terrain types
-    const grassColor = new THREE.Color(0x4d7c2a);
-    const dirtColor = new THREE.Color(0x8b4513);
-    const rockColor = new THREE.Color(0x696969);
-    const sandColor = new THREE.Color(0xc2b280);
+    // Colors for different terrain types (brightened)
+    const grassColor = new THREE.Color(0x6fa83a);
+    const dirtColor = new THREE.Color(0xb8691a);
+    const rockColor = new THREE.Color(0x909090);
+    const sandColor = new THREE.Color(0xe6d4a0);
     
     for (let i = 0; i < segments + 1; i++) {
       for (let j = 0; j < segments + 1; j++) {
