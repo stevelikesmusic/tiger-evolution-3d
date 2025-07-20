@@ -1209,18 +1209,21 @@ export class GameController {
           console.warn(`⚠️ Gender mismatch in save data: expected ${this.tiger.gender}, got ${saveData.tiger.gender}`);
         }
         
-        this.tiger.health = saveData.tiger.health || 100;
-        this.tiger.stamina = saveData.tiger.stamina || 100;
-        this.tiger.hunger = saveData.tiger.hunger || 100;
-        this.tiger.thirst = saveData.tiger.thirst || 100;
-        this.tiger.level = saveData.tiger.level || 1;
-        this.tiger.experience = saveData.tiger.experience || 0;
-        this.tiger.evolutionStage = saveData.tiger.evolutionStage || 'Cub';
+        this.tiger.health = saveData.tiger.health !== undefined ? saveData.tiger.health : 100;
+        this.tiger.maxHealth = saveData.tiger.maxHealth !== undefined ? saveData.tiger.maxHealth : 100;
+        this.tiger.stamina = saveData.tiger.stamina !== undefined ? saveData.tiger.stamina : 100;
+        this.tiger.maxStamina = saveData.tiger.maxStamina !== undefined ? saveData.tiger.maxStamina : 100;
+        this.tiger.hunger = saveData.tiger.hunger !== undefined ? saveData.tiger.hunger : 100;
+        this.tiger.maxHunger = saveData.tiger.maxHunger !== undefined ? saveData.tiger.maxHunger : 100;
+        this.tiger.thirst = saveData.tiger.thirst !== undefined ? saveData.tiger.thirst : 100;
+        this.tiger.level = saveData.tiger.level !== undefined ? saveData.tiger.level : 1;
+        this.tiger.experience = saveData.tiger.experience !== undefined ? saveData.tiger.experience : 0;
+        this.tiger.evolutionStage = saveData.tiger.evolutionStage || 'Young';
         this.tiger.state = saveData.tiger.state || 'idle';
-        this.tiger.huntsSuccessful = saveData.tiger.huntsSuccessful || 0;
-        this.tiger.totalKills = saveData.tiger.totalKills || 0;
-        this.tiger.totalDistance = saveData.tiger.totalDistance || 0;
-        this.tiger.timeAlive = saveData.tiger.timeAlive || 0;
+        this.tiger.huntsSuccessful = saveData.tiger.huntsSuccessful !== undefined ? saveData.tiger.huntsSuccessful : 0;
+        this.tiger.totalKills = saveData.tiger.totalKills !== undefined ? saveData.tiger.totalKills : 0;
+        this.tiger.totalDistance = saveData.tiger.totalDistance !== undefined ? saveData.tiger.totalDistance : 0;
+        this.tiger.timeAlive = saveData.tiger.timeAlive !== undefined ? saveData.tiger.timeAlive : 0;
       }
       
       // Restore terrain state
