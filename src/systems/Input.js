@@ -12,7 +12,8 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      tigerTrace: false,
+      mateTrail: false,
+      diving: false,
       forward_underwater: false,
       backward_underwater: false,
       left_underwater: false,
@@ -20,6 +21,8 @@ export class InputSystem {
       hunt: false,
       Escape: false,
       scentTrail: false,
+      mateTrail: false,
+      diving: false,
       laserBreath: false
     };
     
@@ -140,7 +143,7 @@ export class InputSystem {
         this.keys.interact = true;
         break;
       case 'KeyR':
-        this.keys.tigerTrace = true;
+        this.keys.diving = true; // R = diving (only in water)
         break;
       case 'KeyT':
         this.keys.forward_underwater = true;
@@ -165,8 +168,12 @@ export class InputSystem {
         console.log('🎯 Z key pressed - hunt = true');
         break;
       case 'KeyM':
-        this.keys.scentTrail = true; // M = scent trail
-        console.log('🟣 M key pressed - scent trail = true');
+        this.keys.scentTrail = true; // M = prey scent trail
+        console.log('🟣 M key pressed - prey scent trail = true');
+        break;
+      case 'KeyU':
+        this.keys.mateTrail = true; // U = mate scent trail
+        console.log('💕 U key pressed - mate scent trail = true');
         break;
       case 'Escape':
         this.keys.Escape = true; // Escape = menu
@@ -218,7 +225,7 @@ export class InputSystem {
         this.keys.interact = false;
         break;
       case 'KeyR':
-        this.keys.tigerTrace = false;
+        this.keys.diving = false; // R = diving (only in water)
         break;
       case 'KeyT':
         this.keys.forward_underwater = false;
@@ -243,8 +250,12 @@ export class InputSystem {
         console.log('🎯 Z key released - hunt = false');
         break;
       case 'KeyM':
-        this.keys.scentTrail = false; // M = scent trail
-        console.log('🟣 M key released - scent trail = false');
+        this.keys.scentTrail = false; // M = prey scent trail
+        console.log('🟣 M key released - prey scent trail = false');
+        break;
+      case 'KeyU':
+        this.keys.mateTrail = false; // U = mate scent trail
+        console.log('💕 U key released - mate scent trail = false');
         break;
       case 'Escape':
         this.keys.Escape = false; // Escape = menu
@@ -453,7 +464,8 @@ export class InputSystem {
       crouch: false,
       run: false,
       interact: false,
-      tigerTrace: false,
+      mateTrail: false,
+      diving: false,
       forward_underwater: false,
       backward_underwater: false,
       hunt: false,
@@ -492,11 +504,12 @@ export class InputSystem {
       run: this.physicalKeys.has('ShiftLeft') || this.physicalKeys.has('ShiftRight'),
       crouch: this.physicalKeys.has('ControlLeft') || this.physicalKeys.has('ControlRight'),
       interact: this.physicalKeys.has('KeyE'),
-      tigerTrace: this.physicalKeys.has('KeyR'),
       forward_underwater: this.physicalKeys.has('KeyG'),
       backward_underwater: this.physicalKeys.has('KeyB'),
       hunt: this.physicalKeys.has('KeyZ'),
       scentTrail: this.physicalKeys.has('KeyM'),
+      mateTrail: this.physicalKeys.has('KeyU'),
+      diving: this.physicalKeys.has('KeyR'),
       laserBreath: this.physicalKeys.has('KeyL')
     };
     
@@ -547,8 +560,16 @@ export class InputSystem {
     return this.keys.jump;
   }
 
-  isUsingTigerTrace() {
-    return this.keys.tigerTrace;
+  isDiving() {
+    return this.keys.diving;
+  }
+  
+  isUsingScentTrail() {
+    return this.keys.scentTrail;
+  }
+  
+  isUsingMateTrail() {
+    return this.keys.mateTrail;
   }
 
   // Get underwater movement direction (T/G/F/H keys, same movement method as surface)

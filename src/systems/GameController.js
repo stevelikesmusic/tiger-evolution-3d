@@ -113,7 +113,7 @@ export class GameController {
     underwaterMeshes.forEach((mesh, index) => {
       mesh.visible = false; // Hidden by default
       this.scene.add(mesh);
-      console.log(`  Added mesh ${index + 1}: ${mesh.constructor.name} at (${mesh.position.x.toFixed(1)}, ${mesh.position.y.toFixed(1)}, ${mesh.position.z.toFixed(1)})`);
+      // console.log(`  Added mesh ${index + 1}: ${mesh.constructor.name} at (${mesh.position.x.toFixed(1)}, ${mesh.position.y.toFixed(1)}, ${mesh.position.z.toFixed(1)})`);
     });
     
     // Mark underwater system as ready

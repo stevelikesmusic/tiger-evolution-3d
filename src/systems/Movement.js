@@ -307,12 +307,13 @@ export class MovementSystem {
     
     if (this.isDiving) {
       if (this.isSwimming) {
-        // Swimming: dive input makes tiger swim downward
+        // Swimming: dive input makes tiger swim downward (only when in water)
         this.velocity.y = -this.jumpForce * 0.8; // Diving down force (stronger than swimming up)
       }
       // Reset diving state after applying dive force (one-time action)
       this.isDiving = false;
     }
+    
   }
 
   applyGravity(deltaTime) {

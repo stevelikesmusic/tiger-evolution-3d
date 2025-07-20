@@ -539,8 +539,10 @@ Follow this flow when performing your tasks
 
 1. Read the [spec](.claude/spec.md)
 2. Read the progress.md and project.md in .claude
-3. Use TDD to write tests first based on your goals
-4. Update documentation with new context and/or tools you added
+3. Checkout a new branch for the feature
+4. Make regular commits
+5. Use TDD to write tests first based on your goals
+6. Update documentation with new context and/or tools you added
 
 ## Tools and Scripts
 

@@ -533,13 +533,13 @@ export class UnderwaterSystem {
    * Create balloon-like bubble that tiger needle can pop
    */
   createBubble(x, y, z) {
-    console.log(`🎈 Creating bubble at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+    // console.log(`🎈 Creating bubble at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
     
     // Small balloon size - no lag
     const size = 0.3 + Math.random() * 0.4; // 0.3-0.7 units
     
     const bubbleGeometry = new THREE.SphereGeometry(size, 8, 6); // Lower poly for performance
-    const bubbleMaterial = new THREE.MeshBasicMaterial({
+    const bubbleMaterial = new THREE.MeshLambertMaterial({
       color: 0x88ddff, // Light blue
       transparent: true,
       opacity: 0.7,
@@ -562,7 +562,7 @@ export class UnderwaterSystem {
     this.bubbleMeshes.push(bubble);
     this.underwaterMeshes.push(bubble);
     
-    console.log(`🎈 Bubble created! Total bubbles: ${this.bubbleMeshes.length}`);
+    // console.log(`🎈 Bubble created! Total bubbles: ${this.bubbleMeshes.length}`);
   }
 
   /**
