@@ -61,21 +61,42 @@ export class TigerTraceSystem {
   }
   
   findNearestTiger(position, animalSystem) {
+    // Get all animals first for debugging
+    const allAnimals = animalSystem.animals;
+    console.log(`🔴 TigerTrace: Total animals in system: ${allAnimals.length}`);
+    
+    // Debug: show all animal types
+    const animalTypes = {};
+    allAnimals.forEach(animal => {
+      animalTypes[animal.type] = (animalTypes[animal.type] || 0) + 1;
+    });
+    console.log(`🔴 TigerTrace: Animal breakdown:`, animalTypes);
+    
     const tigers = animalSystem.animals.filter(animal => 
       animal.species === 'tiger' && animal.isAlive()
     );
     
-    if (tigers.length === 0) return null;
+    console.log(`🔴 TigerTrace: Found ${tigers.length} tigers in system`);
+    
+    if (tigers.length === 0) {
+      console.log(`🔴 TigerTrace: No tigers available for trace`);
+      return null;
+    }
     
     let nearestTiger = null;
     let nearestDistance = Infinity;
     
     for (const tiger of tigers) {
       const distance = position.distanceTo(tiger.position);
+      console.log(`🔴 TigerTrace: ${tiger.type} at distance ${distance.toFixed(1)}`);
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestTiger = tiger;
       }
+    }
+    
+    if (nearestTiger) {
+      console.log(`🔴 TigerTrace: Selected nearest ${nearestTiger.type} at distance ${nearestDistance.toFixed(1)}`);
     }
     
     return nearestTiger;

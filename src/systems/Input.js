@@ -21,9 +21,17 @@ export class InputSystem {
       hunt: false,
       Escape: false,
       scentTrail: false,
+      tigerTrace: false,
       mateTrail: false,
       diving: false,
       laserBreath: false
+    };
+    
+    // Double-press detection for M key
+    this.mKeyPressState = {
+      pressCount: 0,
+      lastPressTime: 0,
+      doublePressDuration: 500 // 500ms window for double press
     };
     
     // Track which keys are currently physically pressed
@@ -168,8 +176,7 @@ export class InputSystem {
         console.log('🎯 Z key pressed - hunt = true');
         break;
       case 'KeyM':
-        this.keys.scentTrail = true; // M = prey scent trail
-        console.log('🟣 M key pressed - prey scent trail = true');
+        this.handleMKeyPress();
         break;
       case 'KeyU':
         this.keys.mateTrail = true; // U = mate scent trail
@@ -187,6 +194,32 @@ export class InputSystem {
     
     // Schedule key validation
     this.scheduleKeyValidation();
+  }
+
+  handleMKeyPress() {
+    const currentTime = Date.now();
+    const timeSinceLastPress = currentTime - this.mKeyPressState.lastPressTime;
+    
+    if (timeSinceLastPress <= this.mKeyPressState.doublePressDuration) {
+      // Second press within window - double press detected
+      this.mKeyPressState.pressCount = 0; // Reset counter
+      this.keys.tigerTrace = true; // MM = tiger tracking
+      console.log('🐅 MM (double press) detected - tiger trace = true');
+    } else {
+      // First press or too slow - single press
+      this.mKeyPressState.pressCount = 1;
+      this.keys.scentTrail = true; // M = prey scent trail
+      console.log('🟣 M key pressed - prey scent trail = true');
+      
+      // Set timeout to reset if no second press
+      setTimeout(() => {
+        if (this.mKeyPressState.pressCount === 1) {
+          this.mKeyPressState.pressCount = 0;
+        }
+      }, this.mKeyPressState.doublePressDuration);
+    }
+    
+    this.mKeyPressState.lastPressTime = currentTime;
   }
 
   handleKeyUp(event) {
@@ -251,7 +284,8 @@ export class InputSystem {
         break;
       case 'KeyM':
         this.keys.scentTrail = false; // M = prey scent trail
-        console.log('🟣 M key released - prey scent trail = false');
+        this.keys.tigerTrace = false; // MM = tiger trace
+        console.log('🟣 M key released - both scent trail and tiger trace = false');
         break;
       case 'KeyU':
         this.keys.mateTrail = false; // U = mate scent trail
@@ -380,6 +414,10 @@ export class InputSystem {
 
   isHunting() {
     return this.keys.hunt;
+  }
+
+  isUsingTigerTrace() {
+    return this.keys.tigerTrace;
   }
 
   isUsingLaserBreath() {

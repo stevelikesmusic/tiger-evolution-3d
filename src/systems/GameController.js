@@ -356,7 +356,7 @@ export class GameController {
   }
   
   processInput() {
-    // Handle tiger trace (R key)
+    // Handle tiger trace (MM double press)
     if (this.input.isUsingTigerTrace()) {
       if (this.tigerTraceSystem && this.animalSystem) {
         // Create red trace to nearest tiger

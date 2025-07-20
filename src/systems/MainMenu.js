@@ -519,7 +519,7 @@ export class MainMenu {
         <p>Start your journey as a young tiger cub in the jungle.</p>
         <p>Hunt prey, gain experience, and evolve to become the apex predator.</p>
         <p style="margin-top: 1rem; font-size: 0.9rem; color: #a0c4a0;">
-          <strong>Controls:</strong> WASD to move, Mouse to look, Z to hunt, E to eat
+          <strong>Controls:</strong> WASD to move, Mouse to look, Z to hunt, E to eat, M for scent trail, MM for tiger trail
         </p>
       `;
       this.saveInfoDisplay.style.display = 'block';

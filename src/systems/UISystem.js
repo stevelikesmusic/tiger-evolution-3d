@@ -103,6 +103,7 @@ export class UISystem {
       <div>Z: Hunt nearby animals</div>
       <div>E: Eat prey</div>
       <div>M: Scent trail (find animals)</div>
+      <div>MM: Tiger trail (find tigers)</div>
       <div>R: Dive underwater</div>
       <div>Space: Jump/Surface</div>
       <div>Esc: Menu</div>

@@ -28,12 +28,12 @@ export class AnimalSystem {
     
     // Animal type configuration
     this.animalTypes = [
-      { type: 'deer', weight: 0.3, groupSize: [2, 5] },
-      { type: 'rabbit', weight: 0.25, groupSize: [1, 3] },
-      { type: 'boar', weight: 0.2, groupSize: [1, 2] },
+      { type: 'deer', weight: 0.25, groupSize: [2, 5] },
+      { type: 'rabbit', weight: 0.2, groupSize: [1, 3] },
+      { type: 'boar', weight: 0.15, groupSize: [1, 2] },
       { type: 'leopard', weight: 0.1, groupSize: [1, 1] },
-      { type: 'male_tiger', weight: 0.075, groupSize: [1, 1] },
-      { type: 'female_tiger', weight: 0.075, groupSize: [1, 1] }
+      { type: 'male_tiger', weight: 0.15, groupSize: [1, 1] }, // Increased from 0.075
+      { type: 'female_tiger', weight: 0.15, groupSize: [1, 1] } // Increased from 0.075
     ];
     
     // Initialize system
@@ -50,18 +50,35 @@ export class AnimalSystem {
   }
   
   spawnInitialAnimals() {
-    const initialCount = Math.min(this.maxAnimals, 12);
+    const initialCount = Math.min(this.maxAnimals, 16); // Increased from 12 to 16
     
     console.log(`🦌 AnimalSystem: Spawning ${initialCount} initial animals...`);
+    
+    // Track what types spawn for debugging
+    const spawnStats = {};
     
     for (let i = 0; i < initialCount; i++) {
       const spawnedAnimals = this.spawnAnimal();
       if (spawnedAnimals) {
-        console.log(`🦌 AnimalSystem: Spawned ${spawnedAnimals.length} animals of type ${spawnedAnimals[0].type}`);
+        const type = spawnedAnimals[0].type;
+        spawnStats[type] = (spawnStats[type] || 0) + spawnedAnimals.length;
+        console.log(`🦌 AnimalSystem: Spawned ${spawnedAnimals.length} animals of type ${type}`);
       }
     }
     
     console.log(`🦌 AnimalSystem: Total animals spawned: ${this.animals.length}`);
+    console.log(`🦌 AnimalSystem: Spawn breakdown:`, spawnStats);
+    
+    // Special logging for tigers
+    const tigers = this.animals.filter(a => a.type.includes('tiger'));
+    if (tigers.length > 0) {
+      console.log(`🐅 TIGERS SPAWNED: ${tigers.length} tigers found!`);
+      tigers.forEach(tiger => {
+        console.log(`🐅 ${tiger.type} at position (${tiger.position.x.toFixed(1)}, ${tiger.position.z.toFixed(1)})`);
+      });
+    } else {
+      console.log(`🐅 WARNING: No tigers spawned! This is unusual with increased spawn rates.`);
+    }
   }
   
   spawnAnimal() {
