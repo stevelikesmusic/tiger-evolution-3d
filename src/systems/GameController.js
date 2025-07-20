@@ -14,6 +14,7 @@ import { GameSave } from './GameSave.js';
 import { MainMenu } from './MainMenu.js';
 import { ScentTrailSystem } from './ScentTrailSystem.js';
 import { TigerTraceSystem } from './TigerTraceSystem.js';
+import { AmbushSystem } from './AmbushSystem.js';
 
 export class GameController {
   constructor(scene, canvas) {
@@ -90,6 +91,11 @@ export class GameController {
         this.uiSystem.showSaveStatus(`Game saved after eating ${animal.type}`);
       }
     };
+
+    // Create ambush system AFTER animal system (depends on terrain, water, vegetation, and animal systems)
+    this.ambushSystem = new AmbushSystem(this.scene, this.terrain, this.waterSystem, this.vegetationSystem, this.animalSystem);
+    this.ambushSystem.initialize();
+    console.log('🎯 GameController: Ambush system created and initialized');
 
     // Create UI system
     this.uiSystem = new UISystem();
@@ -185,6 +191,11 @@ export class GameController {
       // Update animal system (for wildlife behavior)
       if (this.animalSystem) {
         this.animalSystem.update(deltaTime, this.tiger);
+      }
+      
+      // Update ambush system (for predator ambushes)
+      if (this.ambushSystem) {
+        this.ambushSystem.update(deltaTime, this.tiger);
       }
       
       // Update UI system (for stats display)
@@ -750,6 +761,11 @@ export class GameController {
       this.animalSystem.dispose();
     }
 
+    // Clean up ambush system
+    if (this.ambushSystem) {
+      this.ambushSystem.dispose();
+    }
+
     // Clean up scent trail system
     if (this.scentTrailSystem) {
       this.scentTrailSystem.dispose();
@@ -803,6 +819,7 @@ export class GameController {
     this.terrainRenderer = null;
     this.vegetationSystem = null;
     this.animalSystem = null;
+    this.ambushSystem = null;
     this.scentTrailSystem = null;
     this.uiSystem = null;
     this.waterSystem = null;
