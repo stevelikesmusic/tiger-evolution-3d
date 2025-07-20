@@ -19,7 +19,7 @@ export class AnimalSystem {
     
     // Performance optimization
     this.updateTimer = 0;
-    this.updateInterval = 1.0 / 30.0; // 30 FPS updates
+    this.updateInterval = 1.0 / 10.0; // 10 FPS updates for better performance
     this.spatialGrid = new Map();
     this.gridSize = 50;
     

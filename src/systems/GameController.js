@@ -355,74 +355,6 @@ export class GameController {
     }
   }
   
-  processInput() {
-    // Handle tiger trace (MM double press)
-    if (this.input.isUsingTigerTrace()) {
-      if (this.tigerTraceSystem && this.animalSystem) {
-        // Create red trace to nearest tiger
-        const traceCreated = this.tigerTraceSystem.createTrace(this.tiger.position, this.animalSystem);
-        if (traceCreated) {
-          console.log('🔴 Red tiger trace created!');
-        }
-      }
-    }
-    
-    // Handle scent trail (M key) 
-    if (this.input.keys.scentTrail) {
-      if (this.scentTrailSystem && this.animalSystem) {
-        // Create scent trail to nearest animal
-        const trailCreated = this.scentTrailSystem.createTrail(this.tiger.position, this.animalSystem);
-        if (trailCreated) {
-          console.log('🟣 Scent trail created!');
-        }
-      }
-    }
-    
-    // Handle hunting (Z key)
-    if (this.input.isHunting()) {
-      if (this.animalSystem) {
-        const huntResult = this.animalSystem.attemptHunt(this.tiger);
-        if (huntResult) {
-          console.log('🎯 Hunt successful!');
-        }
-      }
-    }
-    
-    // Handle laser breath (L key) - Alpha only
-    if (this.input.isUsingLaserBreath()) {
-      if (this.tiger.hasLaserBreath() && this.animalSystem) {
-        const laserResult = this.tiger.useLaserBreath(this.animalSystem.animals, this.tigerModel);
-        if (laserResult) {
-          console.log('🔴 Laser breath fired!');
-        }
-      }
-    }
-    
-    // Handle eating (E key)
-    if (this.input.isInteracting()) {
-      if (this.animalSystem) {
-        const eatResult = this.animalSystem.attemptEat(this.tiger);
-        if (eatResult) {
-          console.log('🍖 Tiger is eating!');
-        }
-      }
-    }
-    
-    // Handle underwater teleportation (Space key when in water)
-    if (this.input.isJumping() && this.isInWater() && !this.isUnderwater) {
-      this.teleportToUnderwaterTerrain();
-    }
-    
-    // Handle surface return (Space key when underwater)
-    if (this.input.isJumping() && this.isUnderwater) {
-      this.teleportToSurface();
-    }
-    
-    // Handle menu toggle (Escape key)
-    if (this.input.keys.Escape) {
-      this.showMainMenu();
-    }
-  }
 
   logPositionSync() {
     this.positionLogCounter = (this.positionLogCounter || 0) + 1;
@@ -549,6 +481,7 @@ export class GameController {
         console.log('🍖 Eating failed - no dead animals in range');
       }
     }
+
 
     // Handle scent trail
     if (this.input.keys.scentTrail && this.scentTrailSystem && this.animalSystem && !this.isUnderwater) {

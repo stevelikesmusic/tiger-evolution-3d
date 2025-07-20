@@ -16,7 +16,7 @@ export class WaterSystem {
     this.waterMaterial = null;
     this.waterNormalsTexture = null;
     this.useAdvancedWater = true; // Use Water class for all water bodies
-    this.maxAdvancedWaterBodies = 10; // Allow multiple Water class instances
+    this.maxAdvancedWaterBodies = 0; // Disable advanced water for now
     this.advancedWaterCount = 0;
     
     this.createWaterNormalsTexture();
