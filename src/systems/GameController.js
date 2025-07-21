@@ -721,6 +721,64 @@ export class GameController {
           if (saved) {
             console.log('🎮 Parsed save data:', JSON.parse(saved));
           }
+        },
+        // Ambush System Debug Functions
+        getAmbushSystem: () => this.ambushSystem,
+        getAmbushStats: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return null;
+          }
+          const stats = this.ambushSystem.getStatistics();
+          console.log('🎯 Ambush System Stats:', stats);
+          return stats;
+        },
+        forceSpawnCrocodiles: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          console.log('🐊 Manually spawning crocodiles...');
+          this.ambushSystem.spawnCrocodileAmbushers();
+          const stats = this.ambushSystem.getStatistics();
+          console.log(`🐊 Spawned! Active crocodiles: ${stats.activeCrocodiles}`);
+        },
+        forceSpawnLeopards: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          console.log('🐆 Manually spawning leopards...');
+          this.ambushSystem.spawnLeopardAmbushers();
+          const stats = this.ambushSystem.getStatistics();
+          console.log(`🐆 Spawned! Active leopards: ${stats.activeLeopards}`);
+        },
+        enableAmbushDebug: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          this.ambushSystem.setDebugMode(true);
+          console.log('🎯 Ambush debug mode enabled');
+        },
+        disableAmbushDebug: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          this.ambushSystem.setDebugMode(false);
+          console.log('🎯 Ambush debug mode disabled');
+        },
+        getTigerAwareness: () => {
+          if (!this.ambushSystem || !this.tiger) {
+            console.log('❌ AmbushSystem or Tiger not initialized');
+            return 0;
+          }
+          const awareness = this.ambushSystem.getTigerAwareness(this.tiger);
+          const level = this.ambushSystem.ambushDetector.getAwarenessLevel();
+          const color = this.ambushSystem.ambushDetector.getAwarenessColor();
+          console.log(`🎯 Tiger Awareness: ${(awareness * 100).toFixed(1)}% (${level}) - Color: ${color}`);
+          return awareness;
         }
       };
       console.log('🔍 Debug API exposed: window.tigerGame');
@@ -739,6 +797,12 @@ export class GameController {
       console.log('  window.tigerGame.evolveToAlpha() - Force evolution to Alpha (level 30)');
       console.log('  window.tigerGame.testSave() - Test manual save functionality');
       console.log('  window.tigerGame.checkLocalStorage() - Check current save data');
+      console.log('  === AMBUSH SYSTEM DEBUG ===');
+      console.log('  window.tigerGame.getAmbushStats() - Show ambush system statistics');
+      console.log('  window.tigerGame.forceSpawnCrocodiles() - Manually spawn crocodiles');
+      console.log('  window.tigerGame.forceSpawnLeopards() - Manually spawn leopards');
+      console.log('  window.tigerGame.enableAmbushDebug() - Enable ambush debug mode');
+      console.log('  window.tigerGame.getTigerAwareness() - Check tiger awareness level');
     }
   }
 
