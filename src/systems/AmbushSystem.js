@@ -227,7 +227,7 @@ export class AmbushSystem {
         crocodile.update(deltaTime, tiger);
         
         // Check for successful ambush
-        if (crocodile.isAttacking() && crocodile.canHitTarget(tiger)) {
+        if (crocodile.isAttacking && crocodile.canHitTarget(tiger)) {
           this.handleSuccessfulAmbush(crocodile, tiger);
         }
       }
@@ -239,7 +239,7 @@ export class AmbushSystem {
         leopard.update(deltaTime, tiger);
         
         // Check for successful ambush
-        if (leopard.isAttacking() && leopard.canHitTarget(tiger)) {
+        if (leopard.isAttacking && leopard.canHitTarget(tiger)) {
           this.handleSuccessfulAmbush(leopard, tiger);
         }
       }
