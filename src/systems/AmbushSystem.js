@@ -73,6 +73,11 @@ export class AmbushSystem {
     );
     console.log(`🐊 AmbushSystem: Found ${suitableWaterBodies.length} suitable water bodies for crocodiles`);
     
+    // Debug: log details of water bodies
+    waterBodies.forEach((body, i) => {
+      console.log(`🐊 Water body ${i+1}: ${body.type} at (${body.center.x.toFixed(1)}, ${body.center.z.toFixed(1)}) radius: ${body.radius.toFixed(1)}`);
+    });
+    
     for (const waterBody of suitableWaterBodies) {
       if (this.crocodileAmbushers.length >= this.maxCrocodiles) break;
       
@@ -186,8 +191,8 @@ export class AmbushSystem {
     
     // Check tree size (must be large enough)
     const scale = tree.scale ? tree.scale.x : 1.0;
-    if (scale < 2.0) {
-      console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) unsuitable: scale ${scale} < 2.0`);
+    if (scale < 0.8) { // Reduced from 2.0 to 0.8 since all trees seem to be scale 1.0
+      console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) unsuitable: scale ${scale} < 0.8`);
       return false; // Minimum scale for ambush
     }
     
