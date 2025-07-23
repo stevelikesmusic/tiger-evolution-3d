@@ -59,23 +59,32 @@ export class AmbushSystem {
    * Spawn crocodile ambushers near water bodies
    */
   spawnCrocodileAmbushers() {
-    if (!this.waterSystem) return;
+    if (!this.waterSystem) {
+      console.log('🐊 AmbushSystem: No water system available for crocodile spawning');
+      return;
+    }
     
     const waterBodies = this.waterSystem.getWaterBodies();
+    console.log(`🐊 AmbushSystem: Found ${waterBodies.length} total water bodies`);
+    
     const suitableWaterBodies = waterBodies.filter(body => 
       (body.type === 'lake' || body.type === 'pond') && 
       body.radius >= 15 // Minimum size for crocodile ambush
     );
+    console.log(`🐊 AmbushSystem: Found ${suitableWaterBodies.length} suitable water bodies for crocodiles`);
     
     for (const waterBody of suitableWaterBodies) {
       if (this.crocodileAmbushers.length >= this.maxCrocodiles) break;
       
-      // 60% chance to spawn crocodile in each suitable water body
-      if (Math.random() < 0.6) {
+      // 100% chance to spawn crocodile for testing (was 60%)
+      if (Math.random() < 1.0) {
         const crocodile = this.createCrocodileAmbusher(waterBody);
         if (crocodile) {
           this.crocodileAmbushers.push(crocodile);
           this.scene.add(crocodile.getMesh());
+          console.log(`🐊 AmbushSystem: Successfully added crocodile to scene at water body ${waterBody.type}`);
+        } else {
+          console.log(`🐊 AmbushSystem: Failed to create crocodile at water body ${waterBody.type}`);
         }
       }
     }
@@ -85,22 +94,34 @@ export class AmbushSystem {
    * Spawn leopard ambushers in suitable trees
    */
   spawnLeopardAmbushers() {
-    if (!this.vegetationSystem) return;
+    if (!this.vegetationSystem) {
+      console.log('🐆 AmbushSystem: No vegetation system available for leopard spawning');
+      return;
+    }
     
     const trees = this.vegetationSystem.trees;
+    console.log(`🐆 AmbushSystem: Found ${trees.length} total trees`);
+    
     const suitableTreeCount = Math.min(trees.length, this.maxLeopards * 3); // Check up to 3x max leopards
+    console.log(`🐆 AmbushSystem: Checking ${suitableTreeCount} trees for leopard suitability`);
     
     for (let i = 0; i < suitableTreeCount && this.leopardAmbushers.length < this.maxLeopards; i++) {
       const tree = trees[Math.floor(Math.random() * trees.length)];
       
       // Check if tree is suitable for leopard ambush
-      if (this.isTreeSuitableForAmbush(tree)) {
-        // 40% chance to spawn leopard in each suitable tree
-        if (Math.random() < 0.4) {
+      const isSuitable = this.isTreeSuitableForAmbush(tree);
+      console.log(`🐆 AmbushSystem: Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) suitable: ${isSuitable}`);
+      
+      if (isSuitable) {
+        // 100% chance to spawn leopard for testing (was 40%)
+        if (Math.random() < 1.0) {
           const leopard = this.createLeopardAmbusher(tree);
           if (leopard) {
             this.leopardAmbushers.push(leopard);
             this.scene.add(leopard.getMesh());
+            console.log(`🐆 AmbushSystem: Successfully added leopard to scene in suitable tree`);
+          } else {
+            console.log(`🐆 AmbushSystem: Failed to create leopard in tree`);
           }
         }
       }

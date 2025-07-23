@@ -12,7 +12,8 @@ export class CrocodileAmbush {
     this.waterBody = waterBody;
     this.originalPosition = this.position.clone();
     
-    // Crocodile stats
+    // Crocodile identity and stats
+    this.type = 'crocodile';
     this.health = 200;
     this.maxHealth = 200;
     this.power = 35; // Base damage

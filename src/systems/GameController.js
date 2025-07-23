@@ -449,18 +449,18 @@ export class GameController {
 
     // Handle hunting
     if (movementInput.isHunting && this.animalSystem && !this.isUnderwater) {
-      // Z key: Attempt to hunt nearby animals (only on surface)
+      // Z key: Attempt to hunt nearby animals and ambushers (only on surface)
       console.log('🎯 Hunt key pressed! Attempting to hunt...');
       console.log(`🎯 Tiger position: (${this.tiger.position.x.toFixed(1)}, ${this.tiger.position.y.toFixed(1)}, ${this.tiger.position.z.toFixed(1)})`);
       console.log(`🎯 Tiger evolution stage: ${this.tiger.evolutionStage}`);
       console.log(`🎯 Tiger attack range: ${this.tiger.getAttackRange()}`);
       console.log(`🎯 Total animals in system: ${this.animalSystem.getAnimalCount()}`);
       
-      const huntSuccess = this.animalSystem.attemptHunt(this.tiger);
+      const huntSuccess = this.attemptHuntAllTargets(this.tiger);
       if (huntSuccess) {
         console.log('🎯 Hunt successful!');
       } else {
-        console.log('🎯 Hunt failed - no animals in range');
+        console.log('🎯 Hunt failed - no targets in range');
       }
     } else if (movementInput.isHunting && this.isUnderwater) {
       console.log('🎯 Hunt key pressed but tiger is underwater - hunting disabled');
@@ -1092,6 +1092,61 @@ export class GameController {
       // Reposition tiger on new terrain
       this.positionTigerOnTerrain();
     }
+  }
+
+  /**
+   * Attempt to hunt both regular animals and ambushers
+   */
+  attemptHuntAllTargets(tiger) {
+    // First try regular animals
+    const animalHuntSuccess = this.animalSystem.attemptHunt(tiger);
+    if (animalHuntSuccess) {
+      return true;
+    }
+
+    // If no regular animals, try ambushers
+    if (this.ambushSystem) {
+      const ambushers = this.ambushSystem.getActiveAmbushers();
+      console.log(`🎯 GameController: Found ${ambushers.length} active ambushers to target`);
+      
+      if (ambushers.length === 0) return false;
+      
+      // Find ambushers within attack range
+      const attackRange = tiger.getAttackRange();
+      const huntableAmbushers = ambushers.filter(ambusher => {
+        const distance = tiger.position.distanceTo(ambusher.position);
+        const isAlive = ambusher.isAlive();
+        console.log(`🎯 GameController: ${ambusher.constructor.name} at distance ${distance.toFixed(1)} - alive: ${isAlive}, in range: ${distance <= attackRange}`);
+        return isAlive && distance <= attackRange;
+      });
+      
+      if (huntableAmbushers.length === 0) return false;
+      
+      // Attack the closest ambusher
+      let closestAmbusher = huntableAmbushers[0];
+      let closestDistance = tiger.position.distanceTo(closestAmbusher.position);
+      
+      for (const ambusher of huntableAmbushers) {
+        const distance = tiger.position.distanceTo(ambusher.position);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestAmbusher = ambusher;
+        }
+      }
+      
+      // Execute attack on ambusher
+      console.log(`🎯 GameController: Tiger attacking ${closestAmbusher.constructor.name}!`);
+      
+      const attackSuccess = tiger.attack(closestAmbusher);
+      if (!attackSuccess) {
+        console.log(`🎯 GameController: Tiger attack on ${closestAmbusher.constructor.name} failed`);
+        return false;
+      }
+      
+      return true;
+    }
+    
+    return false;
   }
 
   // Main Menu and Save/Load System

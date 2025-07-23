@@ -12,7 +12,8 @@ export class LeopardAmbush {
     this.tree = tree;
     this.originalPosition = this.position.clone();
     
-    // Leopard stats
+    // Leopard identity and stats
+    this.type = 'leopard';
     this.health = 180;
     this.maxHealth = 180;
     this.power = 30; // Base damage
