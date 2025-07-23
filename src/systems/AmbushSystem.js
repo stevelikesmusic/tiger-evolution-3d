@@ -179,11 +179,17 @@ export class AmbushSystem {
    * Check if tree is suitable for leopard ambush
    */
   isTreeSuitableForAmbush(tree) {
-    if (!tree || !tree.position) return false;
+    if (!tree || !tree.position) {
+      console.log(`🐆 Tree unsuitable: no tree or position`);
+      return false;
+    }
     
     // Check tree size (must be large enough)
     const scale = tree.scale ? tree.scale.x : 1.0;
-    if (scale < 2.0) return false; // Minimum scale for ambush
+    if (scale < 2.0) {
+      console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) unsuitable: scale ${scale} < 2.0`);
+      return false; // Minimum scale for ambush
+    }
     
     // Check if tree is not too close to water (leopards prefer forest areas)
     if (this.waterSystem) {
@@ -194,15 +200,23 @@ export class AmbushSystem {
             Math.pow(tree.position.x - waterBody.center.x, 2) + 
             Math.pow(tree.position.z - waterBody.center.z, 2)
           );
-          if (distance < waterBody.radius + 20) return false; // Too close to water
+          const minDistance = waterBody.radius + 10; // Reduced from 20 to 10 for more spawning
+          if (distance < minDistance) {
+            console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) unsuitable: ${distance.toFixed(1)} < ${minDistance.toFixed(1)} from ${waterBody.type}`);
+            return false; // Too close to water
+          }
         }
       }
     }
     
     // Check terrain slope (leopards prefer stable terrain)
     const slope = this.terrain.getSlope(tree.position.x, tree.position.z);
-    if (slope > 0.3) return false; // Too steep
+    if (slope > 0.5) { // Relaxed from 0.3 to 0.5 for more spawning
+      console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) unsuitable: slope ${slope.toFixed(2)} > 0.5`);
+      return false; // Too steep
+    }
     
+    console.log(`🐆 Tree at (${tree.position.x.toFixed(1)}, ${tree.position.z.toFixed(1)}) SUITABLE: scale ${scale.toFixed(1)}, slope ${slope.toFixed(2)}`);
     return true;
   }
   
