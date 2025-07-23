@@ -105,7 +105,7 @@ export class Tiger {
     this.maxHunger += 10;
     this.hunger = Math.min(this.maxHunger, this.hunger + 10); // Gain 10 hunger but don't exceed max
     this.power += 10; // Increase damage by 10
-    this.maxStamina -= 5; // Decrease max stamina by 5 every level
+    this.maxStamina = Math.max(100, this.maxStamina - 5); // Decrease max stamina by 5 every level but never below 100
     this.stamina = Math.max(0, this.stamina - 5); // Lose 5 current stamina every level-up
     
     // Ensure current stamina doesn't exceed new max

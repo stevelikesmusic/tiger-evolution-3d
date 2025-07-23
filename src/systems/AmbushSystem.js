@@ -67,15 +67,22 @@ export class AmbushSystem {
     const waterBodies = this.waterSystem.getWaterBodies();
     console.log(`🐊 AmbushSystem: Found ${waterBodies.length} total water bodies`);
     
-    const suitableWaterBodies = waterBodies.filter(body => 
-      (body.type === 'lake' || body.type === 'pond') && 
-      body.radius >= 15 // Minimum size for crocodile ambush
-    );
+    const suitableWaterBodies = waterBodies.filter(body => {
+      // Only lakes and ponds with centers and sufficient size
+      if ((body.type === 'lake' || body.type === 'pond') && body.center && body.radius >= 15) {
+        return true;
+      }
+      return false;
+    });
     console.log(`🐊 AmbushSystem: Found ${suitableWaterBodies.length} suitable water bodies for crocodiles`);
     
     // Debug: log details of water bodies
     waterBodies.forEach((body, i) => {
-      console.log(`🐊 Water body ${i+1}: ${body.type} at (${body.center.x.toFixed(1)}, ${body.center.z.toFixed(1)}) radius: ${body.radius.toFixed(1)}`);
+      if (body.center) {
+        console.log(`🐊 Water body ${i+1}: ${body.type} at (${body.center.x.toFixed(1)}, ${body.center.z.toFixed(1)}) radius: ${body.radius.toFixed(1)}`);
+      } else {
+        console.log(`🐊 Water body ${i+1}: ${body.type} - NO CENTER DEFINED - radius: ${body.radius?.toFixed(1) || 'undefined'}`);
+      }
     });
     
     for (const waterBody of suitableWaterBodies) {
@@ -200,7 +207,8 @@ export class AmbushSystem {
     if (this.waterSystem) {
       const waterBodies = this.waterSystem.getWaterBodies();
       for (const waterBody of waterBodies) {
-        if (waterBody.center) {
+        // Only check distance for lakes and ponds (skip rivers which don't have centers)
+        if (waterBody.center && (waterBody.type === 'lake' || waterBody.type === 'pond')) {
           const distance = Math.sqrt(
             Math.pow(tree.position.x - waterBody.center.x, 2) + 
             Math.pow(tree.position.z - waterBody.center.z, 2)
@@ -293,10 +301,15 @@ export class AmbushSystem {
     const damage = ambusher.getAttackDamage();
     const ambushType = ambusher.constructor.name;
     
-    console.log(`💥 Successful ${ambushType} ambush! Dealing ${damage} damage to tiger`);
+    console.log(`💥 Successful ${ambushType} ambush! Dealing ${damage} damage to tiger (tiger health before: ${tiger.health})`);
     
     // Apply damage to tiger
-    tiger.takeDamage(damage, ambusher);
+    if (tiger.takeDamage) {
+      tiger.takeDamage(damage, ambusher);
+      console.log(`💥 Tiger health after ambush: ${tiger.health}/${tiger.maxHealth}`);
+    } else {
+      console.error(`💥 ERROR: Tiger has no takeDamage method!`);
+    }
     
     // Apply screen effects (if available)
     this.triggerAmbushEffects(ambusher);
