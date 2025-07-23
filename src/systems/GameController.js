@@ -724,7 +724,37 @@ export class GameController {
         },
         // Ambush System Debug Functions
         getAmbushSystem: () => this.ambushSystem,
+        checkAmbushSystemState: () => {
+          console.log('🔍 Checking AmbushSystem state...');
+          console.log('AmbushSystem exists:', !!this.ambushSystem);
+          console.log('WaterSystem exists:', !!this.waterSystem);
+          console.log('VegetationSystem exists:', !!this.vegetationSystem);
+          console.log('Game initialized:', this.gameInitialized);
+          
+          if (this.waterSystem) {
+            const waterBodies = this.waterSystem.getWaterBodies();
+            console.log(`Water bodies: ${waterBodies.length}`);
+            waterBodies.forEach((body, i) => {
+              console.log(`  ${i+1}. ${body.type} at (${body.center.x}, ${body.center.z}) radius: ${body.radius}`);
+            });
+          }
+          
+          if (this.vegetationSystem && this.vegetationSystem.trees) {
+            console.log(`Trees: ${this.vegetationSystem.trees.length}`);
+          }
+          
+          return {
+            ambushSystem: !!this.ambushSystem,
+            waterSystem: !!this.waterSystem,
+            vegetationSystem: !!this.vegetationSystem,
+            gameInitialized: this.gameInitialized
+          };
+        },
         getAmbushStats: () => {
+          if (!this.gameInitialized) {
+            console.log('❌ Game not initialized - start a new game first!');
+            return null;
+          }
           if (!this.ambushSystem) {
             console.log('❌ AmbushSystem not initialized');
             return null;
@@ -734,6 +764,11 @@ export class GameController {
           return stats;
         },
         forceSpawnCrocodiles: () => {
+          if (!this.gameInitialized) {
+            console.log('❌ Game not initialized - start a new game first!');
+            console.log('Use: Start New Game from the menu, then try this command');
+            return;
+          }
           if (!this.ambushSystem) {
             console.log('❌ AmbushSystem not initialized');
             return;
@@ -744,6 +779,11 @@ export class GameController {
           console.log(`🐊 Spawned! Active crocodiles: ${stats.activeCrocodiles}`);
         },
         forceSpawnLeopards: () => {
+          if (!this.gameInitialized) {
+            console.log('❌ Game not initialized - start a new game first!');
+            console.log('Use: Start New Game from the menu, then try this command');
+            return;
+          }
           if (!this.ambushSystem) {
             console.log('❌ AmbushSystem not initialized');
             return;
@@ -779,6 +819,31 @@ export class GameController {
           const color = this.ambushSystem.ambushDetector.getAwarenessColor();
           console.log(`🎯 Tiger Awareness: ${(awareness * 100).toFixed(1)}% (${level}) - Color: ${color}`);
           return awareness;
+        },
+        listAllAmbushers: () => {
+          if (!this.gameInitialized) {
+            console.log('❌ Game not initialized - start a new game first!');
+            return [];
+          }
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return [];
+          }
+          
+          const crocodiles = this.ambushSystem.crocodileAmbushers;
+          const leopards = this.ambushSystem.leopardAmbushers;
+          
+          console.log(`🐊 Crocodiles (${crocodiles.length}):`);
+          crocodiles.forEach((croc, i) => {
+            console.log(`  ${i+1}. Health: ${croc.health}/${croc.maxHealth}, State: ${croc.state}, Position: (${croc.position.x.toFixed(1)}, ${croc.position.y.toFixed(1)}, ${croc.position.z.toFixed(1)})`);
+          });
+          
+          console.log(`🐆 Leopards (${leopards.length}):`);
+          leopards.forEach((leopard, i) => {
+            console.log(`  ${i+1}. Health: ${leopard.health}/${leopard.maxHealth}, State: ${leopard.state}, Position: (${leopard.position.x.toFixed(1)}, ${leopard.position.y.toFixed(1)}, ${leopard.position.z.toFixed(1)})`);
+          });
+          
+          return { crocodiles: crocodiles.length, leopards: leopards.length };
         }
       };
       console.log('🔍 Debug API exposed: window.tigerGame');
@@ -798,11 +863,13 @@ export class GameController {
       console.log('  window.tigerGame.testSave() - Test manual save functionality');
       console.log('  window.tigerGame.checkLocalStorage() - Check current save data');
       console.log('  === AMBUSH SYSTEM DEBUG ===');
+      console.log('  window.tigerGame.checkAmbushSystemState() - Check system initialization');
       console.log('  window.tigerGame.getAmbushStats() - Show ambush system statistics');
       console.log('  window.tigerGame.forceSpawnCrocodiles() - Manually spawn crocodiles');
       console.log('  window.tigerGame.forceSpawnLeopards() - Manually spawn leopards');
       console.log('  window.tigerGame.enableAmbushDebug() - Enable ambush debug mode');
       console.log('  window.tigerGame.getTigerAwareness() - Check tiger awareness level');
+      console.log('  window.tigerGame.listAllAmbushers() - List all active ambushers with details');
     }
   }
 
