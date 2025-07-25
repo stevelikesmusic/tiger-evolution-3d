@@ -809,6 +809,40 @@ export class GameController {
           this.ambushSystem.setDebugMode(false);
           console.log('🎯 Ambush debug mode disabled');
         },
+        enableCrocodileDebug: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          this.ambushSystem.setCrocodileDebugMode(true);
+          console.log('🐊 Crocodile debug visualization enabled');
+          console.log('🔴 Red circles = Detection range (20 units)');
+          console.log('🟠 Orange circles = Attack range (15 units)');
+          console.log('🔵 Blue spheres = Hidden state');
+          console.log('🟡 Yellow spheres = Alert state');
+          console.log('🔴 Red spheres = Attacking state');
+          console.log('🟢 Green spheres = Cooldown state');
+        },
+        disableCrocodileDebug: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          this.ambushSystem.setCrocodileDebugMode(false);
+          console.log('🐊 Crocodile debug visualization disabled');
+        },
+        listCrocodileStates: () => {
+          if (!this.ambushSystem) {
+            console.log('❌ AmbushSystem not initialized');
+            return;
+          }
+          const crocodiles = this.ambushSystem.crocodileAmbushers;
+          console.log(`🐊 Active crocodiles: ${crocodiles.length}`);
+          crocodiles.forEach((croc, i) => {
+            const distance = this.tiger ? croc.getDistanceToTiger(this.tiger) : 'N/A';
+            console.log(`  ${i+1}. State: ${croc.state}, Distance: ${distance !== 'N/A' ? distance.toFixed(1) : 'N/A'}, Position: (${croc.position.x.toFixed(1)}, ${croc.position.y.toFixed(1)}, ${croc.position.z.toFixed(1)})`);
+          });
+        },
         getTigerAwareness: () => {
           if (!this.ambushSystem || !this.tiger) {
             console.log('❌ AmbushSystem or Tiger not initialized');
@@ -868,6 +902,9 @@ export class GameController {
       console.log('  window.tigerGame.forceSpawnCrocodiles() - Manually spawn crocodiles');
       console.log('  window.tigerGame.forceSpawnLeopards() - Manually spawn leopards');
       console.log('  window.tigerGame.enableAmbushDebug() - Enable ambush debug mode');
+      console.log('  window.tigerGame.enableCrocodileDebug() - Show crocodile detection ranges');
+      console.log('  window.tigerGame.disableCrocodileDebug() - Hide crocodile debug visuals');
+      console.log('  window.tigerGame.listCrocodileStates() - Show all crocodile states and positions');
       console.log('  window.tigerGame.getTigerAwareness() - Check tiger awareness level');
       console.log('  window.tigerGame.listAllAmbushers() - List all active ambushers with details');
     }

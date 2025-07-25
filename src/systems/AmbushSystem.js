@@ -21,7 +21,7 @@ export class AmbushSystem {
     // Active ambushers
     this.crocodileAmbushers = [];
     this.leopardAmbushers = [];
-    this.maxCrocodiles = 3;
+    this.maxCrocodiles = 6;
     this.maxLeopards = 2;
     
     // Spawn control
@@ -36,6 +36,7 @@ export class AmbushSystem {
     
     // Debug mode
     this.debugMode = false;
+    this.crocodileDebugMode = false;
     
     console.log('🎯 AmbushSystem: Initialized with crocodile and leopard ambushers');
   }
@@ -94,6 +95,12 @@ export class AmbushSystem {
         if (crocodile) {
           this.crocodileAmbushers.push(crocodile);
           this.scene.add(crocodile.getMesh());
+          
+          // Apply debug mode if enabled
+          if (this.crocodileDebugMode) {
+            crocodile.setDebugMode(true, this.scene);
+          }
+          
           console.log(`🐊 AmbushSystem: Successfully added crocodile to scene at water body ${waterBody.type}`);
         } else {
           console.log(`🐊 AmbushSystem: Failed to create crocodile at water body ${waterBody.type}`);
@@ -151,13 +158,25 @@ export class AmbushSystem {
       
       const x = waterBody.center.x + Math.cos(angle) * distance;
       const z = waterBody.center.z + Math.sin(angle) * distance;
-      const y = this.terrain.getHeightAt(x, z) - 0.5; // Partially submerged
+      
+      // Get proper water body height instead of terrain height
+      let waterHeight;
+      if (waterBody.mesh && waterBody.mesh.position) {
+        // Use actual water body mesh height
+        waterHeight = waterBody.mesh.position.y;
+      } else {
+        // Fallback to water system's base water level
+        waterHeight = this.waterSystem.waterLevel - 1; // Default water surface
+      }
+      
+      // Position crocodile submerged in water (0.8 units below surface)
+      const y = waterHeight - 0.8;
       
       const crocodile = new CrocodileAmbush(x, y, z, waterBody);
       crocodile.setTerrain(this.terrain);
       crocodile.setWaterSystem(this.waterSystem);
       
-      console.log(`🐊 Spawned crocodile at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) near ${waterBody.type}`);
+      console.log(`🐊 Spawned crocodile at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) in ${waterBody.type} (water height: ${waterHeight.toFixed(1)})`);
       return crocodile;
     } catch (error) {
       console.error('🐊 Error creating crocodile ambusher:', error);
@@ -435,6 +454,19 @@ export class AmbushSystem {
   setDebugMode(enabled) {
     this.debugMode = enabled;
     console.log(`🎯 AmbushSystem debug mode: ${enabled ? 'ON' : 'OFF'}`);
+  }
+
+  /**
+   * Enable/disable crocodile debug visualization
+   */
+  setCrocodileDebugMode(enabled) {
+    this.crocodileDebugMode = enabled;
+    console.log(`🐊 Crocodile debug visualization: ${enabled ? 'ON' : 'OFF'}`);
+    
+    // Update all existing crocodiles
+    this.crocodileAmbushers.forEach(crocodile => {
+      crocodile.setDebugMode(enabled, this.scene);
+    });
   }
   
   /**

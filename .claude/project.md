@@ -77,29 +77,78 @@
 - **Camera System**: Third-person camera with smooth following
 - **Basic Controls**: WASD movement, mouse look, jumping
 
-### Phase 2: Water & Ecosystem 🚧 NEXT
+### Phase 2: Water & Ecosystem ✅ COMPLETED
 - **Water Systems**: Rivers, ponds, swimming mechanics
-- **Enhanced Terrain**: Biome variation, seasonal changes
-- **Weather**: Rain, fog, day/night cycles
-- **Sound**: Ambient jungle audio, footsteps, water sounds
+- **Underwater Terrain**: Complete underwater exploration with unique elements
+- **Advanced Water Rendering**: Realistic water surfaces with lily pads and lotus flowers
+- **Dual Movement System**: Surface and underwater controls
 
-### Phase 3: Wildlife & AI 📅 PLANNED
-- **Prey Animals**: Deer, wild boar, small mammals
-- **Predator Threats**: Other tigers, leopards, crocodiles
-- **AI Behaviors**: Realistic animal movement and reactions
-- **Hunting Mechanics**: Stealth, pouncing, kill animations
+### Phase 3: Wildlife & AI ✅ COMPLETED  
+- **Prey Animals**: Deer, wild boar, small mammals with realistic AI
+- **Predator Threats**: Crocodile ambush system, leopard tree ambushes
+- **AI Behaviors**: Complex state machines with hunting, fleeing, territorial behaviors
+- **Hunting Mechanics**: Realistic predator-prey interactions with stealth elements
 
-### Phase 4: Evolution & Progression 📅 PLANNED
+### Phase 4: Advanced Threat Systems 🚧 CURRENT
+- **Crocodile Ambush System**: Water-based predators with explosive emergence attacks
+- **Visual Debug Tools**: Detection range visualization and state indicators
+- **Ambush Mechanics**: Hidden → Alert → Attack → Cooldown state transitions
+- **Water Drag Effects**: Realistic post-attack damage over time
+
+### Phase 5: Evolution & Progression 📅 PLANNED
 - **Growth Stages**: Cub → Juvenile → Adult → Alpha
 - **Skill Development**: Hunting, stealth, strength, speed
 - **Territory System**: Marking, defending, expanding
 - **Social Dynamics**: Mating, cubs, pack behavior
 
-### Phase 5: Advanced Systems 🔮 FUTURE
+### Phase 6: Advanced Systems 🔮 FUTURE
 - **Genetics**: Hereditary traits and breeding
 - **Ecosystem Simulation**: Prey population dynamics
 - **Weather Systems**: Seasonal migrations and behaviors
 - **Player Challenges**: Survival scenarios, objectives
+
+---
+
+## 🐊 Crocodile Ambush System (Latest Feature)
+
+### Technical Implementation
+- **Positioning**: Spawns properly submerged in water bodies (0.8 units below surface)
+- **Detection**: 20-unit radius with simplified single-condition logic
+- **State Machine**: Hidden → Alert → Attacking → Cooldown transitions
+- **NaN Protection**: Comprehensive error handling prevents position corruption
+- **Performance**: 30 FPS updates with efficient collision detection
+
+### Gameplay Mechanics
+- **Detection Range**: 20 units from crocodile position
+- **Attack Range**: 15 units for explosive emergence
+- **Ambush Sequence**: 
+  1. **Hidden**: Only eyes visible above water surface
+  2. **Alert**: Partial emergence with water ripples (1.5s)
+  3. **Attacking**: Explosive emergence with fast lunge (2.0s)
+  4. **Cooldown**: Return to ambush position (15s)
+- **Water Drag**: 3-second damage effect (15 damage/second) after successful hit
+
+### Debug Visualization System
+- **Visual Indicators**:
+  - 🔴 Red wireframe circles: Detection range (20 units)
+  - 🟠 Orange wireframe circles: Attack range (15 units)
+  - 🔵 Blue spheres: Hidden state crocodiles
+  - 🟡 Yellow spheres: Alert state (tiger detected)
+  - 🔴 Red spheres: Attacking state (active ambush)
+  - 🟢 Green spheres: Cooldown state (post-attack)
+
+### Console Commands
+```javascript
+window.tigerGame.enableCrocodileDebug()  // Show detection ranges
+window.tigerGame.disableCrocodileDebug() // Hide debug visuals
+window.tigerGame.listCrocodileStates()   // Show all crocodile info
+```
+
+### Player Experience
+- **Realistic Threat**: Crocodiles lurk in all water bodies
+- **Visual Feedback**: Clear detection ranges when debug enabled
+- **Authentic Behavior**: Explosive water emergence attacks
+- **Strategic Gameplay**: Water becomes genuinely dangerous to approach
 
 ---
 

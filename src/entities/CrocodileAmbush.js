@@ -14,11 +14,11 @@ export class CrocodileAmbush {
     
     // Crocodile identity and stats
     this.type = 'crocodile';
-    this.health = 200;
-    this.maxHealth = 200;
-    this.power = 35; // Base damage
+    this.health = 400;
+    this.maxHealth = 400;
+    this.power = 50; // Base damage
     this.speed = 25.0; // Attack speed
-    this.detectionRadius = 6.0;
+    this.detectionRadius = 20.0;
     
     // State machine
     this.state = 'hidden';
@@ -29,10 +29,16 @@ export class CrocodileAmbush {
     this.repositionChance = 0.6;
     
     // Attack properties
-    this.attackRange = 8.0;
+    this.attackRange = 15.0;
     this.isAttacking = false;
     this.hasAttacked = false;
     this.target = null;
+    
+    // Water drag properties
+    this.isDragging = false;
+    this.dragDuration = 3.0; // seconds of drag effect
+    this.dragTimer = 0;
+    this.dragDamagePerSecond = 15; // continuous damage while dragging
     
     // Movement and animation
     this.velocity = new THREE.Vector3(0, 0, 0);
@@ -46,6 +52,12 @@ export class CrocodileAmbush {
     // Systems references
     this.terrain = null;
     this.waterSystem = null;
+    
+    // Debug visualization
+    this.debugMode = false;
+    this.detectionRangeHelper = null;
+    this.attackRangeHelper = null;
+    this.stateIndicator = null;
     
     console.log(`🐊 CrocodileAmbush: Created at position (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
   }
@@ -182,32 +194,48 @@ export class CrocodileAmbush {
    * Set visibility based on crocodile state
    */
   setVisibilityForState(state) {
+    if (!this.mesh) return;
+    
     switch (state) {
       case 'hidden':
-        this.mesh.position.y = this.position.y - 1.0; // Mostly submerged
+        // Fully submerged - only eyes barely visible
+        this.mesh.position.y = this.position.y;
         this.mesh.children.forEach(child => {
           if (child.children.length > 0) { // Head with eyes
             child.visible = true;
-            child.position.y = 0.8; // Eyes above water
+            child.position.y = 1.0; // Just eyes above water surface
           } else {
-            child.visible = false; // Hide body
+            child.visible = false; // Hide body and limbs
           }
         });
+        console.log(`🐊 Hidden state: mesh at y=${this.mesh.position.y.toFixed(1)}, eyes at water surface`);
         break;
         
       case 'alert':
-        this.mesh.position.y = this.position.y - 0.5; // Slightly more visible
+        // Head partially emerged - creating ripples
+        this.mesh.position.y = this.position.y + 0.3;
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
+        console.log(`🐊 Alert state: mesh at y=${this.mesh.position.y.toFixed(1)}, head visible`);
         break;
         
       case 'attacking':
-      case 'cooldown':
-        this.mesh.position.y = this.position.y; // Fully emerged
+        // Fully emerged for explosive attack
+        this.mesh.position.y = this.position.y + 1.5;
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
+        console.log(`🐊 Attacking state: mesh at y=${this.mesh.position.y.toFixed(1)}, fully emerged`);
+        break;
+        
+      case 'cooldown':
+        // Gradually sinking back
+        this.mesh.position.y = this.position.y + 0.2;
+        this.mesh.children.forEach(child => {
+          child.visible = true;
+        });
+        console.log(`🐊 Cooldown state: mesh at y=${this.mesh.position.y.toFixed(1)}, sinking back`);
         break;
     }
   }
@@ -234,6 +262,9 @@ export class CrocodileAmbush {
     
     this.stateTimer += deltaTime;
     
+    // Update water drag effect
+    this.updateWaterDrag(deltaTime, tiger);
+    
     // Update state machine
     this.updateStateMachine(deltaTime, tiger);
     
@@ -247,6 +278,33 @@ export class CrocodileAmbush {
     }
   }
   
+  /**
+   * Update water drag effect
+   */
+  updateWaterDrag(deltaTime, tiger) {
+    if (!this.isDragging || !this.target) return;
+    
+    this.dragTimer += deltaTime;
+    
+    if (this.dragTimer >= this.dragDuration) {
+      // End drag effect
+      this.isDragging = false;
+      this.dragTimer = 0;
+      console.log(`🐊 Water drag effect ended`);
+      return;
+    }
+    
+    // Apply continuous drag damage
+    const dragDamage = this.dragDamagePerSecond * deltaTime;
+    if (tiger.takeDamage) {
+      tiger.takeDamage(dragDamage, this);
+      console.log(`🐊 Drag damage: ${dragDamage.toFixed(1)} (${(this.dragDuration - this.dragTimer).toFixed(1)}s remaining)`);
+    }
+    
+    // Visual drag effect without modifying tiger position
+    // (Position manipulation removed to prevent camera corruption)
+  }
+
   /**
    * Update state machine
    */
@@ -276,16 +334,11 @@ export class CrocodileAmbush {
    * Handle hidden state - waiting for tiger to approach
    */
   handleHiddenState(tiger, distance) {
-    // Check if tiger is within detection radius
+    // Simplified detection: attack if tiger is within detection radius
     if (distance <= this.detectionRadius) {
-      // Check if tiger is near water edge (ambush trigger zone)
-      const isNearWaterEdge = this.isNearWaterEdge(tiger.position);
-      
-      if (isNearWaterEdge) {
-        console.log(`🐊 Crocodile detected tiger at distance ${distance.toFixed(1)} - entering alert state`);
-        this.setState('alert');
-        this.target = tiger;
-      }
+      console.log(`🐊 Crocodile detected tiger at distance ${distance.toFixed(1)} - entering alert state`);
+      this.setState('alert');
+      this.target = tiger;
     }
   }
   
@@ -352,6 +405,7 @@ export class CrocodileAmbush {
       this.state = newState;
       this.stateTimer = 0;
       this.setVisibilityForState(newState);
+      this.updateDebugVisualization();
     }
   }
   
@@ -380,30 +434,35 @@ export class CrocodileAmbush {
     
     const attackProgress = this.stateTimer / this.attackDuration;
     
-    if (attackProgress < 0.3) {
-      // Emergence phase - rise from water
-      this.emergenceHeight = attackProgress / 0.3; // 0 to 1
-      this.position.y = this.originalPosition.y + this.emergenceHeight * 2.0;
-    } else if (attackProgress < 0.8) {
-      // Lunge phase - move toward tiger
-      const lungeProgress = (attackProgress - 0.3) / 0.5; // 0 to 1
-      const maxLungeDistance = Math.min(this.attackRange, this.getDistanceToTiger(tiger));
+    if (attackProgress < 0.2) {
+      // Explosive emergence phase - burst from water
+      this.emergenceHeight = (attackProgress / 0.2) * (attackProgress / 0.2); // Accelerating emergence
+      // No horizontal movement yet - pure vertical explosion
+      console.log(`🐊 Emerging explosively: ${(this.emergenceHeight * 100).toFixed(0)}%`);
+    } else if (attackProgress < 0.7) {
+      // Lightning-fast lunge phase
+      const lungeProgress = (attackProgress - 0.2) / 0.5; // 0 to 1
       
-      this.velocity.copy(this.attackDirection).multiplyScalar(this.speed);
-      this.position.add(this.velocity.clone().multiplyScalar(0.016)); // Assume ~60fps
+      // Aggressive forward movement
+      this.velocity.copy(this.attackDirection).multiplyScalar(this.speed * 1.5); // 50% faster lunge
+      this.position.add(this.velocity.clone().multiplyScalar(0.016));
       
-      // Check for hit during lunge
+      // Check for hit during lunge - multiple chances for contact
       if (!this.hasAttacked && this.canHitTarget(tiger)) {
         this.executeAttackHit(tiger);
       }
+      
+      console.log(`🐊 Lunging at tiger: distance ${this.getDistanceToTiger(tiger).toFixed(1)}`);
     } else {
-      // Recovery phase - return toward water
+      // Quick recovery phase - return to ambush position
       const recoveryDirection = new THREE.Vector3()
         .subVectors(this.originalPosition, this.position)
         .normalize();
       
-      this.velocity.copy(recoveryDirection).multiplyScalar(this.speed * 0.5);
+      this.velocity.copy(recoveryDirection).multiplyScalar(this.speed * 0.8);
       this.position.add(this.velocity.clone().multiplyScalar(0.016));
+      
+      console.log(`🐊 Recovering to ambush position`);
     }
   }
   
@@ -412,9 +471,16 @@ export class CrocodileAmbush {
    */
   executeAttackHit(tiger) {
     this.hasAttacked = true;
-    console.log(`🐊 Crocodile hit tiger for ${this.power} damage!`);
+    console.log(`🐊 Crocodile hit tiger for ${this.power} damage! Initiating water drag...`);
     
-    // This will be handled by the AmbushSystem
+    // Initiate water drag effect
+    this.isDragging = true;
+    this.dragTimer = 0;
+    this.target = tiger;
+    
+    console.log(`🐊 Water drag initiated! Tiger will take ${this.dragDamagePerSecond} damage/sec for ${this.dragDuration} seconds`);
+    
+    // This will be handled by the AmbushSystem for immediate damage
     // tiger.takeDamage(this.power, this);
   }
   
@@ -429,10 +495,34 @@ export class CrocodileAmbush {
   }
   
   /**
-   * Get distance to tiger
+   * Get distance to tiger with NaN protection
    */
   getDistanceToTiger(tiger) {
-    return this.position.distanceTo(tiger.position);
+    // Validate positions to prevent NaN
+    if (!tiger || !tiger.position || !this.position) {
+      console.warn('🐊 Invalid positions in distance calculation');
+      return Infinity;
+    }
+    
+    // Check for NaN coordinates
+    if (isNaN(tiger.position.x) || isNaN(tiger.position.y) || isNaN(tiger.position.z) ||
+        isNaN(this.position.x) || isNaN(this.position.y) || isNaN(this.position.z)) {
+      console.error('🐊 NaN coordinates detected!', {
+        tiger: { x: tiger.position.x, y: tiger.position.y, z: tiger.position.z },
+        crocodile: { x: this.position.x, y: this.position.y, z: this.position.z }
+      });
+      return Infinity;
+    }
+    
+    const distance = this.position.distanceTo(tiger.position);
+    
+    // Final NaN check on result
+    if (isNaN(distance)) {
+      console.error('🐊 Distance calculation returned NaN!');
+      return Infinity;
+    }
+    
+    return distance;
   }
   
   /**
@@ -447,10 +537,17 @@ export class CrocodileAmbush {
     );
     
     const waterRadius = this.waterBody.radius;
-    const edgeDistance = Math.abs(distanceToCenter - waterRadius);
     
-    // Tiger is near edge if within 5 units of water boundary
-    return edgeDistance <= 5.0;
+    // Enhanced detection: Tiger is approaching if within 8 units of water edge
+    // This includes tigers both inside and outside the water body
+    if (distanceToCenter <= waterRadius) {
+      // Tiger is inside water body - always trigger (drinking, wading)
+      return true;
+    } else {
+      // Tiger is outside - trigger if within 8 units of edge
+      const distanceFromEdge = distanceToCenter - waterRadius;
+      return distanceFromEdge <= 8.0;
+    }
   }
   
   /**
@@ -535,8 +632,17 @@ export class CrocodileAmbush {
    * Take damage
    */
   takeDamage(amount, attacker) {
-    this.health = Math.max(0, this.health - amount);
-    console.log(`🐊 Crocodile took ${amount} damage (health: ${this.health})`);
+    // Crocodiles have thick armor - reduce damage by 40%
+    const reducedDamage = Math.floor(amount * 0.6);
+    this.health = Math.max(0, this.health - reducedDamage);
+    console.log(`🐊 Crocodile took ${amount} damage (reduced to ${reducedDamage} due to armor) (health: ${this.health})`);
+    
+    // Become aggressive when attacked
+    if (this.state === 'hidden' && attacker) {
+      console.log(`🐊 Crocodile enraged by attack - becoming aggressive!`);
+      this.setState('alert');
+      this.target = attacker;
+    }
     
     if (!this.isAlive()) {
       console.log(`🐊 Crocodile defeated!`);
@@ -566,6 +672,13 @@ export class CrocodileAmbush {
   }
   
   /**
+   * Check if crocodile is dragging tiger into water
+   */
+  isDraggingTiger() {
+    return this.isDragging;
+  }
+
+  /**
    * Check if should despawn
    */
   shouldDespawn() {
@@ -580,9 +693,153 @@ export class CrocodileAmbush {
   }
   
   /**
+   * Enable/disable debug visualization
+   */
+  setDebugMode(enabled, scene = null) {
+    this.debugMode = enabled;
+    
+    if (enabled && scene) {
+      this.createDebugVisualization(scene);
+    } else {
+      this.removeDebugVisualization(scene);
+    }
+  }
+
+  /**
+   * Create debug visualization helpers
+   */
+  createDebugVisualization(scene) {
+    if (!scene) return;
+    
+    // Detection range circle (red wireframe)
+    const detectionGeometry = new THREE.RingGeometry(
+      this.detectionRadius - 0.5, 
+      this.detectionRadius + 0.5, 
+      32
+    );
+    const detectionMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.6
+    });
+    this.detectionRangeHelper = new THREE.Mesh(detectionGeometry, detectionMaterial);
+    this.detectionRangeHelper.position.copy(this.position);
+    this.detectionRangeHelper.position.y += 2; // Slightly above water
+    this.detectionRangeHelper.rotation.x = -Math.PI / 2; // Lay flat
+    scene.add(this.detectionRangeHelper);
+    
+    // Attack range circle (orange wireframe)
+    const attackGeometry = new THREE.RingGeometry(
+      this.attackRange - 0.5,
+      this.attackRange + 0.5,
+      32
+    );
+    const attackMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff8800,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.4
+    });
+    this.attackRangeHelper = new THREE.Mesh(attackGeometry, attackMaterial);
+    this.attackRangeHelper.position.copy(this.position);
+    this.attackRangeHelper.position.y += 1.5; // Slightly below detection range
+    this.attackRangeHelper.rotation.x = -Math.PI / 2;
+    scene.add(this.attackRangeHelper);
+    
+    // State indicator (colored sphere above crocodile)
+    const indicatorGeometry = new THREE.SphereGeometry(1, 8, 6);
+    const indicatorMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.8
+    });
+    this.stateIndicator = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+    this.stateIndicator.position.copy(this.position);
+    this.stateIndicator.position.y += 5; // High above crocodile
+    scene.add(this.stateIndicator);
+    
+    this.updateDebugVisualization();
+  }
+
+  /**
+   * Update debug visualization based on current state
+   */
+  updateDebugVisualization() {
+    if (!this.debugMode || !this.stateIndicator) return;
+    
+    // Update state indicator color
+    switch (this.state) {
+      case 'hidden':
+        this.stateIndicator.material.color.setHex(0x0066cc); // Blue - hidden
+        break;
+      case 'alert':
+        this.stateIndicator.material.color.setHex(0xffff00); // Yellow - alert
+        break;
+      case 'attacking':
+        this.stateIndicator.material.color.setHex(0xff0000); // Red - attacking
+        break;
+      case 'cooldown':
+        this.stateIndicator.material.color.setHex(0x00ff00); // Green - cooldown
+        break;
+      default:
+        this.stateIndicator.material.color.setHex(0x888888); // Gray - unknown
+    }
+    
+    // Update positions
+    if (this.detectionRangeHelper) {
+      this.detectionRangeHelper.position.copy(this.position);
+      this.detectionRangeHelper.position.y += 2;
+    }
+    
+    if (this.attackRangeHelper) {
+      this.attackRangeHelper.position.copy(this.position);
+      this.attackRangeHelper.position.y += 1.5;
+    }
+    
+    if (this.stateIndicator) {
+      this.stateIndicator.position.copy(this.position);
+      this.stateIndicator.position.y += 5;
+    }
+  }
+
+  /**
+   * Remove debug visualization
+   */
+  removeDebugVisualization(scene) {
+    if (scene && this.detectionRangeHelper) {
+      scene.remove(this.detectionRangeHelper);
+      this.detectionRangeHelper.geometry.dispose();
+      this.detectionRangeHelper.material.dispose();
+      this.detectionRangeHelper = null;
+    }
+    
+    if (scene && this.attackRangeHelper) {
+      scene.remove(this.attackRangeHelper);
+      this.attackRangeHelper.geometry.dispose();
+      this.attackRangeHelper.material.dispose();
+      this.attackRangeHelper = null;
+    }
+    
+    if (scene && this.stateIndicator) {
+      scene.remove(this.stateIndicator);
+      this.stateIndicator.geometry.dispose();
+      this.stateIndicator.material.dispose();
+      this.stateIndicator = null;
+    }
+  }
+
+  /**
    * Dispose of crocodile
    */
   dispose() {
+    // Clean up drag effects
+    this.isDragging = false;
+    this.target = null;
+    this.dragTimer = 0;
+    
+    // Clean up debug visualization
+    this.removeDebugVisualization(null); // Scene reference not available here
+    
     if (this.mesh) {
       this.mesh.clear();
       this.mesh = null;

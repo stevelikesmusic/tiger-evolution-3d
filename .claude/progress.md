@@ -1,15 +1,43 @@
 # Development Progress - Tiger Evolution 3D
 
-## Current Phase: Complete Gender System & Tiger Interactions ✅ COMPLETED
+## Current Phase: Crocodile Ambush System & Debug Tools ✅ COMPLETED
 
-### Session Summary (Latest - Gender System & Tiger Interactions!)
-**Goal**: Implement comprehensive gender system with male/female tigers, visual differences, mating mechanics, territorial fighting, and red tiger trace
+### Session Summary (Latest - Crocodile Ambush System Overhaul!)
+**Goal**: Fix critical crocodile ambush system issues and implement comprehensive debug visualization
 **Status**: ✅ **FULLY COMPLETED**
-**Duration**: Latest session focused on complete gender selection and tiger interaction systems
+**Duration**: Complete system overhaul fixing detection, position corruption, and adding visual debug tools
 
 ---
 
 ## ✅ COMPLETED MILESTONES
+
+### 🐊 Phase 9: Crocodile Ambush System Overhaul & Debug Tools ✅
+**Goal**: Fix critical crocodile ambush system issues and implement comprehensive debug visualization
+
+**Major Accomplishments**:
+1. **Critical Bug Fixes**:
+   - **✅ DETECTION RANGE FIXED**: Increased from 12 to 20 units, removed restrictive double-condition logic
+   - **✅ POSITION CORRUPTION RESOLVED**: Removed direct tiger position manipulation causing camera corruption
+   - **✅ NaN PROTECTION**: Comprehensive error handling prevents distance calculation failures
+   - **✅ CAMERA STABILITY**: No more sky-pointing or invalid position states
+
+2. **Enhanced Ambush Mechanics**:
+   - **✅ PROPER WATER POSITIONING**: Crocodiles spawn 0.8 units below water surface (submerged)
+   - **✅ SIMPLIFIED DETECTION**: Single distance check (≤20 units) for reliable triggering
+   - **✅ EXPLOSIVE EMERGENCE**: Realistic ambush sequence with 20% emergence, 50% lunge, 30% recovery
+   - **✅ WATER DRAG EFFECT**: 3-second damage over time (15 damage/sec) without position corruption
+
+3. **Visual Debug System**:
+   - **✅ DETECTION VISUALIZATION**: Red wireframe circles showing 20-unit detection ranges
+   - **✅ ATTACK RANGE CIRCLES**: Orange wireframe circles showing 15-unit attack zones
+   - **✅ STATE INDICATORS**: Color-coded spheres (Blue=Hidden, Yellow=Alert, Red=Attacking, Green=Cooldown)
+   - **✅ REAL-TIME UPDATES**: Debug visuals update dynamically with crocodile state changes
+
+4. **Console Debug Commands**:
+   - **✅ ENABLE/DISABLE DEBUG**: `window.tigerGame.enableCrocodileDebug()` and `disableCrocodileDebug()`
+   - **✅ STATE MONITORING**: `window.tigerGame.listCrocodileStates()` shows all crocodile info
+   - **✅ COMPREHENSIVE LOGGING**: Detailed console output for troubleshooting
+   - **✅ HELP INTEGRATION**: All commands documented in main debug help system
 
 ### 🐅 Phase 8: Complete Gender Selection & Tiger Interaction System ✅
 **Goal**: Implement comprehensive gender system with male/female tigers, visual differences, mating mechanics, territorial fighting, and red tiger trace
@@ -189,7 +217,7 @@
 
 ## 🎯 NEXT PHASE PRIORITIES
 
-### Phase 9: Enhanced Tiger Models & Animation System (IMMEDIATE - NEXT SESSION)
+### Phase 10: Enhanced Tiger Models & Animation System (IMMEDIATE - NEXT SESSION)
 **Goal**: Upgrade tiger and animal models with better visuals, animations, and Blockbench-style designs
 
 **Planned Features**:
@@ -211,19 +239,19 @@
    - **Particle Effects**: Dust clouds when running, hearts during mating
    - **Combat Effects**: Visual feedback for successful attacks/blocks
 
-### Phase 10: Underwater Wildlife (FOLLOWING SESSION)
+### Phase 11: Underwater Wildlife (FOLLOWING SESSION)
 1. **Fish Schools**: Dynamic schooling behavior, predator avoidance
 2. **Aquatic Prey**: Tiger fishing mechanics, underwater hunting
-3. **Water-Based Predators**: Crocodiles, underwater threats
+3. **Enhanced Crocodile Behavior**: More complex ambush patterns, multiple attack types
 
-### Phase 11: Environmental Enhancement (FUTURE)
+### Phase 12: Environmental Enhancement (FUTURE)
 1. **Weather System**: Rain, fog, dynamic weather affecting visibility
 2. **Day/Night Cycle**: Dynamic lighting, different animal behaviors by time
 3. **Audio Integration**: Ambient jungle sounds, animal calls, footsteps
 4. **Enhanced Terrain**: Biome variation (dense forest, riverbanks, rocky outcrops)
 5. **Particle Effects**: Water splashes, dust clouds, environmental atmosphere
 
-### Phase 12: Advanced Systems (LONG-TERM)
+### Phase 13: Advanced Systems (LONG-TERM)
 1. **Tiger Evolution**: Growth stages (cub → adult → alpha), stat progression
 2. **Territory System**: Marking, defending, expanding territory
 3. **Survival Elements**: Enhanced hunger, thirst, stamina management, oxygen levels underwater
