@@ -75,33 +75,53 @@ export class CrocodileAmbush {
     });
     this.mesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
     
-    // Head - large and menacing
-    const headGeometry = new THREE.BoxGeometry(1.8, 1.0, 2.5);
+    // Head container (for jaw animation)
+    this.headContainer = new THREE.Group();
+    this.headContainer.position.set(0, 0.2, 4.8);
+    this.mesh.add(this.headContainer);
+    
+    // Upper jaw
+    const upperJawGeometry = new THREE.BoxGeometry(1.8, 0.5, 2.5);
     const headMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3a2a });
-    const head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.set(0, 0.2, 4.8);
-    this.mesh.add(head);
+    this.upperJaw = new THREE.Mesh(upperJawGeometry, headMaterial);
+    this.upperJaw.position.set(0, 0.25, 0);
+    this.headContainer.add(this.upperJaw);
+    
+    // Lower jaw (will animate)
+    const lowerJawGeometry = new THREE.BoxGeometry(1.8, 0.5, 2.5);
+    this.lowerJaw = new THREE.Mesh(lowerJawGeometry, headMaterial);
+    this.lowerJaw.position.set(0, -0.25, 0);
+    this.lowerJaw.rotation.x = 0; // Will animate this
+    this.headContainer.add(this.lowerJaw);
     
     // Eyes - only visible parts when hidden
     const eyeGeometry = new THREE.SphereGeometry(0.15, 8, 6);
     const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0xff4444 }); // Red eyes
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.4, 0.6, 1.0);
-    head.add(leftEye);
+    leftEye.position.set(-0.4, 0.1, 1.0);
+    this.upperJaw.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.4, 0.6, 1.0);
-    head.add(rightEye);
+    rightEye.position.set(0.4, 0.1, 1.0);
+    this.upperJaw.add(rightEye);
     
-    // Snout
-    const snoutGeometry = new THREE.BoxGeometry(1.2, 0.6, 1.5);
-    const snout = new THREE.Mesh(snoutGeometry, headMaterial);
-    snout.position.set(0, -0.1, 1.8);
-    head.add(snout);
+    // Upper snout
+    const upperSnoutGeometry = new THREE.BoxGeometry(1.2, 0.3, 1.5);
+    const upperSnout = new THREE.Mesh(upperSnoutGeometry, headMaterial);
+    upperSnout.position.set(0, 0, 1.8);
+    this.upperJaw.add(upperSnout);
     
-    // Teeth
-    this.addTeeth(snout);
+    // Lower snout
+    const lowerSnoutGeometry = new THREE.BoxGeometry(1.2, 0.3, 1.5);
+    const lowerSnout = new THREE.Mesh(lowerSnoutGeometry, headMaterial);
+    lowerSnout.position.set(0, 0, 1.8);
+    this.lowerJaw.add(lowerSnout);
+    
+    // Teeth on upper jaw
+    this.addTeeth(upperSnout, true);
+    // Teeth on lower jaw
+    this.addTeeth(lowerSnout, false);
     
     // Tail
     const tailGeometry = new THREE.BoxGeometry(1.5, 0.6, 4.0);
@@ -127,25 +147,27 @@ export class CrocodileAmbush {
   /**
    * Add teeth to crocodile snout
    */
-  addTeeth(snout) {
+  addTeeth(snout, isUpper) {
     const toothGeometry = new THREE.ConeGeometry(0.08, 0.3, 4);
     const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xffffee });
     
-    // Upper teeth
-    for (let i = 0; i < 8; i++) {
-      const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
-      const x = (i - 3.5) * 0.25;
-      tooth.position.set(x, 0.15, 0.6);
-      tooth.rotation.x = Math.PI;
-      snout.add(tooth);
-    }
-    
-    // Lower teeth
-    for (let i = 0; i < 6; i++) {
-      const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
-      const x = (i - 2.5) * 0.3;
-      tooth.position.set(x, -0.25, 0.6);
-      snout.add(tooth);
+    if (isUpper) {
+      // Upper teeth pointing down
+      for (let i = 0; i < 8; i++) {
+        const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+        const x = (i - 3.5) * 0.25;
+        tooth.position.set(x, -0.15, 0.6);
+        tooth.rotation.x = Math.PI;
+        snout.add(tooth);
+      }
+    } else {
+      // Lower teeth pointing up
+      for (let i = 0; i < 6; i++) {
+        const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+        const x = (i - 2.5) * 0.3;
+        tooth.position.set(x, 0.15, 0.6);
+        snout.add(tooth);
+      }
     }
   }
   
@@ -200,12 +222,14 @@ export class CrocodileAmbush {
       case 'hidden':
         // Fully submerged - only eyes barely visible
         this.mesh.position.y = this.position.y;
+        // Show only head container with closed mouth
+        this.headContainer.visible = true;
+        this.headContainer.position.y = 1.0; // Just eyes above water surface
+        this.lowerJaw.rotation.x = 0; // Mouth closed
+        // Hide body parts
         this.mesh.children.forEach(child => {
-          if (child.children.length > 0) { // Head with eyes
-            child.visible = true;
-            child.position.y = 1.0; // Just eyes above water surface
-          } else {
-            child.visible = false; // Hide body and limbs
+          if (child !== this.headContainer) {
+            child.visible = false;
           }
         });
         console.log(`🐊 Hidden state: mesh at y=${this.mesh.position.y.toFixed(1)}, eyes at water surface`);
@@ -217,7 +241,10 @@ export class CrocodileAmbush {
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
-        console.log(`🐊 Alert state: mesh at y=${this.mesh.position.y.toFixed(1)}, head visible`);
+        this.headContainer.position.y = 0.2; // Reset head position
+        // Start opening mouth slightly
+        this.lowerJaw.rotation.x = 0.2; // Small opening
+        console.log(`🐊 Alert state: mesh at y=${this.mesh.position.y.toFixed(1)}, head visible, mouth opening`);
         break;
         
       case 'attacking':
@@ -226,7 +253,20 @@ export class CrocodileAmbush {
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
-        console.log(`🐊 Attacking state: mesh at y=${this.mesh.position.y.toFixed(1)}, fully emerged`);
+        // Wide mouth opening for attack
+        this.lowerJaw.rotation.x = 0.8; // Maximum jaw opening (~45 degrees)
+        console.log(`🐊 Attacking state: mesh at y=${this.mesh.position.y.toFixed(1)}, fully emerged, mouth wide open`);
+        break;
+        
+      case 'grabbing':
+        // Holding tiger - mouth closed on prey
+        this.mesh.position.y = this.position.y + 1.2;
+        this.mesh.children.forEach(child => {
+          child.visible = true;
+        });
+        // Mouth closed tight on prey
+        this.lowerJaw.rotation.x = 0.1; // Almost closed
+        console.log(`🐊 Grabbing state: mouth closed on prey`);
         break;
         
       case 'cooldown':
@@ -235,6 +275,7 @@ export class CrocodileAmbush {
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
+        this.lowerJaw.rotation.x = 0; // Mouth closed
         console.log(`🐊 Cooldown state: mesh at y=${this.mesh.position.y.toFixed(1)}, sinking back`);
         break;
     }

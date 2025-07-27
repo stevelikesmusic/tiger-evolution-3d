@@ -33,6 +33,12 @@ export class Tiger {
     this.hunger = 100;
     this.maxHunger = 100;
     
+    // Thirst system
+    this.thirst = 100;
+    this.maxThirst = 100;
+    this.thirstDecayRate = 0.5; // Thirst decrease per second
+    this.isMovementLocked = false; // For crocodile grab
+    
     // Evolution system
     this.level = 1;
     this.experience = 0;
@@ -84,6 +90,29 @@ export class Tiger {
 
   feed(amount) {
     this.hunger = Math.min(this.maxHunger, this.hunger + amount);
+  }
+
+  // Thirst management
+  consumeThirst(amount) {
+    this.thirst = Math.max(0, this.thirst - amount);
+  }
+
+  drink(amount = 50) {
+    const previousThirst = this.thirst;
+    this.thirst = Math.min(this.maxThirst, this.thirst + amount);
+    const restored = this.thirst - previousThirst;
+    console.log(`🐅💧 Tiger drank water! Thirst restored: +${restored} (${previousThirst} -> ${this.thirst})`);
+    return restored;
+  }
+
+  // Movement lock for crocodile grab
+  setMovementLocked(locked) {
+    this.isMovementLocked = locked;
+    if (locked) {
+      console.log(`🐅 Tiger movement LOCKED (crocodile grab)`);
+    } else {
+      console.log(`🐅 Tiger movement UNLOCKED`);
+    }
   }
 
   // Experience and evolution
@@ -427,14 +456,32 @@ export class Tiger {
     // Natural hunger decrease over time
     this.consumeHunger(deltaTime * .25); // 2 hunger per second
     
+    // Natural thirst decrease over time
+    let thirstRate = this.thirstDecayRate;
+    if (this.state === 'running') {
+      thirstRate *= 2; // Double thirst consumption when running
+    }
+    this.consumeThirst(deltaTime * thirstRate);
+    
     // Natural stamina regeneration when not exhausted
     if (this.stamina < this.maxStamina && this.state !== 'running') {
-      this.restoreStamina(deltaTime * 10); // 10 stamina per second
+      // Reduced stamina regen when thirsty
+      const regenRate = this.thirst < 30 ? 5 : 10;
+      this.restoreStamina(deltaTime * regenRate);
     }
     
     // Health regeneration when well-fed
     if (this.hunger > 50 && this.health < this.maxHealth) {
       this.heal(deltaTime * 1); // 1 HP per 5 seconds (slow natural healing)
+    }
+    
+    // Low thirst effects
+    if (this.thirst < 20) {
+      // Severe thirst slows movement (handled in movement system)
+      if (this.thirst === 0) {
+        // Take damage from dehydration
+        this.takeDamage(deltaTime * 2); // 2 damage per second when completely dehydrated
+      }
     }
   }
 }

@@ -481,15 +481,30 @@ export class GameController {
       }
     }
 
-    // Handle eating
-    if (movementInput.isInteracting && this.animalSystem && !this.isUnderwater) {
-      // E key: Attempt to eat nearby dead animals (only on surface)
-      console.log('🍖 Eat key pressed! Attempting to eat...');
-      const eatSuccess = this.animalSystem.attemptEat(this.tiger);
-      if (eatSuccess) {
-        console.log('🍖 Eating successful! +20 hunger');
-      } else {
-        console.log('🍖 Eating failed - no dead animals in range');
+    // Handle interaction (E key)
+    if (movementInput.isInteracting && !this.isUnderwater) {
+      // Check if near water for drinking
+      const nearWater = this.isNearWater(this.tiger.position);
+      
+      if (nearWater) {
+        // E key near water: Drink
+        console.log('💧 Drink key pressed! Attempting to drink...');
+        const thirstRestored = this.tiger.drink();
+        if (thirstRestored > 0) {
+          console.log(`💧 Drinking successful! +${thirstRestored} thirst`);
+          // Could add drinking animation here
+        } else {
+          console.log('💧 Already fully hydrated');
+        }
+      } else if (this.animalSystem) {
+        // E key away from water: Attempt to eat
+        console.log('🍖 Eat key pressed! Attempting to eat...');
+        const eatSuccess = this.animalSystem.attemptEat(this.tiger);
+        if (eatSuccess) {
+          console.log('🍖 Eating successful! +20 hunger');
+        } else {
+          console.log('🍖 Eating failed - no dead animals in range');
+        }
       }
     }
 
@@ -1464,6 +1479,34 @@ export class GameController {
         document.body.removeChild(notification);
       }
     }, 3000);
+  }
+  
+  /**
+   * Check if a position is near water
+   */
+  isNearWater(position) {
+    if (!this.waterSystem) return false;
+    
+    const waterBodies = this.waterSystem.getWaterBodies();
+    const drinkingDistance = 8.0; // Tiger can drink from water within 8 units
+    
+    for (const waterBody of waterBodies) {
+      if (waterBody.center) {
+        // Check distance to water body center
+        const distance = Math.sqrt(
+          Math.pow(position.x - waterBody.center.x, 2) +
+          Math.pow(position.z - waterBody.center.z, 2)
+        );
+        
+        // Check if within drinking distance of water edge
+        const distanceFromEdge = Math.abs(distance - waterBody.radius);
+        if (distanceFromEdge <= drinkingDistance || distance < waterBody.radius) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
   
   dispose() {

@@ -152,9 +152,9 @@ export class AmbushSystem {
    */
   createCrocodileAmbusher(waterBody) {
     try {
-      // Position crocodile near the edge of water body for ambush
+      // Position crocodile at the edge of water body for ambush
       const angle = Math.random() * Math.PI * 2;
-      const distance = waterBody.radius * (0.7 + Math.random() * 0.2); // 70-90% from center
+      const distance = waterBody.radius * (0.90 + Math.random() * 0.05); // 90-95% from center (at edge)
       
       const x = waterBody.center.x + Math.cos(angle) * distance;
       const z = waterBody.center.z + Math.sin(angle) * distance;
@@ -169,8 +169,8 @@ export class AmbushSystem {
         waterHeight = this.waterSystem.waterLevel - 1; // Default water surface
       }
       
-      // Position crocodile submerged in water (0.8 units below surface)
-      const y = waterHeight - 0.8;
+      // Position crocodile at water surface with only eyes visible (0.5 units below surface)
+      const y = waterHeight - 0.5;
       
       const crocodile = new CrocodileAmbush(x, y, z, waterBody);
       crocodile.setTerrain(this.terrain);

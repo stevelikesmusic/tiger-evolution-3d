@@ -72,12 +72,16 @@ export class UISystem {
     // Create hunger display
     const hungerContainer = this.createStatBar('Hunger', '#FF8800', 'hunger');
     
+    // Create thirst display
+    const thirstContainer = this.createStatBar('Thirst', '#44CCFF', 'thirst');
+    
     // Assemble UI
     statsPanel.appendChild(title);
     statsPanel.appendChild(healthContainer);
     statsPanel.appendChild(staminaContainer);
     statsPanel.appendChild(xpContainer);
     statsPanel.appendChild(hungerContainer);
+    statsPanel.appendChild(thirstContainer);
     statsPanel.appendChild(levelDisplay);
     statsPanel.appendChild(evolutionDisplay);
     
@@ -228,6 +232,11 @@ export class UISystem {
     this.elements.hungerBar.style.width = `${hungerPercent}%`;
     this.elements.hungerText.textContent = `${Math.round(tiger.hunger)}/${tiger.maxHunger}`;
     
+    // Update thirst
+    const thirstPercent = (tiger.thirst / tiger.maxThirst) * 100;
+    this.elements.thirstBar.style.width = `${thirstPercent}%`;
+    this.elements.thirstText.textContent = `${Math.round(tiger.thirst)}/${tiger.maxThirst}`;
+    
     // Update level
     this.elements.levelDisplay.textContent = `Level: ${tiger.level}`;
     
@@ -253,6 +262,14 @@ export class UISystem {
       this.elements.hungerBar.style.background = 'linear-gradient(90deg, #FF0000, #FF0000AA)';
     } else {
       this.elements.hungerBar.style.background = 'linear-gradient(90deg, #FF8800, #FF8800AA)';
+    }
+    
+    if (thirstPercent < 20) {
+      this.elements.thirstBar.style.background = 'linear-gradient(90deg, #FF0000, #FF0000AA)';
+    } else if (thirstPercent < 50) {
+      this.elements.thirstBar.style.background = 'linear-gradient(90deg, #FFAA00, #FFAA00AA)';
+    } else {
+      this.elements.thirstBar.style.background = 'linear-gradient(90deg, #44CCFF, #44CCFFAA)';
     }
   }
   
