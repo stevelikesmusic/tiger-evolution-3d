@@ -678,6 +678,11 @@ export class AnimalSystem {
     return tiger.hunt(closestAnimal);
   }
 
+  hasDeadAnimalsNearby(position, range) {
+    const nearbyAnimals = this.getAnimalsNear(position, range);
+    return nearbyAnimals.some(animal => !animal.isAlive());
+  }
+
   attemptEat(tiger) {
     const eatRange = 5.0; // Same range as attack
     const nearbyAnimals = this.getAnimalsNear(tiger.position, eatRange);

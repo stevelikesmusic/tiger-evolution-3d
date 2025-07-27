@@ -201,6 +201,19 @@ export class GameController {
       // Update UI system (for stats display)
       if (this.uiSystem) {
         this.uiSystem.updateStats(this.tiger);
+        
+        // Update action context
+        if (!this.isUnderwater) {
+          if (this.isNearWater(this.tiger.position)) {
+            this.uiSystem.showActionContext('drink');
+          } else if (this.animalSystem && this.animalSystem.hasDeadAnimalsNearby(this.tiger.position, 5.0)) {
+            this.uiSystem.showActionContext('eat');
+          } else {
+            this.uiSystem.hideActionContext();
+          }
+        } else {
+          this.uiSystem.hideActionContext();
+        }
       }
       
       // Update scent trail system (for trail fading)
@@ -528,6 +541,16 @@ export class GameController {
       this.showMainMenu();
     }
 
+    // Check if movement is locked (e.g., by crocodile grab)
+    if (this.tiger.isMovementLocked) {
+      // Clear movement input but allow other actions
+      movementInput.direction = { x: 0, y: 0, z: 0 };
+      movementInput.rotation = 0;
+      movementInput.isRunning = false;
+      movementInput.isJumping = false;
+      console.log('🚫 Movement locked - tiger cannot move');
+    }
+    
     // Apply to movement system
     this.movementSystem.setMovementInput(movementInput);
 

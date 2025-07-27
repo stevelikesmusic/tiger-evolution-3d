@@ -25,7 +25,9 @@ export class CrocodileAmbush {
     this.stateTimer = 0;
     this.alertDuration = 1.5; // seconds
     this.attackDuration = 2.0; // seconds
-    this.cooldownDuration = 15.0; // seconds
+    this.grabbingDuration = 5.0; // 5 seconds hold
+    this.retreatingDuration = 3.0; // seconds to retreat
+    this.cooldownDuration = 30.0; // 30 seconds before next attack
     this.repositionChance = 0.6;
     
     // Attack properties
@@ -34,11 +36,11 @@ export class CrocodileAmbush {
     this.hasAttacked = false;
     this.target = null;
     
-    // Water drag properties
-    this.isDragging = false;
-    this.dragDuration = 3.0; // seconds of drag effect
-    this.dragTimer = 0;
-    this.dragDamagePerSecond = 15; // continuous damage while dragging
+    // Grab properties
+    this.isGrabbing = false;
+    this.grabbedTiger = null;
+    this.grabDamagePerSecond = 15; // continuous damage while holding
+    this.hasDealtInitialBite = false;
     
     // Movement and animation
     this.velocity = new THREE.Vector3(0, 0, 0);
@@ -269,14 +271,29 @@ export class CrocodileAmbush {
         console.log(`🐊 Grabbing state: mouth closed on prey`);
         break;
         
-      case 'cooldown':
-        // Gradually sinking back
-        this.mesh.position.y = this.position.y + 0.2;
+      case 'retreating':
+        // Quickly submerging
+        this.mesh.position.y = this.position.y;
         this.mesh.children.forEach(child => {
           child.visible = true;
         });
         this.lowerJaw.rotation.x = 0; // Mouth closed
-        console.log(`🐊 Cooldown state: mesh at y=${this.mesh.position.y.toFixed(1)}, sinking back`);
+        console.log(`🐊 Retreating state: rapidly submerging`);
+        break;
+        
+      case 'cooldown':
+        // Mostly submerged, repositioning
+        this.mesh.position.y = this.position.y;
+        this.headContainer.visible = true;
+        this.headContainer.position.y = 0.5; // Just eyes visible
+        this.lowerJaw.rotation.x = 0; // Mouth closed
+        // Hide body parts
+        this.mesh.children.forEach(child => {
+          if (child !== this.headContainer) {
+            child.visible = false;
+          }
+        });
+        console.log(`🐊 Cooldown state: mostly hidden, repositioning`);
         break;
     }
   }
@@ -303,14 +320,31 @@ export class CrocodileAmbush {
     
     this.stateTimer += deltaTime;
     
-    // Update water drag effect
-    this.updateWaterDrag(deltaTime, tiger);
-    
     // Update state machine
     this.updateStateMachine(deltaTime, tiger);
     
     // Update position and animation
     this.updateMovement(deltaTime);
+    
+    // Validate position before updating mesh
+    if (isNaN(this.position.x) || isNaN(this.position.y) || isNaN(this.position.z)) {
+      console.error(`🐊 NaN position detected! Resetting to original position`, {
+        current: { x: this.position.x, y: this.position.y, z: this.position.z },
+        original: { x: this.originalPosition.x, y: this.originalPosition.y, z: this.originalPosition.z }
+      });
+      
+      // Reset to original position
+      this.position.copy(this.originalPosition);
+      
+      // If original position is also invalid, use water body center
+      if (isNaN(this.position.y)) {
+        if (this.waterBody && this.waterBody.mesh && this.waterBody.mesh.position) {
+          this.position.y = this.waterBody.mesh.position.y - 0.5;
+        } else {
+          this.position.y = 0;
+        }
+      }
+    }
     
     // Update mesh position
     if (this.mesh) {
@@ -320,30 +354,38 @@ export class CrocodileAmbush {
   }
   
   /**
-   * Update water drag effect
+   * Handle grabbing state - holding tiger for 5 seconds
    */
-  updateWaterDrag(deltaTime, tiger) {
-    if (!this.isDragging || !this.target) return;
-    
-    this.dragTimer += deltaTime;
-    
-    if (this.dragTimer >= this.dragDuration) {
-      // End drag effect
-      this.isDragging = false;
-      this.dragTimer = 0;
-      console.log(`🐊 Water drag effect ended`);
+  handleGrabbingState(tiger, distance) {
+    if (!this.grabbedTiger || !this.isGrabbing) {
+      // Lost the grab somehow
+      console.log(`🐊 Lost grab - entering cooldown`);
+      this.setState('cooldown');
+      this.releaseGrab();
       return;
     }
     
-    // Apply continuous drag damage
-    const dragDamage = this.dragDamagePerSecond * deltaTime;
-    if (tiger.takeDamage) {
-      tiger.takeDamage(dragDamage, this);
-      console.log(`🐊 Drag damage: ${dragDamage.toFixed(1)} (${(this.dragDuration - this.dragTimer).toFixed(1)}s remaining)`);
+    // Apply initial bite damage once
+    if (!this.hasDealtInitialBite) {
+      const biteDamage = this.getInitialBiteDamage(tiger);
+      tiger.takeDamage(biteDamage, this);
+      console.log(`🐊 Initial bite damage: ${biteDamage}`);
+      this.hasDealtInitialBite = true;
     }
     
-    // Visual drag effect without modifying tiger position
-    // (Position manipulation removed to prevent camera corruption)
+    // Apply continuous damage while holding
+    const holdDamage = this.getHoldDamagePerSecond(tiger) * 0.016; // Per frame
+    tiger.takeDamage(holdDamage, this);
+    
+    // Pull tiger toward water center
+    this.pullTigerToWater(tiger);
+    
+    // Check if grab duration is complete
+    if (this.stateTimer >= this.grabbingDuration) {
+      console.log(`🐊 5-second grab complete - releasing tiger and retreating`);
+      this.releaseGrab();
+      this.setState('retreating');
+    }
   }
 
   /**
@@ -363,6 +405,14 @@ export class CrocodileAmbush {
         
       case 'attacking':
         this.handleAttackingState(tiger, distanceToTiger);
+        break;
+        
+      case 'grabbing':
+        this.handleGrabbingState(tiger, distanceToTiger);
+        break;
+        
+      case 'retreating':
+        this.handleRetreatingState();
         break;
         
       case 'cooldown':
@@ -421,17 +471,59 @@ export class CrocodileAmbush {
   }
   
   /**
+   * Handle retreating state - move away from attack location
+   */
+  handleRetreatingState() {
+    if (!this.waterBody || !this.waterBody.center) {
+      this.setState('cooldown');
+      return;
+    }
+    
+    // Move toward water center at retreat speed
+    const retreatDirection = new THREE.Vector3();
+    retreatDirection.subVectors(this.waterBody.center, this.position);
+    retreatDirection.y = 0;
+    retreatDirection.normalize();
+    
+    const retreatSpeed = 15.0; // Fast retreat
+    const retreatDistance = retreatSpeed * 0.016; // Per frame
+    
+    this.position.x += retreatDirection.x * retreatDistance;
+    this.position.z += retreatDirection.z * retreatDistance;
+    
+    // Gradually submerge during retreat
+    const retreatProgress = this.stateTimer / this.retreatingDuration;
+    // Ensure we have a valid Y position
+    if (isNaN(this.position.y) || isNaN(this.originalPosition.y)) {
+      console.error(`🐊 Invalid Y position during retreat! position.y: ${this.position.y}, originalPosition.y: ${this.originalPosition.y}`);
+      // Reset to water level
+      if (this.waterBody && this.waterBody.mesh && this.waterBody.mesh.position) {
+        this.position.y = this.waterBody.mesh.position.y - 0.5;
+      } else if (this.waterSystem) {
+        this.position.y = this.waterSystem.waterLevel - 1.5;
+      } else {
+        this.position.y = 0; // Fallback
+      }
+    } else {
+      const targetY = this.originalPosition.y - 1.5; // Deeper than original
+      this.position.y = this.position.y + (targetY - this.position.y) * 0.1;
+    }
+    
+    if (this.stateTimer >= this.retreatingDuration) {
+      console.log(`🐊 Retreat complete - entering cooldown`);
+      this.setState('cooldown');
+      
+      // Reposition during cooldown
+      this.repositionToNewAmbushSpot();
+    }
+  }
+  
+  /**
    * Handle cooldown state - recovery and repositioning
    */
   handleCooldownState() {
     if (this.stateTimer >= this.cooldownDuration) {
-      console.log(`🐊 Crocodile cooldown complete - repositioning`);
-      
-      // Chance to reposition to new ambush spot
-      if (Math.random() < this.repositionChance) {
-        this.repositionToNewAmbushSpot();
-      }
-      
+      console.log(`🐊 Crocodile cooldown complete - ready for next ambush`);
       this.setState('hidden');
       this.target = null;
     }
@@ -457,8 +549,10 @@ export class CrocodileAmbush {
     this.isAttacking = true;
     this.hasAttacked = false;
     
-    // Calculate attack direction
-    this.attackDirection.subVectors(tiger.position, this.position).normalize();
+    // Calculate attack direction (horizontal only)
+    this.attackDirection.subVectors(tiger.position, this.position);
+    this.attackDirection.y = 0; // Keep attack horizontal
+    this.attackDirection.normalize();
     
     // Create water splash effects
     this.createWaterSplash();
@@ -486,7 +580,15 @@ export class CrocodileAmbush {
       
       // Aggressive forward movement
       this.velocity.copy(this.attackDirection).multiplyScalar(this.speed * 1.5); // 50% faster lunge
+      
+      // Store current Y to prevent corruption
+      const currentY = this.position.y;
       this.position.add(this.velocity.clone().multiplyScalar(0.016));
+      
+      // Maintain Y position during horizontal lunge
+      if (!isNaN(currentY)) {
+        this.position.y = currentY;
+      }
       
       // Check for hit during lunge - multiple chances for contact
       if (!this.hasAttacked && this.canHitTarget(tiger)) {
@@ -497,11 +599,20 @@ export class CrocodileAmbush {
     } else {
       // Quick recovery phase - return to ambush position
       const recoveryDirection = new THREE.Vector3()
-        .subVectors(this.originalPosition, this.position)
-        .normalize();
+        .subVectors(this.originalPosition, this.position);
+      recoveryDirection.y = 0; // Only move horizontally
+      recoveryDirection.normalize();
       
       this.velocity.copy(recoveryDirection).multiplyScalar(this.speed * 0.8);
+      
+      // Store current Y to prevent corruption
+      const currentY = this.position.y;
       this.position.add(this.velocity.clone().multiplyScalar(0.016));
+      
+      // Maintain Y position during recovery
+      if (!isNaN(currentY)) {
+        this.position.y = currentY;
+      }
       
       console.log(`🐊 Recovering to ambush position`);
     }
@@ -512,17 +623,11 @@ export class CrocodileAmbush {
    */
   executeAttackHit(tiger) {
     this.hasAttacked = true;
-    console.log(`🐊 Crocodile hit tiger for ${this.power} damage! Initiating water drag...`);
+    console.log(`🐊 Crocodile grabbed tiger! Starting 5-second hold...`);
     
-    // Initiate water drag effect
-    this.isDragging = true;
-    this.dragTimer = 0;
-    this.target = tiger;
-    
-    console.log(`🐊 Water drag initiated! Tiger will take ${this.dragDamagePerSecond} damage/sec for ${this.dragDuration} seconds`);
-    
-    // This will be handled by the AmbushSystem for immediate damage
-    // tiger.takeDamage(this.power, this);
+    // Transition to grabbing state
+    this.setState('grabbing');
+    this.startGrab(tiger);
   }
   
   /**
@@ -713,10 +818,88 @@ export class CrocodileAmbush {
   }
   
   /**
-   * Check if crocodile is dragging tiger into water
+   * Start grab on tiger
    */
-  isDraggingTiger() {
-    return this.isDragging;
+  startGrab(tiger) {
+    this.isGrabbing = true;
+    this.grabbedTiger = tiger;
+    this.hasDealtInitialBite = false;
+    
+    // Lock tiger movement
+    if (tiger.setMovementLocked) {
+      tiger.setMovementLocked(true);
+    }
+    
+    console.log(`🐊 Grab started - tiger movement locked for ${this.grabbingDuration} seconds`);
+  }
+  
+  /**
+   * Release grab
+   */
+  releaseGrab() {
+    if (this.grabbedTiger && this.grabbedTiger.setMovementLocked) {
+      this.grabbedTiger.setMovementLocked(false);
+    }
+    
+    this.isGrabbing = false;
+    this.grabbedTiger = null;
+    this.hasDealtInitialBite = false;
+    
+    console.log(`🐊 Grab released - tiger can move again`);
+  }
+  
+  /**
+   * Get initial bite damage based on tiger stage
+   */
+  getInitialBiteDamage(tiger) {
+    const damageByStage = {
+      'Young': 30,
+      'Adult': 50,
+      'Alpha': 70
+    };
+    return damageByStage[tiger.evolutionStage] || 50;
+  }
+  
+  /**
+   * Get hold damage per second based on tiger stage
+   */
+  getHoldDamagePerSecond(tiger) {
+    const damageByStage = {
+      'Young': 10,
+      'Adult': 15,
+      'Alpha': 20
+    };
+    return damageByStage[tiger.evolutionStage] || 15;
+  }
+  
+  /**
+   * Pull tiger toward water center
+   */
+  pullTigerToWater(tiger) {
+    if (!this.waterBody || !this.waterBody.center) return;
+    
+    // Calculate pull direction toward water center
+    const pullDirection = new THREE.Vector3();
+    pullDirection.subVectors(this.waterBody.center, tiger.position);
+    pullDirection.y = 0; // Only pull horizontally
+    pullDirection.normalize();
+    
+    // Pull speed: 5 units per second
+    const pullSpeed = 5.0;
+    const pullDistance = pullSpeed * 0.016; // Per frame
+    
+    // Move tiger position
+    tiger.position.x += pullDirection.x * pullDistance;
+    tiger.position.z += pullDirection.z * pullDistance;
+    
+    // Also move crocodile with the tiger
+    this.position.x += pullDirection.x * pullDistance * 0.5; // Crocodile moves slower
+    this.position.z += pullDirection.z * pullDistance * 0.5;
+    
+    // Create splash effects periodically
+    if (Math.floor(this.stateTimer * 4) !== Math.floor((this.stateTimer - 0.016) * 4)) {
+      this.createWaterSplash();
+    }
   }
 
   /**

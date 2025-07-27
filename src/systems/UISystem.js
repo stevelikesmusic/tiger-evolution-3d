@@ -105,7 +105,7 @@ export class UISystem {
       <div>Shift: Run (pounce)</div>
       <div>Ctrl: Crouch (stealth)</div>
       <div>Z: Hunt nearby animals</div>
-      <div>E: Eat prey</div>
+      <div>E: Drink/Eat (context)</div>
       <div>M: Scent trail (find animals)</div>
       <div>MM: Tiger trail (find tigers)</div>
       <div>R: Dive underwater</div>
@@ -139,12 +139,35 @@ export class UISystem {
     saveStatus.textContent = 'Game Saved';
     document.body.appendChild(saveStatus);
     
+    // Create action context indicator
+    const actionContext = document.createElement('div');
+    actionContext.id = 'action-context';
+    actionContext.style.cssText = `
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #FFFFFF;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1100;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.2);
+    `;
+    document.body.appendChild(actionContext);
+    
     // Store references
     this.elements.container = uiContainer;
     this.elements.statsPanel = statsPanel;
     this.elements.levelDisplay = levelDisplay;
     this.elements.evolutionDisplay = evolutionDisplay;
     this.elements.saveStatus = saveStatus;
+    this.elements.actionContext = actionContext;
   }
   
   createStatBar(label, color, id) {
@@ -301,6 +324,36 @@ export class UISystem {
       }, 3000);
     }
   }
+  
+  showActionContext(action) {
+    if (this.elements.actionContext) {
+      let text = '';
+      let icon = '';
+      
+      switch (action) {
+        case 'drink':
+          icon = '💧';
+          text = 'Press E to Drink';
+          break;
+        case 'eat':
+          icon = '🍖';
+          text = 'Press E to Eat';
+          break;
+        default:
+          this.hideActionContext();
+          return;
+      }
+      
+      this.elements.actionContext.innerHTML = `${icon} ${text}`;
+      this.elements.actionContext.style.opacity = '1';
+    }
+  }
+  
+  hideActionContext() {
+    if (this.elements.actionContext) {
+      this.elements.actionContext.style.opacity = '0';
+    }
+  }
 
   dispose() {
     if (this.elements.container && this.elements.container.parentNode) {
@@ -308,6 +361,9 @@ export class UISystem {
     }
     if (this.elements.saveStatus && this.elements.saveStatus.parentNode) {
       this.elements.saveStatus.parentNode.removeChild(this.elements.saveStatus);
+    }
+    if (this.elements.actionContext && this.elements.actionContext.parentNode) {
+      this.elements.actionContext.parentNode.removeChild(this.elements.actionContext);
     }
     this.elements = {};
   }
