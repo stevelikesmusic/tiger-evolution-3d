@@ -152,9 +152,9 @@ export class AmbushSystem {
    */
   createCrocodileAmbusher(waterBody) {
     try {
-      // Position crocodile at the edge of water body for ambush
+      // Position crocodile inside water body near the edge for ambush
       const angle = Math.random() * Math.PI * 2;
-      const distance = waterBody.radius * (0.90 + Math.random() * 0.05); // 90-95% from center (at edge)
+      const distance = waterBody.radius * (0.80 + Math.random() * 0.10); // 80-90% from center (safely inside water)
       
       const x = waterBody.center.x + Math.cos(angle) * distance;
       const z = waterBody.center.z + Math.sin(angle) * distance;

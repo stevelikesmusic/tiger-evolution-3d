@@ -1510,26 +1510,16 @@ export class GameController {
   isNearWater(position) {
     if (!this.waterSystem) return false;
     
-    const waterBodies = this.waterSystem.getWaterBodies();
-    const drinkingDistance = 8.0; // Tiger can drink from water within 8 units
+    const drinkingDistance = 3.0; // Tiger can drink from water within 3 units (reduced to prevent meal overlap)
     
-    for (const waterBody of waterBodies) {
-      if (waterBody.center) {
-        // Check distance to water body center
-        const distance = Math.sqrt(
-          Math.pow(position.x - waterBody.center.x, 2) +
-          Math.pow(position.z - waterBody.center.z, 2)
-        );
-        
-        // Check if within drinking distance of water edge
-        const distanceFromEdge = Math.abs(distance - waterBody.radius);
-        if (distanceFromEdge <= drinkingDistance || distance < waterBody.radius) {
-          return true;
-        }
-      }
-    }
+    // Use precise edge detection
+    const distanceToEdge = this.waterSystem.getDistanceToWaterEdge(position.x, position.z);
     
-    return false;
+    
+    // Tiger can drink if:
+    // 1. Inside water (negative distance)
+    // 2. Within drinking distance of water edge (positive distance <= drinkingDistance)
+    return distanceToEdge <= drinkingDistance;
   }
   
   dispose() {

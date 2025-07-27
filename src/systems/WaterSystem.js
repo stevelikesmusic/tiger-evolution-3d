@@ -628,6 +628,51 @@ export class WaterSystem {
   }
 
   /**
+   * Get distance to nearest water edge from position
+   * Returns positive value if outside water, negative if inside water
+   */
+  getDistanceToWaterEdge(x, z) {
+    let minAbsoluteDistance = Infinity;
+    let actualMinDistance = Infinity;
+    
+    for (const waterBody of this.waterBodies) {
+      if (waterBody.type === 'lake' || waterBody.type === 'pond') {
+        const distance = Math.sqrt(
+          Math.pow(x - waterBody.center.x, 2) + Math.pow(z - waterBody.center.z, 2)
+        );
+        const edgeDistance = distance - waterBody.radius;
+        
+        if (Math.abs(edgeDistance) < minAbsoluteDistance) {
+          minAbsoluteDistance = Math.abs(edgeDistance);
+          actualMinDistance = edgeDistance;
+        }
+      } else if (waterBody.type === 'river' && waterBody.path) {
+        // Check distance to river path segments
+        for (let i = 0; i < waterBody.path.length - 1; i++) {
+          const start = waterBody.path[i];
+          const end = waterBody.path[i + 1];
+          const riverWidth = (start.width + end.width) / 2;
+          
+          const distanceToRiver = this.distanceToLineSegment(
+            { x, z }, 
+            { x: start.x, z: start.z }, 
+            { x: end.x, z: end.z }
+          );
+          
+          const edgeDistance = distanceToRiver - riverWidth / 2;
+          
+          if (Math.abs(edgeDistance) < minAbsoluteDistance) {
+            minAbsoluteDistance = Math.abs(edgeDistance);
+            actualMinDistance = edgeDistance;
+          }
+        }
+      }
+    }
+    
+    return actualMinDistance;
+  }
+
+  /**
    * Check if position is in water
    */
   isInWater(x, z) {
